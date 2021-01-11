@@ -2,9 +2,9 @@ kernel:
   image: linuxkit/kernel:5.4.39
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0"
 init:
-  - linuxkit/init:a68f9fa0c1d9dbfc9c23663749a0b7ac510cbe1c
+  - linuxkit/init:v0.8
   - linuxkit/runc:v0.8
-  - linuxkit/containerd:a4aa19c608556f7d786852557c36136255220c1f
+  - linuxkit/containerd:v0.8
   - linuxkit/ca-certificates:v0.8
 onboot:
   - name: sysctl
@@ -40,12 +40,12 @@ services:
      - /var/lib/docker:/var/lib/docker
      - /lib/modules:/lib/modules
      - /etc/docker/daemon.json:/etc/docker/daemon.json
-    command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
-  - name: tink-worker
-    capabilities:
-     - all
-    net: host
-    image: quay.io/tinkerbell/tink-worker:sha-47f1e124
+    command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd", "--",
+    "-H", "tcp://0.0.0.0:2376"]
+  - name: bootkit
+    image: bootkit:0.0
+    env:
+    - "DOCKER_HOST=tcp://0.0.0.0:2376"
 files:
   - path: var/lib/docker
     directory: true
@@ -55,4 +55,3 @@ trust:
   org:
     - linuxkit
     - library
-    - quay.io/tinkerbell

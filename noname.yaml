@@ -1,6 +1,6 @@
 kernel:
   image: linuxkit/kernel:5.4.39
-  cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0 docker_registry=192.168.1.1 grpc_authority=192.168.1.1:42113 grpc_cert_url=http://192.168.1.1:42114/cert packet_base_url=http://192.168.1.2/workflow tinkerbell=http://192.168.1.1 registry_username=admin registry_password=ce51b0ca1f13febf18938ecd4c4ad81c69c7651551a21a7642794d025ce1d869"
+  cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0 docker_registry=192.168.1.1 grpc_authority=192.168.1.1:42113 grpc_cert_url=http://192.168.1.1:42114/cert packet_base_url=http://192.168.1.2/workflow tinkerbell=http://192.168.1.1 registry_username=admin registry_password=ce51b0ca1f13febf18938ecd4c4ad81c69c7651551a21a7642794d025ce1d869 worker_id=5209d4f0-2df1-44be-be7b-51ca163ffe6b"
 init:
   - linuxkit/init:v0.8
   - linuxkit/runc:v0.8
@@ -41,9 +41,14 @@ services:
      - /lib/modules:/lib/modules
      - /etc/docker/daemon.json:/etc/docker/daemon.json
      - /var/run/docker:/var/run
+     - /var/run/worker:/worker
+     - /dev/console:/dev/console
+     - /dev:/dev
+    rootfsPropagation: shared
     runtime:
       mkdir:
         - /var/run/docker
+        - /var/run/worker
   - name: bootkit
     image: bootkit:0.0
     capabilities:
@@ -54,11 +59,9 @@ services:
        options: ["rw","nosuid","noexec","nodev","relatime"]
     binds:
      - /var/run/docker:/var/run
-     - /var/run/worker:/worker
     runtime:
       mkdir:
         - /var/run/docker
-        - /var/run/worker
 files:
   - path: var/lib/docker
     directory: true

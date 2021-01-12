@@ -35,6 +35,9 @@ type tinkConfig struct {
 	// Worker ID(s) .. why are there two?
 	workerID string
 	ID       string
+
+	// Metadata ID ... plus the other IDs :shrug:
+	MetadataID string `json:"id"`
 }
 
 func main() {
@@ -51,6 +54,12 @@ func main() {
 	cmdlines := strings.Split(string(content), " ")
 	cfg, _ := parsecmdline(cmdlines)
 
+	// Get the ID from the metadata service
+	err = cfg.MetaDataQuery()
+	if err != nil {
+		panic(err)
+	}
+
 	// Generate the path to the tink-worker
 	imageName := fmt.Sprintf("%s/tink-worker:latest", cfg.registry)
 
@@ -65,6 +74,7 @@ func main() {
 			fmt.Sprintf("TINKERBELL_CERT_URL=%s", cfg.grpcCertURL),
 			fmt.Sprintf("WORKER_ID=%s", cfg.workerID),
 			fmt.Sprintf("ID=%s", cfg.workerID),
+			fmt.Sprintf("container_uuid=%s", cfg.MetadataID),
 		},
 		AttachStdout: true,
 		AttachStderr: true,
@@ -87,13 +97,22 @@ func main() {
 		Privileged:  true,
 	}
 
-	jsonBytes, _ := json.Marshal(map[string]string{
-		"username": cfg.username,
-		"password": cfg.password,
-	})
+	fmt.Printf("%s / %s", cfg.username, cfg.password)
 
-	pullOpts := &types.ImagePullOptions{
-		RegistryAuth: base64.StdEncoding.EncodeToString(jsonBytes),
+	authConfig := types.AuthConfig{
+		Username: cfg.username,
+		Password: strings.TrimSuffix(cfg.password, "\n"),
+	}
+
+	encodedJSON, err := json.Marshal(authConfig)
+	if err != nil {
+		panic(err)
+	}
+
+	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
+
+	pullOpts := types.ImagePullOptions{
+		RegistryAuth: authStr,
 	}
 
 	// Give time to Docker to start
@@ -101,6 +120,7 @@ func main() {
 	time.Sleep(time.Second * 3)
 	fmt.Println("Starting Communication with Docker Engine")
 
+	// Create Docker client with API (socket)
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -109,7 +129,7 @@ func main() {
 
 	fmt.Printf("Pulling image [%s]", imageName)
 
-	out, err := cli.ImagePull(ctx, imageName, *pullOpts)
+	out, err := cli.ImagePull(ctx, imageName, pullOpts)
 	if err != nil {
 		panic(err)
 	}
@@ -138,10 +158,10 @@ func parsecmdline(cmdlines []string) (cfg tinkConfig, err error) {
 				cfg.registry = cmdline[1]
 			}
 			if cmdline[0] == "registry_username" {
-				cfg.registry = cmdline[1]
+				cfg.username = cmdline[1]
 			}
 			if cmdline[0] == "registry_password" {
-				cfg.registry = cmdline[1]
+				cfg.password = cmdline[1]
 			}
 
 			// Find Tinkerbell servers settings
@@ -189,5 +209,46 @@ func DownloadFile(filepath string, url string) error {
 
 	// Write the body to file
 	_, err = io.Copy(out, resp.Body)
+	return err
+}
+
+// MetaDataQuery will query the metadata
+func (cfg *tinkConfig) MetaDataQuery() error {
+
+	spaceClient := http.Client{
+		Timeout: time.Second * 60, // Timeout after 60 seconds (seems massively long is this dial-up?)
+	}
+
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s:50061/metadata", cfg.tinkerbell), nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("User-Agent", "bootkit")
+
+	res, getErr := spaceClient.Do(req)
+	if getErr != nil {
+		return err
+	}
+
+	if res.Body != nil {
+		defer res.Body.Close()
+	}
+
+	body, readErr := ioutil.ReadAll(res.Body)
+	if readErr != nil {
+		return err
+	}
+
+	var metadata struct {
+		ID string `json:"id"`
+	}
+
+	jsonErr := json.Unmarshal(body, &metadata)
+	if jsonErr != nil {
+		return err
+	}
+
+	cfg.MetadataID = metadata.ID
 	return err
 }

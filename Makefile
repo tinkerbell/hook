@@ -12,3 +12,9 @@ bootkitBuild:
 
 tink-dockerBuild:
 	cd tink-docker; docker buildx build  --platform linux/amd64 --load -t tink-docker:0.0 .
+
+convert:
+	mkdir convert
+	cp out/imho-initrd.img ./convert/initrd.gz
+	cd convert; gunzip ./initrd.gz; cpio -idv < initrd; rm initrd; find . -print0 | cpio --null -ov --format=newc > ../initramfs; gzip ../initramfs
+

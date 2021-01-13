@@ -44,7 +44,7 @@ func main() {
 	fmt.Println("Downloaded the repository certificates, starting the Docker Engine")
 
 	// Build the command, and execute
-	cmd := exec.Command("/usr/local/bin/docker-init", "/usr/local/bin/dockerd", "--", "--storage-driver", "overlay2")
+	cmd := exec.Command("/usr/local/bin/docker-init", "/usr/local/bin/dockerd")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()

@@ -67,7 +67,7 @@ kernel.
 
 ## Architecture
 
-The noname project aims to provide a "in-place" swappable set of files (`kernel`/`initramfs`) that can be used to replace the [OSIE]() environment that comes from Equinix Metal. The key aims of this new project:
+The noname project aims to provide a "in-place" swappable set of files (`kernel`/`initramfs`) that can be used to replace the [OSIE](https://github.com/tinkerbell/osie) environment that comes from Equinix Metal. The key aims of this new project:
 
 - Immutable output
 - Batteries included (but swappable if needed)

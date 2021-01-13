@@ -64,3 +64,39 @@ kernel.
 3. It will convert the init ramkdisk in the right format that iPXE can boot
 4. It will create a `tar.gz` archive in the root of the project containing all
    the files in the right format, ready to be served via Tinkerbell.
+
+## Architecture
+
+The noname project aims to provide a "in-place" swappable set of files (`kernel`/`initramfs`) that can be used to replace the [OSIE](https://github.com/tinkerbell/osie) environment that comes from Equinix Metal. The key aims of this new project:
+
+- Immutable output
+- Batteries included (but swappable if needed)
+- Ease of build (Subsequent builds of noname are ~47 seconds)
+- Lean / simple design
+- Clean base to build upon
+
+The noname project predominantly makes use of [linuxkit](github.com/linuxkit/linuxkit) as the toolkit that will produce repeatable and simple build of the entire in-memory operating system. The linuxkit project combines a Linux kernel with a number of additional container images to produce a Linux Operating System with just the right amount of functionality (no less / no more). We have built upon the minimal set of components:
+
+- containerd (the engine to start/stop all other components in a LinuxKit OS)
+- dhcp (for network access)
+- ntp (network time)
+- rngd (random number gen for entropy) 
+
+To this minimal build we've added our own set of containers that will provide the functionality needed for a `tink-worker` to run succesfully:
+
+### tink-docker
+
+The `tink-docker` container builds upon the upstream `dind` (docker-in-docker) container and adds the additional functionality to retrieve the certificates needed for the docker engine to communicate with the tinkerbell repository **before** it starts the docker engine. The docker engine will be exposed through the `/var/run/docker.sock` that will use a bind mount so that the container `bootkit` can access it.
+
+### bootkit
+
+The `bootkit` container will parse the `/proc/cmdline` and the metadata service in order to retrieve the specific configuration for tink-worker to be started for the current/correct machine. It will then speak with the `tink-docker` engine API through the shared `/var/run/docker.sock`, where it will ask the engine to run the `tink-worker:latest` container, which in turn will begin to execute the workflow/actions associated with that machine. 
+
+## Next steps
+
+- Test passing pid:host to tink-docker, this should allow gracefull reboots
+- Re-write a bunch of actions that are un-managable shell scripts (disk management being the first)
+
+## Troubleshooting
+
+Due to a very unexplainable issue, on rare occasions the `initramfs` generated may not work if that is the case then the `make convert` command we re-build the `initramfs` in a different format. (sometimes this has occured with changed one letter of a string inside some source code and rebuilding... not sure why yet)

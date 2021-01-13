@@ -38,8 +38,10 @@ services:
      - /var/run/worker:/worker
      - /dev/console:/dev/console
      - /dev:/dev
+     - /var/run/images:/var/lib/docker
     runtime:
       mkdir:
+        - /var/run/images
         - /var/run/docker
         - /var/run/worker
   - name: bootkit

@@ -11,11 +11,6 @@ onboot:
     image: linuxkit/sysctl:v0.8
   - name: sysfs
     image: linuxkit/sysfs:v0.8
-  - name: format
-    image: linuxkit/format:v0.8
-  - name: mount
-    image: linuxkit/mount:v0.8
-    command: ["/usr/bin/mountie", "/var/lib/docker"]
 services:
   - name: getty
     image: linuxkit/getty:v0.8
@@ -37,14 +32,12 @@ services:
        options: ["rw","nosuid","noexec","nodev","relatime"]
     binds:
      - /etc/resolv.conf:/etc/resolv.conf
-     - /var/lib/docker:/var/lib/docker
      - /lib/modules:/lib/modules
      - /etc/docker/daemon.json:/etc/docker/daemon.json
      - /var/run/docker:/var/run
      - /var/run/worker:/worker
      - /dev/console:/dev/console
      - /dev:/dev
-    rootfsPropagation: shared
     runtime:
       mkdir:
         - /var/run/docker
@@ -63,8 +56,6 @@ services:
       mkdir:
         - /var/run/docker
 files:
-  - path: var/lib/docker
-    directory: true
   - path: etc/docker/daemon.json
     contents: '{"debug": true}'
 trust:

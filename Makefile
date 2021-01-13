@@ -1,4 +1,9 @@
+GIT_VERSION ?= $(shell git log -1 --format="%h")
+ifneq ($(shell git status --porcelain),)
+  GIT_VERSION := $(GIT_VERSION)-dirty
+endif
 default: bootkitBuild tink-dockerBuild image
+
 
 image:
 	mkdir -p out
@@ -18,3 +23,10 @@ convert:
 	cp out/imho-initrd.img ./convert/initrd.gz
 	cd convert; gunzip ./initrd.gz; cpio -idv < initrd; rm initrd; find . -print0 | cpio --null -ov --format=newc > ../initramfs; gzip ../initramfs
 
+dist: default convert
+	rm -rf ./dist ./convert
+	mkdir ./dist
+	mv ./initramfs.gz ./dist/initramfs-x86_64
+	mv ./out/imho-kernel ./dist/vmlinuz-x86_64
+	rm -rf out
+	cd ./dist && tar -czvf ../noname-${GIT_VERSION}.tar.gz ./*

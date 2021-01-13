@@ -42,6 +42,7 @@ mkShell {
   buildInputs = [
     git
     linuxkit
+    s3cmd
   ];
   shellHook =
     ''

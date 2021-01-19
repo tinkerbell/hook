@@ -30,3 +30,9 @@ dist: default convert
 	mv ./out/imho-kernel ./dist/vmlinuz-x86_64
 	rm -rf out
 	cd ./dist && tar -czvf ../noname-${GIT_VERSION}.tar.gz ./*
+
+deploy: dist
+	s3cmd sync ./noname-${GIT_VERSION}.tar.gz s3://s.gianarb.it/noname/${GIT_VERSION}.tar.gz
+ifeq ($(shell git rev-parse --abbrev-ref HEAD),master)
+	s3cmd cp s3://s.gianarb.it/noname/noname-${GIT_VERSION}.tar.gz s3://s.gianarb.it/noname/noname-master.tar.gz
+endif

@@ -97,8 +97,6 @@ func main() {
 		Privileged:  true,
 	}
 
-	fmt.Printf("%s / %s", cfg.username, cfg.password)
-
 	authConfig := types.AuthConfig{
 		Username: cfg.username,
 		Password: strings.TrimSuffix(cfg.password, "\n"),

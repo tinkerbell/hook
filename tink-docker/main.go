@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 type tinkConfig struct {
@@ -20,6 +21,7 @@ type tinkConfig struct {
 
 func main() {
 	fmt.Println("Starting Tink-Docker")
+	go rebootWatch()
 
 	// Parse the cmdline in order to find the urls for the repostiory and path to the cert
 	content, err := ioutil.ReadFile("/proc/cmdline")
@@ -93,4 +95,34 @@ func DownloadFile(filepath string, url string) error {
 	// Write the body to file
 	_, err = io.Copy(out, resp.Body)
 	return err
+}
+
+func rebootWatch() {
+	fmt.Println("Starting Reboot Watcher")
+
+	// Forever loop
+	for {
+		if fileExists("/worker/reboot") {
+			//Build the command, and execute
+			cmd := exec.Command("/sbin/reboot")
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			err := cmd.Run()
+			if err != nil {
+				panic(err)
+			}
+			break
+		}
+		// Wait one second before looking for file
+		time.Sleep(time.Second)
+	}
+	fmt.Println("Rebooting")
+}
+
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
 }

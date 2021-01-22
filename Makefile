@@ -7,7 +7,7 @@ default: bootkitBuild tink-dockerBuild image
 
 image:
 	mkdir -p out
-	linuxkit build --docker -format kernel+initrd -name imho -dir out noname.yaml
+	linuxkit build --docker -format kernel+initrd -name imho -dir out tinkie.yaml
 
 run:
 	sudo ~/go/bin/linuxkit run qemu --mem 2048 out/imho
@@ -29,10 +29,10 @@ dist: default convert
 	mv ./initramfs.gz ./dist/initramfs-x86_64
 	mv ./out/imho-kernel ./dist/vmlinuz-x86_64
 	rm -rf out
-	cd ./dist && tar -czvf ../noname-${GIT_VERSION}.tar.gz ./*
+	cd ./dist && tar -czvf ../tinkie-${GIT_VERSION}.tar.gz ./*
 
 deploy: dist
-	s3cmd sync ./noname-${GIT_VERSION}.tar.gz s3://s.gianarb.it/noname/${GIT_VERSION}.tar.gz
+	s3cmd sync ./tinkie-${GIT_VERSION}.tar.gz s3://s.gianarb.it/tinkie/${GIT_VERSION}.tar.gz
 ifeq ($(shell git rev-parse --abbrev-ref HEAD),master)
-	s3cmd cp s3://s.gianarb.it/noname/noname-${GIT_VERSION}.tar.gz s3://s.gianarb.it/noname/noname-master.tar.gz
+	s3cmd cp s3://s.gianarb.it/tinkie/tinkie-${GIT_VERSION}.tar.gz s3://s.gianarb.it/tinkie/tinkie-master.tar.gz
 endif

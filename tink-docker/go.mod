@@ -1,3 +1,3 @@
-module github.com/thebsdbox/noname/tink-docker
+module github.com/thebsdbox/tinkie/tink-docker
 
 go 1.15

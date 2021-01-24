@@ -1,4 +1,4 @@
-module github.com/thebsdbox/noname/bootkit
+module github.com/thebsdbox/tinkie/bootkit
 
 go 1.15
 

@@ -133,3 +133,34 @@ kernel.
 ## Troubleshooting
 
 Due to a very unexplainable issue, on rare occasions the `initramfs` generated may not work if that is the case then the `make convert` command we re-build the `initramfs` in a different format. (sometimes this has occured with changed one letter of a string inside some source code and rebuilding... not sure why yet)
+
+## Nix for CI/CD
+
+This project uses Nix for a couple of reasons. I want to use it more intensively to see if it can help me quickly iterate
+over CI/CD. I think i like it, but not sure yet. Anyway, if you are not into Nix
+and you don't like it here a few tips.
+
+First you can use Docker:
+
+```terminal
+$ docker run -it -v nix-build-cache:/nix/store -v $PWD:/opt -v /var/run/docker.sock:/var/run/docker.sock --workdir /opt nixos/nix sh
+
+# now you are inside the container and you can use nix-shell to reproduce the
+environment
+$ nix-shell
+# You can run the command GitHub aciton runs:
+$ ./hack/build-and-deploy.sh
+
+# or you can use make to build LinuxKit image
+$ make image
+```
+
+Second: you can copy paste `./hack/build-and-deploy.sh` elsewhere and change
+the shebang:
+
+```
+#!/usr/bin/env nix-shell
+#!nix-shell -i bash ../shell.nix
+```
+
+with `#!/bin/bash` or something else.

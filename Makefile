@@ -32,7 +32,7 @@ dist: default convert
 	cd ./dist && tar -czvf ../tinkie-${GIT_VERSION}.tar.gz ./*
 
 deploy: dist
-	s3cmd sync ./tinkie-${GIT_VERSION}.tar.gz s3://s.gianarb.it/tinkie/${GIT_VERSION}.tar.gz
 ifeq ($(shell git rev-parse --abbrev-ref HEAD),master)
+	s3cmd sync ./tinkie-${GIT_VERSION}.tar.gz s3://s.gianarb.it/tinkie/${GIT_VERSION}.tar.gz
 	s3cmd cp s3://s.gianarb.it/tinkie/tinkie-${GIT_VERSION}.tar.gz s3://s.gianarb.it/tinkie/tinkie-master.tar.gz
 endif

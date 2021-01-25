@@ -127,12 +127,14 @@ kernel.
 
 ## Next steps
 
-- Test passing pid:host to tink-docker, this should allow gracefull reboots
-- Re-write a bunch of actions that are un-managable shell scripts (disk management being the first)
+- Test passing pid:host to tink-docker, this should allow gracefull reboots [done]
+- Re-write a bunch of actions that are un-managable shell scripts (disk management being the first) [done]
 
 ## Troubleshooting
 
 Due to a very unexplainable issue, on rare occasions the `initramfs` generated may not work if that is the case then the `make convert` command we re-build the `initramfs` in a different format. (sometimes this has occured with changed one letter of a string inside some source code and rebuilding... not sure why yet)
+
+It is also possible to build a debug version of tinkie, that will have an `sshd` server running with any public keys you have. This is achieved through the command `make debug-image'
 
 ## Nix for CI/CD
 

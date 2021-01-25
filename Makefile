@@ -7,7 +7,11 @@ default: bootkitBuild tink-dockerBuild image
 
 image:
 	mkdir -p out
-	linuxkit build --docker -format kernel+initrd -name imho -dir out tinkie.yaml
+	linuxkit build --docker -format kernel+initrd -name tinkie -dir out tinkie.yaml
+
+debug-image:
+	mkdir -p out
+	linuxkit build --docker -format kernel+initrd -name debug -dir out tinkie_debug.yaml
 
 run:
 	sudo ~/go/bin/linuxkit run qemu --mem 2048 out/imho

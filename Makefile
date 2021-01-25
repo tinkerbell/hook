@@ -14,7 +14,7 @@ debug-image:
 	linuxkit build --docker -format kernel+initrd -name debug -dir out tinkie_debug.yaml
 
 run:
-	sudo ~/go/bin/linuxkit run qemu --mem 2048 out/imho
+	sudo ~/go/bin/linuxkit run qemu --mem 2048 out/tinkie
 
 bootkitBuild:
 	cd bootkit; docker buildx build  --platform linux/amd64 --load -t bootkit:0.0 .
@@ -24,14 +24,14 @@ tink-dockerBuild:
 
 convert:
 	mkdir convert
-	cp out/imho-initrd.img ./convert/initrd.gz
+	cp out/tinkie-initrd.img ./convert/initrd.gz
 	cd convert; gunzip ./initrd.gz; cpio -idv < initrd; rm initrd; find . -print0 | cpio --null -ov --format=newc > ../initramfs; gzip ../initramfs
 
 dist: default convert
 	rm -rf ./dist ./convert
 	mkdir ./dist
 	mv ./initramfs.gz ./dist/initramfs-x86_64
-	mv ./out/imho-kernel ./dist/vmlinuz-x86_64
+	mv ./out/tinkie-kernel ./dist/vmlinuz-x86_64
 	rm -rf out
 	cd ./dist && tar -czvf ../tinkie-${GIT_VERSION}.tar.gz ./*
 

@@ -4,14 +4,19 @@ in
   import
     (_pkgs.fetchFromGitHub {
       owner = "NixOS";
-      repo = "nixpkgs-channels";
-      #branch@date: nixpkgs-unstable@2020-09-11
-      rev = "6d4b93323e7f78121f8d6db6c59f3889aa1dd931";
-      sha256 = "0g2j41cx2w2an5d9kkqvgmada7ssdxqz1zvjd7hi5vif8ag0v5la";
+      repo = "nixpkgs";
+      #branch@date: nixpkgs-unstable@2021-01-25
+      rev = "ce7b327a52d1b82f82ae061754545b1c54b06c66";
+      sha256 = "1rc4if8nmy9lrig0ddihdwpzg2s8y36vf20hfywb8hph5hpsg4vj";
     }) { }
 }:
+
 with pkgs;
 let
+  docker-ov = docker.override {
+    buildxSupport = true;
+  };
+
   linuxkit = buildGoPackage rec {
     pname = "linuxkit";
     version = "1ec1768d18ad7a5cd2d6e5c2125a14324ff6f57f";
@@ -43,6 +48,7 @@ mkShell {
     git
     linuxkit
     s3cmd
+    docker-ov
   ];
   shellHook =
     ''

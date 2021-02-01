@@ -2,7 +2,7 @@
 
 Tinkie is the Tinkerbell Installation Environment for bare-metal. It runs in-memory, installs operating systems and handles deprovisioning.
 
-## Movivation
+## Motivation
 
 <!-- TODO: Move this to the documentation repository once this is part of the Tinkerbell organisation. -->
 

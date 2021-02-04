@@ -17,6 +17,21 @@ let
     buildxSupport = true;
   };
 
+  manifest-tool = pkgs.buildGoModule rec {
+    pname = "manifest-tool";
+    version = "unstable-${builtins.substring 0 9 src.rev}";
+    src = pkgs.fetchFromGitHub {
+      owner = "estesp";
+      repo = "manifest-tool";
+      rev = "2d360eeba276afaf63ab22270b7c6b4f8447e261";
+      sha256 = "1895hj6r10cd865vnpfj0v6r26x0ywlwlc2ygimg8a2cwi7q5h99";
+    };
+    subPackages = [ "cmd/manifest-tool" ];
+    buildFlagsArray = [ "-ldflags=-X main.gitCommit=${version}" ];
+    vendorSha256 = null;
+    CGO_ENABLED = 0;
+  };
+
   linuxkit = buildGoPackage rec {
     pname = "linuxkit";
     version = "1ec1768d18ad7a5cd2d6e5c2125a14324ff6f57f";
@@ -49,6 +64,7 @@ mkShell {
     linuxkit
     s3cmd
     docker-ov
+    manifest-tool
   ];
   shellHook =
     ''

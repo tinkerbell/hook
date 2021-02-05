@@ -23,7 +23,7 @@ services:
   - name: ntpd
     image: linuxkit/openntpd:v0.8
   - name: docker
-    image: tink-docker:0.0
+    image: quay.io/tinkerbell/hook-docker:0.0
     capabilities:
      - all
     net: host
@@ -46,7 +46,7 @@ services:
         - /var/run/docker
         - /var/run/worker
   - name: bootkit
-    image: bootkit:0.0
+    image: quay.io/tinkerbell/hook-bootkit:0.0
     capabilities:
      - all
     net: host
@@ -58,9 +58,15 @@ services:
     runtime:
       mkdir:
         - /var/run/docker
+  - name: sshd
+    image: linuxkit/sshd:666b4a1a323140aa1f332826164afba506abf597
 files:
   - path: etc/docker/daemon.json
     contents: '{"debug": true}'
+  - path: root/.ssh/authorized_keys
+    source: ~/.ssh/id_rsa.pub
+    mode: "0600"
+    optional: true
 trust:
   org:
     - linuxkit

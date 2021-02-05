@@ -19,15 +19,15 @@ let
 
   linuxkit = buildGoPackage rec {
     pname = "linuxkit";
-    version = "1ec1768d18ad7a5cd2d6e5c2125a14324ff6f57f";
+    version = "4cdf6bc56dd43227d5601218eaccf53479c765b9";
 
     goPackagePath = "github.com/linuxkit/linuxkit";
 
     src = fetchFromGitHub {
       owner = "linuxkit";
       repo = "linuxkit";
-      rev = "1ec1768d18ad7a5cd2d6e5c2125a14324ff6f57f";
-      sha256 = "09qap7bfssbbqhrvjqpplahpldci956lbfdwxy9nwzml3aw18r42";
+      rev = "4cdf6bc56dd43227d5601218eaccf53479c765b9";
+      sha256 = "1w4ly0i8mx7p5a3y25ml6j4vxz42vdcacx0fbv23najcz7qh3810";
     };
 
     subPackages = [ "src/cmd/linuxkit" ];

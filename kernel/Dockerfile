@@ -60,7 +60,7 @@ RUN KERNEL_MAJOR=$(echo ${KERNEL_VERSION} | cut -d . -f 1) && \
     KERNEL_SHA256=$(grep linux-${KERNEL_VERSION}.tar.xz sha256sums.asc | cut -d ' ' -f 1) && \
     [ -f linux-${KERNEL_VERSION}.tar.xz ] || curl -fsSLO ${KERNEL_SOURCE} && \
     echo "${KERNEL_SHA256}  linux-${KERNEL_VERSION}.tar.xz" | sha256sum -c - && \
-    xz -d linux-${KERNEL_VERSION}.tar.xz && \
+    xz -T 0 -d linux-${KERNEL_VERSION}.tar.xz && \
     curl -fsSLO ${KERNEL_PGP2_SIGN} && \
     gpg2 --verify linux-${KERNEL_VERSION}.tar.sign linux-${KERNEL_VERSION}.tar && \
     cat linux-${KERNEL_VERSION}.tar | tar --absolute-names -x && mv /linux-${KERNEL_VERSION} /linux
@@ -156,7 +156,7 @@ RUN case $(uname -m) in \
         cp arch/x86_64/boot/bzImage /out/kernel; \
         ;; \
     aarch64) \
-        cp arch/arm64/boot/Image.gz /out/kernel; \
+        cp arch/arm64/boot/Image /out/kernel; \
         ;; \
     s390x) \
         cp arch/s390/boot/bzImage /out/kernel; \

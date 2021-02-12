@@ -1,5 +1,1 @@
-out
-dist
-tinkie-*.tar.gz
-hook-*.tar.gz
-hook-ci.yaml
+.env

@@ -17,40 +17,21 @@ let
     buildxSupport = true;
   };
 
-  linuxkit = buildGoPackage rec {
-    pname = "linuxkit";
-    version = "4cdf6bc56dd43227d5601218eaccf53479c765b9";
-
-    goPackagePath = "github.com/linuxkit/linuxkit";
-
+  linuxkit-ov = linuxkit.overrideAttrs (oldAttrs: rec {
+    version = "unstable-g${builtins.substring 0 9 src.rev}";
     src = fetchFromGitHub {
       owner = "linuxkit";
       repo = "linuxkit";
       rev = "4cdf6bc56dd43227d5601218eaccf53479c765b9";
       sha256 = "1w4ly0i8mx7p5a3y25ml6j4vxz42vdcacx0fbv23najcz7qh3810";
     };
-
-    subPackages = [ "src/cmd/linuxkit" ];
-
-    buildFlagsArray = [ "-ldflags=-s -w -X ${goPackagePath}/src/cmd/linuxkit/version.GitCommit=${src.rev} -X ${goPackagePath}/src/cmd/linuxkit/version.Version=${version}" ];
-
-    meta = with lib; {
-      description = "A toolkit for building secure, portable and lean operating systems for containers";
-      license = licenses.asl20;
-      homepage = "https://github.com/linuxkit/linuxkit";
-      maintainers = [ maintainers.nicknovitski ];
-      platforms = platforms.unix;
-    };
-  };
+  });
 in
 mkShell {
   buildInputs = [
-    git
-    linuxkit
-    s3cmd
     docker-ov
+    git
+    linuxkit-ov
+    s3cmd
   ];
-  shellHook =
-    ''
-    '';
 }

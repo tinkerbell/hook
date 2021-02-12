@@ -45,12 +45,9 @@ let
 in
 mkShell {
   buildInputs = [
+    docker-ov
     git
     linuxkit
     s3cmd
-    docker-ov
   ];
-  shellHook =
-    ''
-    '';
 }

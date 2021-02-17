@@ -149,6 +149,7 @@ $(eval $(call kernel,5.10.11,5.10.x,$(EXTRA),$(DEBUG)))
 else ifeq ($(ARCH),aarch64)
 $(eval $(call kernel,5.10.11,5.10.x,$(EXTRA),$(DEBUG)))
 #$(eval $(call kernel,5.4.28,5.4.x,-rt,))
+endif
 
 # Target for kernel config
 kconfig:

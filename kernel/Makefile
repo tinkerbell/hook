@@ -267,3 +267,33 @@ else
 		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
 		-t $(ORG)/kconfig:${KCONFIG_TAG} .
 endif
+
+kconfig_amd64:
+ifeq (${KCONFIG_TAG},)
+	docker buildx build --no-cache -f Dockerfile.kconfig \
+		--platform linux/amd64 \
+		--load \
+		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
+		-t $(ORG)/kconfig .
+else
+	docker buildx build --no-cache -f Dockerfile.kconfig \
+		--platform linux/arm64 \
+		-o type=local,dest=out/kconfig \
+		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
+		-t $(ORG)/kconfig:${KCONFIG_TAG} .
+endif
+
+kconfig_arm64:
+ifeq (${KCONFIG_TAG},)
+	docker buildx build --no-cache -f Dockerfile.kconfig \
+		--platform linux/arm64 \
+		--load \
+		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
+		-t $(ORG)/kconfig .
+else
+	docker buildx build --no-cache -f Dockerfile.kconfig \
+		--platform linux/arm64 \
+		-o type=local,dest=out/kconfig \
+		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
+		-t $(ORG)/kconfig:${KCONFIG_TAG} .
+endif

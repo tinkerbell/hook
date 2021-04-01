@@ -8,7 +8,7 @@ Hook is the Tinkerbell Installation Environment for bare-metal. It runs in-memor
 
 One of the [Tinkerbell](https://tinkerbell.org) components is the operating
 system installation environment. Currently, Tinkerbell uses
-[OSIE](https:github.com/tinkebell/osie). That implementation is open-sourced by
+[OSIE](https://github.com/tinkebell/osie). That implementation is open-sourced by
 Equinix Metal and it is serving the purpose of provisioning and de-provisioning
 hardware at a huge scale. But why we started this project?
 
@@ -39,7 +39,7 @@ The hook project aims to provide an "in-place" swappable set of files (`kernel`/
 - Lean / simple design
 - Clean base to build upon
 
-The hook project predominantly uses [linuxkit](github.com/linuxkit/linuxkit) as the toolkit that will produce repeatable and straightforward build of the entire in-memory operating system. The linuxkit project combines a Linux kernel with a number of additional container images to produce a Linux Operating System with just the right amount of functionality (no less / no more). We have built upon the minimal set of components:
+The hook project predominantly uses [linuxkit](https://github.com/linuxkit/linuxkit) as the toolkit that will produce repeatable and straightforward build of the entire in-memory operating system. The linuxkit project combines a Linux kernel with a number of additional container images to produce a Linux Operating System with just the right amount of functionality (no less / no more). We have built upon the minimal set of components:
 
 - containerd (the engine to start/stop all other components in a LinuxKit OS)
 - dhcp (for network access)
@@ -81,19 +81,14 @@ it with the release package containing the new operating system. After you have
 removed the directory, it is time to re-create it:
 
 ```
-mkdir current
-```
+# check out this repo
+git clone https://github.com/tinkerbell/hook.git
 
-Download the new tar.gz
+# build it - this produces a hook-<commit SHA>.tar.gz
+make dist
 
-```
-wget http://s.gianarb.it/hook/hook-master.tar.gz
-```
-
-Uncompress it
-
-```
-tar xzcv -O ./current hook-master.tar.gz
+# copy the output to current (the filename will be different)
+tar -xf hook-bc3e58a-dirty.tar.gz -C ../sandbox/deploy/state/webroot/misc/osie/current/
 ```
 
 Now you are ready to boot the worker, it will pick up the new operating system

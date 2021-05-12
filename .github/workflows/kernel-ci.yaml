@@ -14,7 +14,7 @@ jobs:
           - 5000:5000
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v2.3.4
 
     - run: echo "REGISTRY=$(ip addr show dev bond0 | awk '$1 == "inet" { sub("/.*", "", $2); print $2 }' | head -n 1)" >> $GITHUB_ENV
 

@@ -297,3 +297,7 @@ else
 		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
 		-t $(ORG)/kconfig:${KCONFIG_TAG} .
 endif
+
+.PHONY: clean
+clean:
+	rm out/

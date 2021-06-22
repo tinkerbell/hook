@@ -22,11 +22,11 @@ export DOCKER_CLI_EXPERIMENTAL := enabled
 
 image-amd64:
 	mkdir -p out
-	linuxkit build -docker -disable-content-trust -pull -format kernel+initrd -name hook-x86_64 -dir out $(LINUXKIT_CONFIG)
+	linuxkit build -docker -pull -format kernel+initrd -name hook-x86_64 -dir out $(LINUXKIT_CONFIG)
 
 image-arm64:
 	mkdir -p out
-	linuxkit build -docker -disable-content-trust -pull -arch arm64 -format kernel+initrd -name hook-aarch64 -dir out $(LINUXKIT_CONFIG)
+	linuxkit build -docker -pull -arch arm64 -format kernel+initrd -name hook-aarch64 -dir out $(LINUXKIT_CONFIG)
 
 image: image-amd64 image-arm64
 
@@ -110,3 +110,8 @@ ifeq ($(shell git rev-parse --abbrev-ref HEAD),master)
 	s3cmd sync ./hook-${GIT_VERSION}.tar.gz s3://s.gianarb.it/hook/${GIT_VERSION}.tar.gz
 	s3cmd cp s3://s.gianarb.it/hook/hook-${GIT_VERSION}.tar.gz s3://s.gianarb.it/hook/hook-master.tar.gz
 endif
+
+.PHONY: clean
+clean:
+	rm ./hook-${GIT_VERSION}.tar.gz
+	rm -rf dist/ out/ tink-docker/local/ bootkit/local/

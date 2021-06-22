@@ -40,11 +40,12 @@ jobs:
         push: true
         tags: localhost:5000/tinkerbell/hook-docker:0.0
 
-    - run: sed -e 's/quay.io/localhost:5000/g' hook.yaml > hook-ci.yaml
-
     - uses: cachix/install-nix-action@v13
       with:
         nix_path: nixpkgs=channel:nixos-unstable
+
+    # Replace hook-{bootkit,docker} but not hook-kernel
+    - run: sed -E -e 's,quay.io/tinkerbell/hook-(bootkit|docker),localhost:5000/tinkerbell/hook-\1,g' hook.yaml | tee hook-ci.yaml
 
     - run: ./hack/ci-build.sh
       env:

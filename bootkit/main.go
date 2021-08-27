@@ -51,11 +51,11 @@ func main() {
 		panic(err)
 	}
 
-	cmdlines := strings.Split(string(content), " ")
-	cfg, _ := parsecmdline(cmdlines)
+	cmdLines := strings.Split(string(content), " ")
+	cfg := parseCmdLine(cmdLines)
 
 	// Get the ID from the metadata service
-	err = cfg.MetaDataQuery()
+	err = cfg.metaDataQuery()
 	if err != nil {
 		panic(err)
 	}
@@ -131,7 +131,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	io.Copy(os.Stdout, out)
+
+	_, err = io.Copy(os.Stdout, out)
+	if err != nil {
+		panic(err)
+	}
 
 	resp, err := cli.ContainerCreate(ctx, tinkContainer, tinkHostConfig, nil, nil, "")
 	if err != nil {
@@ -145,74 +149,42 @@ func main() {
 	fmt.Println(resp.ID)
 }
 
-func parsecmdline(cmdlines []string) (cfg tinkConfig, err error) {
+// parseCmdLine will parse the command line.
+func parseCmdLine(cmdLines []string) (cfg tinkConfig) {
+	for i := range cmdLines {
+		cmdLine := strings.Split(cmdLines[i], "=")
+		if len(cmdLine) == 0 {
+			continue
+		}
 
-	for i := range cmdlines {
-		cmdline := strings.Split(cmdlines[i], "=")
-		if len(cmdline) != 0 {
-
-			// Find Registry configuration
-			if cmdline[0] == "docker_registry" {
-				cfg.registry = cmdline[1]
-			}
-			if cmdline[0] == "registry_username" {
-				cfg.username = cmdline[1]
-			}
-			if cmdline[0] == "registry_password" {
-				cfg.password = cmdline[1]
-			}
-
-			// Find Tinkerbell servers settings
-			if cmdline[0] == "packet_base_url" {
-				cfg.baseURL = cmdline[1]
-			}
-			if cmdline[0] == "tinkerbell" {
-				cfg.tinkerbell = cmdline[1]
-			}
-
-			// Find GRPC configuration
-			if cmdline[0] == "grpc_authority" {
-				cfg.grpcAuthority = cmdline[1]
-			}
-			if cmdline[0] == "grpc_cert_url" {
-				cfg.grpcCertURL = cmdline[1]
-			}
-
-			// Find the worker configuration
-			if cmdline[0] == "worker_id" {
-				cfg.workerID = cmdline[1]
-			}
+		switch cmd := cmdLine[0]; cmd {
+		// Find Registry configuration
+		case "docker_registry":
+			cfg.registry = cmdLine[1]
+		case "registry_username":
+			cfg.username = cmdLine[1]
+		case "registry_password":
+			cfg.password = cmdLine[1]
+		// Find Tinkerbell servers settings
+		case "packet_base_url":
+			cfg.baseURL = cmdLine[1]
+		case "tinkerbell":
+			cfg.tinkerbell = cmdLine[1]
+		// Find GRPC configuration
+		case "grpc_authority":
+			cfg.grpcAuthority = cmdLine[1]
+		case "grpc_cert_url":
+			cfg.grpcCertURL = cmdLine[1]
+		// Find the worker configuration
+		case "worker_id":
+			cfg.workerID = cmdLine[1]
 		}
 	}
-	return
+	return cfg
 }
 
-// DownloadFile will download a url to a local file. It's efficient because it will
-// write as it downloads and not load the whole file into memory.
-func DownloadFile(filepath string, url string) error {
-
-	// Get the data
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// Create the file
-	out, err := os.Create(filepath)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	// Write the body to file
-	_, err = io.Copy(out, resp.Body)
-	return err
-}
-
-// MetaDataQuery will query the metadata
-func (cfg *tinkConfig) MetaDataQuery() error {
-
+// metaDataQuery will query the metadata.
+func (cfg *tinkConfig) metaDataQuery() error {
 	spaceClient := http.Client{
 		Timeout: time.Second * 60, // Timeout after 60 seconds (seems massively long is this dial-up?)
 	}

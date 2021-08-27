@@ -23,13 +23,13 @@ func main() {
 	fmt.Println("Starting Tink-Docker")
 	go rebootWatch()
 
-	// Parse the cmdline in order to find the urls for the repostiory and path to the cert
+	// Parse the cmdline in order to find the urls for the repository and path to the cert
 	content, err := ioutil.ReadFile("/proc/cmdline")
 	if err != nil {
 		panic(err)
 	}
-	cmdlines := strings.Split(string(content), " ")
-	cfg, _ := parsecmdline(cmdlines)
+	cmdLines := strings.Split(string(content), " ")
+	cfg := parseCmdLine(cmdLines)
 
 	path := fmt.Sprintf("/etc/docker/certs.d/%s/", cfg.registry)
 
@@ -39,7 +39,7 @@ func main() {
 		panic(err)
 	}
 	// Download the configuration
-	err = DownloadFile(path+"ca.crt", cfg.baseURL+"/ca.pem")
+	err = downloadFile(path+"ca.crt", cfg.baseURL+"/ca.pem")
 	if err != nil {
 		panic(err)
 	}
@@ -55,29 +55,30 @@ func main() {
 	}
 }
 
-func parsecmdline(cmdlines []string) (cfg tinkConfig, err error) {
+// parseCmdLine will parse the command line.
+func parseCmdLine(cmdLines []string) (cfg tinkConfig) {
+	for i := range cmdLines {
+		cmdLine := strings.Split(cmdLines[i], "=")
+		if len(cmdLine) == 0 {
+			continue
+		}
 
-	for i := range cmdlines {
-		cmdline := strings.Split(cmdlines[i], "=")
-		if len(cmdline) != 0 {
-			if cmdline[0] == "docker_registry" {
-				cfg.registry = cmdline[1]
-			}
-			if cmdline[0] == "packet_base_url" {
-				cfg.baseURL = cmdline[1]
-			}
-			if cmdline[0] == "tinkerbell" {
-				cfg.tinkerbell = cmdline[1]
-			}
+		switch cmd := cmdLine[0]; cmd {
+		// Find Registry configuration
+		case "docker_registry":
+			cfg.registry = cmdLine[1]
+		case "packet_base_url":
+			cfg.baseURL = cmdLine[1]
+		case "tinkerbell":
+			cfg.tinkerbell = cmdLine[1]
 		}
 	}
-	return
+	return cfg
 }
 
-// DownloadFile will download a url to a local file. It's efficient because it will
+// downloadFile will download a url to a local file. It's efficient because it will
 // write as it downloads and not load the whole file into memory.
-func DownloadFile(filepath string, url string) error {
-
+func downloadFile(filepath string, url string) error {
 	// Get the data
 	resp, err := http.Get(url)
 	if err != nil {
@@ -103,7 +104,6 @@ func rebootWatch() {
 	// Forever loop
 	for {
 		if fileExists("/worker/reboot") {
-			//Build the command, and execute
 			cmd := exec.Command("/sbin/reboot")
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr

@@ -14,11 +14,14 @@ jobs:
           - 5000:5000
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v2.3.4
+
+    - name: Use docker buildx
+      run: docker buildx create --use
 
     - run: echo "REGISTRY=$(ip addr show dev bond0 | awk '$1 == "inet" { sub("/.*", "", $2); print $2 }' | head -n 1)" >> $GITHUB_ENV
 
-    - run: make -C kernel build ORG=${REGISTRY}:5000
+    - run: make -C kernel devbuild ORG=${REGISTRY}:5000
 
     # TODO: add artifacts for the built images
     #- uses: actions/upload-artifact@v2

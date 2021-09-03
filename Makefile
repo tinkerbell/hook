@@ -106,9 +106,9 @@ dev-dist: dev dev-convert
 	cd ./dist && tar -czvf ../hook-${GIT_VERSION}.tar.gz ./*
 
 deploy: dist
-ifeq ($(shell git rev-parse --abbrev-ref HEAD),master)
+ifeq ($(shell git rev-parse --abbrev-ref HEAD),main)
 	s3cmd sync ./hook-${GIT_VERSION}.tar.gz s3://s.gianarb.it/hook/${GIT_VERSION}.tar.gz
-	s3cmd cp s3://s.gianarb.it/hook/hook-${GIT_VERSION}.tar.gz s3://s.gianarb.it/hook/hook-master.tar.gz
+	s3cmd cp s3://s.gianarb.it/hook/hook-${GIT_VERSION}.tar.gz s3://s.gianarb.it/hook/hook-main.tar.gz
 endif
 
 .PHONY: clean

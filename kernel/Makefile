@@ -103,6 +103,7 @@ devbuild_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard
 		$(LABELS) \
 		--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) .
 
+
 build_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config-$(2)*) config-dbg
 	@if [ x"$(DIRTY)" !=  x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
 	docker pull $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) || \
@@ -125,7 +126,7 @@ forcebuild_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildca
 		--build-arg EXTRA=$(3) \
 		--build-arg DEBUG=$(4) \
 		$(LABELS) \
-		--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) .
+		-t $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) .
 
 show-tag_$(2)$(3)$(4):
 	@echo $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)
@@ -241,15 +242,13 @@ endef
 # Debug targets only for latest stable and LTS stable
 #
 ifeq ($(ARCH),x86_64)
-$(eval $(call kernel,5.10.11,5.10.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.10.57,5.10.x,$(EXTRA),$(DEBUG)))
 #$(eval $(call kernel,5.4.28,5.4.x,-rt,))
 
 else ifeq ($(ARCH),aarch64)
-$(eval $(call kernel,5.10.11,5.10.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.10.57,5.10.x,$(EXTRA),$(DEBUG)))
 #$(eval $(call kernel,5.4.28,5.4.x,-rt,))
 
-else ifeq ($(ARCH),s390x)
-$(eval $(call kernel,5.10.11,5.10.x,$(EXTRA),$(DEBUG)))
 endif
 
 # Target for kernel config
@@ -297,6 +296,7 @@ else
 		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
 		-t $(ORG)/kconfig:${KCONFIG_TAG} .
 endif
+
 
 .PHONY: clean
 clean:

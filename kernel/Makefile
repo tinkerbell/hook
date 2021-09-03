@@ -103,6 +103,7 @@ devbuild_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard
 		$(LABELS) \
 		--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) .
 
+
 build_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config-$(2)*) config-dbg
 	@if [ x"$(DIRTY)" !=  x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
 	docker pull $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) || \
@@ -125,7 +126,7 @@ forcebuild_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildca
 		--build-arg EXTRA=$(3) \
 		--build-arg DEBUG=$(4) \
 		$(LABELS) \
-		--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) .
+		-t $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) .
 
 show-tag_$(2)$(3)$(4):
 	@echo $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)

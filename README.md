@@ -98,7 +98,7 @@ installation environment.
 ### The automation way
 
 Sandbox has a file called
-[current_versions.sh](https://github.com/tinkerbell/sandbox/blob/master/current_versions.sh).
+[current_versions.sh](https://github.com/tinkerbell/sandbox/blob/main/current_versions.sh).
 If you change `OSIE_DOWNLOAD_LINK` with the hook link the setup.sh script will
 download the OS again and it will uncompress it in the right location
 (only if ./deploy/state/webroot/misc/osie/current does not exist)

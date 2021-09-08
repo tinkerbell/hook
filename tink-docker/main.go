@@ -79,10 +79,31 @@ func parseCmdLine(cmdLines []string) (cfg tinkConfig) {
 // downloadFile will download a url to a local file. It's efficient because it will
 // write as it downloads and not load the whole file into memory.
 func downloadFile(filepath string, url string) error {
-	// Get the data
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
+	// As all functions in the LinuxKit services run in parallel, ensure that we can fail
+	// succsefully until we accept that networking is actually broken
+
+	var retryCount int
+	var timeOut time.Duration
+	retryCount = 10
+	timeOut = time.Millisecond * 500 // 0.5 seconds
+	var resp *http.Response
+	var err error
+	// Retry this task
+	for {
+		// Get the data
+		resp, err = http.Get(url)
+		if err != nil {
+			// If we recieved an error, see if we are still in the retry phase
+			if retryCount != 0 {
+				retryCount--
+				time.Sleep(timeOut)
+			} else {
+				return err
+			}
+		} else {
+			// No error, exit the retry loop
+			break
+		}
 	}
 	defer resp.Body.Close()
 

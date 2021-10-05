@@ -13,10 +13,6 @@ onboot:
     image: linuxkit/sysfs:v0.8
   - name: dhcpcd
     image: linuxkit/dhcpcd:v0.8
-    binds:
-     - /etc/resolv.conf:/etc/resolv.conf
-     - /run:/run
-     - /var/lib/dhcpcd:/var/lib/dhcpcd
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: getty
@@ -27,10 +23,6 @@ services:
     image: linuxkit/rngd:v0.8
   - name: dhcpcd
     image: linuxkit/dhcpcd:v0.8
-    binds:
-     - /etc/resolv.conf:/etc/resolv.conf
-     - /run:/run
-     - /var/lib/dhcpcd:/var/lib/dhcpcd
   - name: ntpd
     image: linuxkit/openntpd:v0.8
     binds:

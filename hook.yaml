@@ -66,6 +66,10 @@ services:
 files:
   - path: etc/docker/daemon.json
     contents: '{"debug": true}'
+  - path: etc/profile.d/local.sh
+    contents: |
+      alias docker='ctr -n services.linuxkit tasks exec --tty --exec-id shell docker docker'
+    mode: "0644"
 trust:
   org:
     - linuxkit

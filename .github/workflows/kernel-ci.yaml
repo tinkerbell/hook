@@ -14,7 +14,7 @@ jobs:
           - 5000:5000
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2.3.4
+      uses: actions/checkout@v2.3.5
 
     - name: Use docker buildx
       run: docker buildx create --use

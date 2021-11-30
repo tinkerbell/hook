@@ -30,7 +30,7 @@ jobs:
       with:
         context: ./bootkit/
         platforms: linux/amd64,linux/arm64
-        push: true
+        push: ${{ github.actor != 'dependabot[bot]' }}
         tags: quay.io/tinkerbell/hook-bootkit:0.0
 
     - name: Build and push tink-docker
@@ -38,7 +38,7 @@ jobs:
       with:
         context: ./tink-docker/
         platforms: linux/amd64,linux/arm64
-        push: true
+        push: ${{ github.actor != 'dependabot[bot]' }}
         tags: quay.io/tinkerbell/hook-docker:0.0
 
     - uses: cachix/install-nix-action@v16

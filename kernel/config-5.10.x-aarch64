@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 5.10.57 Kernel Configuration
+# Linux/arm64 5.10.85 Kernel Configuration
 #
 CONFIG_CC_VERSION_TEXT="gcc (Alpine 9.2.0) 9.2.0"
 CONFIG_CC_IS_GCC=y
@@ -4780,6 +4780,7 @@ CONFIG_STAGING_BOARD=y
 # CONFIG_LTE_GDM724X is not set
 # CONFIG_GS_FPGABOOT is not set
 # CONFIG_UNISYSSPAR is not set
+# CONFIG_COMMON_CLK_XLNX_CLKWZRD is not set
 # CONFIG_FB_TFT is not set
 # CONFIG_KS7010 is not set
 # CONFIG_BCM_VIDEOCORE is not set

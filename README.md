@@ -118,7 +118,7 @@ kernel.
 4. It will create a `tar.gz` archive in the root of the project containing all
    the files in the proper format, ready to be served via Tinkerbell.
 
-
+___Note: You will require push access to the [quay.io/tinkerbell/hook-bootkit](https://quay.io/repository/tinkerbell/hook-bootkit) registry for this action to be successful.___
 ## Build for local testing (only the local architecture)
 
 ```

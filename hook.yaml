@@ -1,5 +1,5 @@
 kernel:
-  image: quay.io/tinkerbell/hook-kernel:5.10.57
+  image: quay.io/tinkerbell/hook-kernel:5.10.85
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0"
 init:
   - linuxkit/init:v0.8

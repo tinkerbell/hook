@@ -2,6 +2,7 @@ bin/
 dist/
 .env
 hook-bootkit/local/
+hook-debug.*.yaml
 hook-docker/local/
 hook-*.tar.gz
 hook.*.yaml

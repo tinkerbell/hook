@@ -23,6 +23,10 @@ hook.$(TAG).yaml: $(LINUXKIT_CONFIG)
 	sed '/quay.io/ s|:latest|:$(TAG)|' $^ > $@.tmp
 	mv $@.tmp $@
 
+hook-debug.$(TAG).yaml: hook.$(TAG).yaml
+	sed '/^\s*#dbg/ s|#dbg||' $^ > $@.tmp
+	mv $@.tmp $@
+
 image-amd64: hook.$(TAG).yaml
 	mkdir -p out
 	linuxkit build -docker -pull -format kernel+initrd -name hook-x86_64 -dir out $^
@@ -41,13 +45,13 @@ dev-image-arm64: hook.$(TAG).yaml
 
 image: image-amd64 image-arm64
 
-debug-image-amd64:
+debug-image-amd64: hook-debug.$(TAG).yaml
 	mkdir -p out/amd64
-	linuxkit build --docker -format kernel+initrd -name debug-x86_64 -dir out hook_debug.yaml
+	linuxkit build --docker -format kernel+initrd -name debug-x86_64 -dir out $^
 
-debug-image-arm64:
+debug-image-arm64: hook-debug.$(TAG).yaml
 	mkdir -p out/arm64
-	linuxkit build --docker -arch arm64 -format kernel+initrd -name debug-aarch64 -dir out hook_debug.yaml
+	linuxkit build --docker -arch arm64 -format kernel+initrd -name debug-aarch64 -dir out $^
 
 debug-image: debug-image-amd64 debug-image-arm64
 

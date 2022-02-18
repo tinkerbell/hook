@@ -24,18 +24,18 @@ jobs:
         with:
           driver-opts: network=host
 
-      - name: Build and push bootkit
+      - name: Build and push hook-bootkit
         uses: docker/build-push-action@v3
         with:
-          context: ./bootkit/
+          context: ./hook-bootkit/
           platforms: linux/amd64,linux/arm64
           push: true
           tags: localhost:5000/tinkerbell/hook-bootkit:latest
 
-      - name: Build and push tink-docker
+      - name: Build and push hook-docker
         uses: docker/build-push-action@v3
         with:
-          context: ./tink-docker/
+          context: ./hook-docker/
           platforms: linux/amd64,linux/arm64
           push: true
           tags: localhost:5000/tinkerbell/hook-docker:latest

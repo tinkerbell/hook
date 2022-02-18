@@ -42,7 +42,7 @@ services:
     binds:
       - /var/run:/var/run
 
-  - name: docker
+  - name: hook-docker
     image: quay.io/tinkerbell/hook-docker:latest
     capabilities:
       - all
@@ -65,7 +65,7 @@ services:
         - /var/run/docker
         - /var/run/worker
 
-  - name: bootkit
+  - name: hook-bootkit
     image: quay.io/tinkerbell/hook-bootkit:latest
     capabilities:
       - all

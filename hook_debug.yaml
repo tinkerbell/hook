@@ -25,7 +25,7 @@ services:
     image: linuxkit/dhcpcd:v0.8
   - name: ntpd
     image: linuxkit/openntpd:v0.8
-  - name: docker
+  - name: hook-docker
     image: quay.io/tinkerbell/hook-docker:0.0
     capabilities:
       - all
@@ -48,7 +48,7 @@ services:
         - /var/run/images
         - /var/run/docker
         - /var/run/worker
-  - name: bootkit
+  - name: hook-bootkit
     image: quay.io/tinkerbell/hook-bootkit:0.0
     capabilities:
       - all

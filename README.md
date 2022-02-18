@@ -49,15 +49,15 @@ We have built upon the minimal set of components:
 
 To this minimal build, we've added our own set of containers that will provide the functionality needed for a `tink-worker` to run successfully:
 
-### tink-docker
+### hook-docker
 
-The `tink-docker` container builds upon the upstream `dind` (docker-in-docker) container and adds the additional functionality to retrieve the certificates needed for the docker engine to communicate with the Tinkerbell repository **before** it starts the docker engine.
-The docker engine will be exposed through the `/var/run/docker.sock` that will use a bind mount so that the container `bootkit` can access it.
+The `hook-docker` container builds upon the upstream `dind` (docker-in-docker) container and adds the additional functionality to retrieve the certificates needed for the docker engine to communicate with the Tinkerbell repository **before** it starts the docker engine.
+The docker engine will be exposed through the `/var/run/docker.sock` that will use a bind mount so that the container `hook-bootkit` can access it.
 
-### bootkit
+### hook-bootkit
 
-The `bootkit` container will parse the `/proc/cmdline` and the metadata service in order to retrieve the specific configuration for tink-worker to be started for the current/correct machine.
-It will then speak with the `tink-docker` engine API through the shared `/var/run/docker.sock`, where it will ask the engine to run the `tink-worker:latest` container, which in turn will begin to execute the workflow/actions associated with that machine.
+The `hook-bootkit` container will parse the `/proc/cmdline` and the metadata service in order to retrieve the specific configuration for tink-worker to be started for the current/correct machine.
+It will then speak with the `hook-docker` engine API through the shared `/var/run/docker.sock`, where it will ask the engine to run the `tink-worker:latest` container, which in turn will begin to execute the workflow/actions associated with that machine.
 
 ## How to use hook with Sandbox
 
@@ -116,7 +116,7 @@ make dev-dist
 
 ## Next steps
 
-- Test passing pid:host to tink-docker, this should allow graceful reboots [done]
+- Test passing pid:host to hook-docker, this should allow graceful reboots [done]
 - Re-write a bunch of actions that are un-manageable shell scripts (disk management being the first) [done]
 
 ## Troubleshooting

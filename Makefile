@@ -5,9 +5,9 @@ ifeq ($(strip $(TAG)),)
   # ^ guards against TAG being defined but empty string which makes `TAG ?=` not work
   TAG := latest
 endif
-default: bootkitBuild tink-dockerBuild image
+default: hook-bootkitBuild hook-dockerBuild image
 
-dev: dev-bootkitBuild dev-tink-dockerBuild
+dev: dev-hook-bootkitBuild dev-hook-dockerBuild
 ifeq ($(ARCH),x86_64)
 dev: dev-image-amd64
 endif
@@ -61,17 +61,17 @@ run-arm64:
 run:
 	sudo ~/go/bin/linuxkit run qemu --mem 2048 out/hook-${ARCH}
 
-dev-bootkitBuild:
-	cd bootkit; docker buildx build --load -t $(ORG)/hook-bootkit:$(TAG) .
+dev-hook-bootkitBuild:
+	cd hook-bootkit; docker buildx build --load -t $(ORG)/hook-bootkit:$(TAG) .
 
-bootkitBuild:
-	cd bootkit; docker buildx build --platform linux/amd64,linux/arm64 --push -t $(ORG)/hook-bootkit:$(TAG) .
+hook-bootkitBuild:
+	cd hook-bootkit; docker buildx build --platform linux/amd64,linux/arm64 --push -t $(ORG)/hook-bootkit:$(TAG) .
 
-dev-tink-dockerBuild:
-	cd tink-docker; docker buildx build --load -t $(ORG)/hook-docker:$(TAG) .
+dev-hook-dockerBuild:
+	cd hook-docker; docker buildx build --load -t $(ORG)/hook-docker:$(TAG) .
 
-tink-dockerBuild:
-	cd tink-docker; docker buildx build --platform linux/amd64,linux/arm64 --push -t $(ORG)/hook-docker:$(TAG) .
+hook-dockerBuild:
+	cd hook-docker; docker buildx build --platform linux/amd64,linux/arm64 --push -t $(ORG)/hook-docker:$(TAG) .
 
 dev-convert:
 	rm -rf ./convert
@@ -126,6 +126,6 @@ endif
 .PHONY: clean
 clean:
 	rm ./hook-${TAG}.tar.gz
-	rm -rf dist/ out/ tink-docker/local/ bootkit/local/
+	rm -rf dist/ out/ hook-docker/local/ hook-bootkit/local/
 
 -include lint.mk

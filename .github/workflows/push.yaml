@@ -30,18 +30,18 @@ jobs:
         run: |
           echo ::set-output name=short::$(git rev-parse --short HEAD)
 
-      - name: Build and push bootkit
+      - name: Build and push hook-bootkit
         uses: docker/build-push-action@v3
         with:
-          context: ./bootkit/
+          context: ./hook-bootkit/
           platforms: linux/amd64,linux/arm64
           push: ${{ github.actor != 'dependabot[bot]' }}
           tags: quay.io/tinkerbell/hook-bootkit:latest,quay.io/tinkerbell/hook-bootkit:sha-${{steps.commitid.outputs.short}}
 
-      - name: Build and push tink-docker
+      - name: Build and push hook-docker
         uses: docker/build-push-action@v3
         with:
-          context: ./tink-docker/
+          context: ./hook-docker/
           platforms: linux/amd64,linux/arm64
           push: ${{ github.actor != 'dependabot[bot]' }}
           tags: quay.io/tinkerbell/hook-docker:latest,quay.io/tinkerbell/hook-docker:sha-${{steps.commitid.outputs.short}}

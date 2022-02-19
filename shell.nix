@@ -31,7 +31,11 @@ mkShell {
   buildInputs = [
     docker-ov
     git
+    gnumake
+    gnused
     linuxkit-ov
+    ncurses
     s3cmd
+    util-linux
   ];
 }

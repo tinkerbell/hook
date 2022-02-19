@@ -58,10 +58,10 @@ jobs:
 
       - name: Build & Deploy
         run: |
-          ./hack/build-and-deploy.sh
-          TAG=sha-${{steps.commitid.outputs.short}} ./hack/build-and-deploy.sh
+          nix-shell --run 'make TAG=latest deploy'
+          nix-shell --run 'make TAG=sha-${{steps.commitid.outputs.short}} deploy'
 
       - uses: actions/upload-artifact@v3
         with:
           name: hook-${{steps.commitid.outputs.short}}.tar.gz
-          path: hook-${{steps.commitid.outputs.short}}.tar.gz
+          path: out/${{steps.commitid.outputs.short}}/rel/hook-${{steps.commitid.outputs.short}}.tar.gz

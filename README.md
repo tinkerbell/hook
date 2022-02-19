@@ -105,8 +105,7 @@ The `dist` make target will do a couple of things:
 
 1. Build the required docker images using `docker buildx`.
 2. It will use `linuxkit build` to prepare the init ramdisk and the kernel.
-3. It will convert the init ramkdisk in the right format that iPXE can boot
-4. It will create a `tar.gz` archive in the root of the project containing all the files in the proper format, ready to be served via Tinkerbell.
+3. It will create a `tar.gz` archive in the root of the project containing all the files in the proper format, ready to be served via boots.
 
 ## Build for local testing (only the local architecture)
 
@@ -121,10 +120,8 @@ make dev-dist
 
 ## Troubleshooting
 
-Sometimes this has occurred with changed one letter of a string inside some source code and rebuilding... not sure why yet.
-
-It is also possible to build a debug version of hook, that will have an `sshd` server running with any public keys you have.
-This is achieved through the command `make debug-image`
+It is possible to build a debug version of hook, that will have an `sshd` server running with any public keys you have.
+This is achieved through the command `make debug-images`
 
 ## Nix for CI/CD
 

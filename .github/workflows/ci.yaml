@@ -6,11 +6,6 @@ on:
 jobs:
   validation:
     runs-on: ubuntu-20.04
-    services:
-      registry:
-        image: registry:2
-        ports:
-          - 5000:5000
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -19,26 +14,21 @@ jobs:
         uses: docker/setup-qemu-action@v2
 
       - name: Set up Docker Buildx
-        id: buildx
         uses: docker/setup-buildx-action@v2
-        with:
-          driver-opts: network=host
 
       - name: Build and push hook-bootkit
         uses: docker/build-push-action@v3
         with:
           context: ./hook-bootkit/
           platforms: linux/amd64,linux/arm64
-          push: true
-          tags: localhost:5000/tinkerbell/hook-bootkit:latest
+          tags: quay.io/tinkerbell/hook-bootkit:latest
 
       - name: Build and push hook-docker
         uses: docker/build-push-action@v3
         with:
           context: ./hook-docker/
           platforms: linux/amd64,linux/arm64
-          push: true
-          tags: localhost:5000/tinkerbell/hook-docker:latest
+          tags: quay.io/tinkerbell/hook-docker:latest
 
       - uses: cachix/install-nix-action@v17
         with:
@@ -50,14 +40,11 @@ jobs:
       - name: Run formatters and linters
         run: nix-shell --run .github/workflows/formatters-and-linters.sh
 
-      # Replace hook-{bootkit,docker} but not hook-kernel
-      - run: sed -E -i 's,quay.io/tinkerbell/hook-(bootkit|docker),localhost:5000/tinkerbell/hook-\1,g' hook.in.yaml
-
       - name: Build
-        run: ./hack/ci-build.sh
+        run: nix-shell --run 'make TAG=${{ github.sha }} dist'
 
       # TODO: add artifacts for the built images
       - uses: actions/upload-artifact@v3
         with:
           name: hook-${{ github.sha }}.tar.gz
-          path: hook-${{ github.sha }}.tar.gz
+          path: out/${{ github.sha }}/rel/hook-${{ github.sha }}.tar.gz

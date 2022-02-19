@@ -32,6 +32,7 @@ in mkShell {
     ncurses
     nixfmt
     nodePackages.prettier
+    pigz
     python3Packages.pip
     python3Packages.setuptools
     python3Packages.wheel

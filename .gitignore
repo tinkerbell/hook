@@ -1,10 +1,10 @@
 bin/
+dbg/
 dist/
 .env
-hook-bootkit/local/
-hook-debug.*.yaml
-hook-docker/local/
-hook-*.tar.gz
-hook.*.yaml
+hook-*
+!/hook-bootkit/
+!/hook-docker/
+hook*.*.yaml
 out/
 *.swp

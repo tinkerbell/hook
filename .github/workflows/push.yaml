@@ -45,6 +45,9 @@ jobs:
       with:
         nix_path: nixpkgs=channel:nixos-unstable
 
+    - name: Fetch Nix Deps
+      run: nix-shell --command true
+
     - run: ./hack/build-and-deploy.sh
       env:
         GIT_VERSION: ${{ github.sha }}

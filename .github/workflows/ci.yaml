@@ -44,6 +44,9 @@ jobs:
       with:
         nix_path: nixpkgs=channel:nixos-unstable
 
+    - name: Fetch Nix Deps
+      run: nix-shell --command true
+
     # Replace hook-{bootkit,docker} but not hook-kernel
     - run: sed -E -e 's,quay.io/tinkerbell/hook-(bootkit|docker),localhost:5000/tinkerbell/hook-\1,g' hook.yaml | tee hook-ci.yaml
 

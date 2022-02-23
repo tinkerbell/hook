@@ -9,7 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"path"
+	"path"        
 	"strings"
 	"time"
 
@@ -24,6 +24,9 @@ type tinkConfig struct {
 	registry string
 	username string
 	password string
+	certURL string
+	registryCertRequired string
+	useAbsoluteImageURI string
 
 	// Tinkerbell server configuration
 	baseURL    string
@@ -41,6 +44,7 @@ type tinkConfig struct {
 	MetadataID string `json:"id"`
 
 	// tinkWorkerImage is the Tink worker image location.
+	// This must contain the absolute URI to Tink worker image.
 	tinkWorkerImage string
 
 	// tinkServerTLS is whether or not to use TLS for tink-server communication.
@@ -88,6 +92,9 @@ func main() {
 			fmt.Sprintf("DOCKER_REGISTRY=%s", cfg.registry),
 			fmt.Sprintf("REGISTRY_USERNAME=%s", cfg.username),
 			fmt.Sprintf("REGISTRY_PASSWORD=%s", cfg.password),
+			fmt.Sprintf("REGISTRY_CERT_URL=%s", cfg.certURL),
+			fmt.Sprintf("REGISTRY_CERT_REQUIRED=%s", cfg.registryCertRequired),
+			fmt.Sprintf("USE_ABSOLUTE_IMAGE_URI=%s", cfg.useAbsoluteImageURI),
 			fmt.Sprintf("TINKERBELL_GRPC_AUTHORITY=%s", cfg.grpcAuthority),
 			fmt.Sprintf("TINKERBELL_CERT_URL=%s", cfg.grpcCertURL),
 			fmt.Sprintf("TINKERBELL_TLS=%s", cfg.tinkServerTLS),
@@ -184,6 +191,12 @@ func parseCmdLine(cmdLines []string) (cfg tinkConfig) {
 			cfg.username = cmdLine[1]
 		case "registry_password":
 			cfg.password = cmdLine[1]
+		case "registry_cert_url":
+			cfg.certURL = cmdLine[1]
+		case "registry_cert_required":
+			cfg.registryCertRequired = cmdLine[1]
+		case "use_absolute_image_uri":
+			cfg.useAbsoluteImageURI = cmdLine[1]
 		// Find Tinkerbell servers settings
 		case "packet_base_url":
 			cfg.baseURL = cmdLine[1]

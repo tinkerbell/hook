@@ -14,6 +14,8 @@ import (
 
 type tinkConfig struct {
 	registry   string
+	registryCertURL string
+	registryCertRequired string
 	baseURL    string
 	tinkerbell string
 	syslogHost string
@@ -39,19 +41,31 @@ func main() {
 	cmdLines := strings.Split(string(content), " ")
 	cfg := parseCmdLine(cmdLines)
 
-	path := fmt.Sprintf("/etc/docker/certs.d/%s/", cfg.registry)
+	if len(cfg.registryCertRequired) <= 0 || cfg.registryCertRequired == "true" {
+		// Download the configuration
+		var baseCertURL string
+		if len(cfg.registryCertURL) > 0 {
+			baseCertURL = cfg.registryCertURL
+		} else {
+			baseCertURL = cfg.baseURL
+		}
+		if len(baseCertURL) > 0 {
+			path := fmt.Sprintf("/etc/docker/certs.d/%s/", cfg.registry)
 
-	// Create the directory
-	err = os.MkdirAll(path, os.ModeDir)
-	if err != nil {
-		panic(err)
+			// Create the directory
+			err = os.MkdirAll(path, os.ModeDir)
+			if err != nil {
+				panic(err)
+			}
+			err = downloadFile(path+"ca.crt", baseCertURL+"/ca.pem")
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println("Downloaded the repository certificates, starting the Docker Engine")
+		} else {
+			fmt.Println("Repository certificate download path not specified. Starting the Docker Engine")
+		}
 	}
-	// Download the configuration
-	err = downloadFile(path+"ca.crt", cfg.baseURL+"/ca.pem")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("Downloaded the repository certificates, starting the Docker Engine")
 
 	d := dockerConfig{
 		Debug:     true,
@@ -99,8 +113,12 @@ func parseCmdLine(cmdLines []string) (cfg tinkConfig) {
 		// Find Registry configuration
 		case "docker_registry":
 			cfg.registry = cmdLine[1]
+		case "registry_cert_url":
+			cfg.registryCertURL = cmdLine[1]
 		case "packet_base_url":
 			cfg.baseURL = cmdLine[1]
+		case "registry_cert_required":
+			cfg.registryCertRequired = cmdLine[1]
 		case "tinkerbell":
 			cfg.tinkerbell = cmdLine[1]
 		case "syslog_host":

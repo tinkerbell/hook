@@ -23,6 +23,9 @@ type tinkConfig struct {
 	registry string
 	username string
 	password string
+	certURL string
+	registryCertRequired string
+	useAbsoluteImageURI string
 
 	// Tinkerbell server configuration
 	baseURL    string
@@ -38,6 +41,8 @@ type tinkConfig struct {
 
 	// Metadata ID ... plus the other IDs :shrug:
 	MetadataID string `json:"id"`
+
+	tinkWorkerImage string
 }
 
 func main() {
@@ -61,7 +66,21 @@ func main() {
 	}
 
 	// Generate the path to the tink-worker
-	imageName := fmt.Sprintf("%s/tink-worker:latest", cfg.registry)
+	var imageName string
+	if len(cfg.useAbsoluteImageURI) <= 0 || cfg.useAbsoluteImageURI == "false" {
+		if len(cfg.registry) <= 0 {
+			panic("Image registry is required for tink-worker image path. Specify image registry using DOCKER_REGISTRY")
+		} else if len(cfg.tinkWorkerImage) > 0 {
+			imageName = fmt.Sprintf("%s/%s", cfg.registry, cfg.tinkWorkerImage)
+		} else {
+			imageName = fmt.Sprintf("%s/tink-worker:latest", cfg.registry)
+		}
+	} else if cfg.useAbsoluteImageURI == "true" {
+		imageName = cfg.tinkWorkerImage
+	}
+	if len(imageName) <= 0 {
+		panic("tink-worker image path is empty")
+	}
 
 	// Generate the configuration of the container
 	tinkContainer := &container.Config{
@@ -70,6 +89,9 @@ func main() {
 			fmt.Sprintf("DOCKER_REGISTRY=%s", cfg.registry),
 			fmt.Sprintf("REGISTRY_USERNAME=%s", cfg.username),
 			fmt.Sprintf("REGISTRY_PASSWORD=%s", cfg.password),
+			fmt.Sprintf("REGISTRY_CERT_URL=%s", cfg.certURL),
+			fmt.Sprintf("REGISTRY_CERT_REQUIRED=%s", cfg.registryCertRequired),
+			fmt.Sprintf("USE_ABSOLUTE_IMAGE_URI=%s", cfg.useAbsoluteImageURI),
 			fmt.Sprintf("TINKERBELL_GRPC_AUTHORITY=%s", cfg.grpcAuthority),
 			fmt.Sprintf("TINKERBELL_CERT_URL=%s", cfg.grpcCertURL),
 			fmt.Sprintf("WORKER_ID=%s", cfg.workerID),
@@ -165,6 +187,12 @@ func parseCmdLine(cmdLines []string) (cfg tinkConfig) {
 			cfg.username = cmdLine[1]
 		case "registry_password":
 			cfg.password = cmdLine[1]
+		case "registry_cert_url":
+			cfg.certURL = cmdLine[1]
+		case "registry_cert_required":
+			cfg.registryCertRequired = cmdLine[1]
+		case "use_absolute_image_uri":
+			cfg.useAbsoluteImageURI = cmdLine[1]
 		// Find Tinkerbell servers settings
 		case "packet_base_url":
 			cfg.baseURL = cmdLine[1]
@@ -178,6 +206,8 @@ func parseCmdLine(cmdLines []string) (cfg tinkConfig) {
 		// Find the worker configuration
 		case "worker_id":
 			cfg.workerID = cmdLine[1]
+		case "tink_worker_image":
+			cfg.tinkWorkerImage = cmdLine[1]
 		}
 	}
 	return cfg

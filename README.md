@@ -137,8 +137,7 @@ $ docker run -it -v nix-build-cache:/nix/store -v $PWD:/opt -v /var/run/docker.s
 
 # now you are inside the container and you can use nix-shell to reproduce the environment
 $ nix-shell
-# You can run the command GitHub action runs:
-$ ./hack/build-and-deploy.sh
+$ make dev
 
 # or you can use make to build LinuxKit image
 $ make image

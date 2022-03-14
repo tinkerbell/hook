@@ -7,8 +7,8 @@ It runs in-memory, installs operating system, and handles deprovisioning.
 
 <!-- TODO: Move this to the documentation repository once this is part of the Tinkerbell organisation. -->
 
-One of the [Tinkerbell](https://tinkerbell.org) components is the operating system installation environment.
-Currently, Tinkerbell uses [OSIE](https://github.com/tinkebell/osie).
+One of the [Tinkerbell] components is the operating system installation environment.
+Currently, Tinkerbell uses [OSIE].
 That implementation is open-sourced by Equinix Metal and it is serving the purpose of provisioning and de-provisioning hardware at a huge scale.
 But why we started this project?
 
@@ -17,19 +17,19 @@ But why we started this project?
   This is an implementation to validate that the model works (it does!! this is why we are here)
 * Looking at the CI/CD build time for OSIE is ~1h on average
 * The building process is not standardised, which is critical for an open-source project because it causes friction for contributors.
-  This project, as highlighted later in this page, uses [LinuxKit](https://github.com/linuxkit/linuxkit) a tool provided by Docker, now part of the Linux Computing Foundation.
+  This project, as highlighted later in this page, uses [LinuxKit] a tool provided by Docker, now part of the Linux Computing Foundation.
   It gives us:
     * Documentation about how the building phase works
-    * A clear and defined CLI and [specification mechanism](https://github.com/linuxkit/linuxkit/blob/master/docs/yaml.md) (YAML)
+    * A clear and defined CLI and [specification] (YAML)
     * A community that is built and supportive
     * LinuxKit  cross-compiles in many architectures
-    * [Different output format](https://github.com/linuxkit/linuxkit/blob/master/README.md#booting-and-testing): ISO, init ramkdisk, aws, docker, rpi3...
+    * [Different output formats]: ISO, init ramkdisk, aws, docker, rpi3...
 * It is not easy to explain to the Tinkerbell community how OSIE works and the components it is made for, a lot of them are coming from specific Equinix Metal operational experience and they are not strictly needed in Tinkerbell.
   There is an ongoing conversation from the contributors about a replacement or a complete refactoring for OSIE.
 
 ## Architecture
 
-The hook project aims to provide an "in-place" swappable set of files (`kernel`/`initramfs`) that can be used to replace the [OSIE](https://github.com/tinkerbell/osie) environment that comes from Equinix Metal.
+The hook project aims to provide an "in-place" swappable set of files (`kernel`/`initramfs`) that can be used to replace the [OSIE] environment that comes from Equinix Metal.
 The key aims of this new project:
 
 - Immutable output
@@ -38,7 +38,7 @@ The key aims of this new project:
 - Lean / simple design
 - Clean base to build upon
 
-The hook project predominantly uses [linuxkit](https://github.com/linuxkit/linuxkit) as the toolkit that will produce repeatable and straightforward build of the entire in-memory operating system.
+The hook project predominantly uses [linuxkit] as the toolkit that will produce repeatable and straightforward build of the entire in-memory operating system.
 The linuxkit project combines a Linux kernel with a number of additional container images to produce a Linux Operating System with just the right amount of functionality (no less / no more).
 We have built upon the minimal set of components:
 
@@ -61,8 +61,8 @@ It will then speak with the `tink-docker` engine API through the shared `/var/ru
 
 ## How to use hook with Sandbox
 
-[sandbox](https://github.com/tinkerbell/sandbox) is a project that helps you to create and run the Tinkerbell stack locally with Vagrant, on Equinix Metal with Terraform and, acts as a guide to deploying Tinkerbell wherever you like.
-I will tell you how you can change the default operating system installer environment called [OSIE](https://github.com/tinkerbell/osie) with this project.
+[sandbox] is a project that helps you to create and run the Tinkerbell stack locally with Vagrant, on Equinix Metal with Terraform and, acts as a guide to deploying Tinkerbell wherever you like.
+I will tell you how you can change the default operating system installer environment called [OSIE] with this project.
 
 There are essentially two methods a manual one and a more automatic one.
 Have a look at the manual one even if you intend to use the automatic one to learn what what the automation does for you.
@@ -93,7 +93,7 @@ Now you are ready to boot the worker, it will pick up the new operating system i
 
 ### The automation way
 
-Sandbox has a file called [current_versions.sh](https://github.com/tinkerbell/sandbox/blob/main/current_versions.sh).
+Sandbox has a file called [current_versions.sh].
 If you change `OSIE_DOWNLOAD_LINK` with the hook link the setup.sh script will download the OS again and it will uncompress it in the right location (only if ./deploy/state/webroot/misc/osie/current does not exist)
 
 ## Package a release
@@ -155,3 +155,11 @@ Second: you can copy paste `./hack/build-and-deploy.sh` elsewhere and change the
 #!nix-shell -i bash ../shell.nix
 ```
 With `#!/bin/bash` or something similar.
+
+[current_versions.sh]: https://github.com/tinkerbell/sandbox/blob/main/current_versions.sh
+[different output formats]: https://github.com/linuxkit/linuxkit/blob/master/README.md#booting-and-testing
+[linuxkit]: https://github.com/linuxkit/linuxkit
+[osie]: https://github.com/tinkebell/osie
+[sandbox]: https://github.com/tinkerbell/sandbox
+[specification]: https://github.com/linuxkit/linuxkit/blob/master/docs/yaml.md
+[tinkerbell]: https://tinkerbell.org

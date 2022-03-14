@@ -48,6 +48,9 @@ jobs:
       - name: Fetch Nix Deps
         run: nix-shell --command true
 
+      - name: Run formatters and linters
+        run: nix-shell --run .github/workflows/formatters-and-linters.sh
+
       - run: ./hack/build-and-deploy.sh
         env:
           GIT_VERSION: ${{ github.sha }}

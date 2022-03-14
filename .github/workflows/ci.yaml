@@ -47,6 +47,9 @@ jobs:
       - name: Fetch Nix Deps
         run: nix-shell --command true
 
+      - name: Run formatters and linters
+        run: nix-shell --run .github/workflows/formatters-and-linters.sh
+
       # Replace hook-{bootkit,docker} but not hook-kernel
       - run: sed -E -e 's,quay.io/tinkerbell/hook-(bootkit|docker),localhost:5000/tinkerbell/hook-\1,g' hook.yaml | tee hook-ci.yaml
 

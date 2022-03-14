@@ -29,9 +29,9 @@ linters-settings:
     min-complexity: 8
 
   nolintlint:
-      require-explanation: true
-      allow-unused: false
-      require-specific: true
+    require-explanation: true
+    allow-unused: false
+    require-specific: true
 
   revive:
     ignore-generated-header: true
@@ -163,7 +163,6 @@ linters:
   # - gofumpt
   # - gosec
   # - tagliatelle
-
 
 issues:
   # Excluding configuration per-path, per-linter, per-text and per-source

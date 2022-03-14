@@ -27,10 +27,13 @@ in mkShell {
     git
     gnumake
     gnused
+    go
     linuxkit-ov
     ncurses
     nixfmt
+    nodePackages.prettier
     s3cmd
+    shfmt
     util-linux
   ];
 }

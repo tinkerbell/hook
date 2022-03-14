@@ -12,19 +12,19 @@ Currently, Tinkerbell uses [OSIE].
 That implementation is open-sourced by Equinix Metal and it is serving the purpose of provisioning and de-provisioning hardware at a huge scale.
 But why we started this project?
 
-* Because we like to Hack the Kernel!
-* Tinkerbell architecture leaves an open door in terms of the operating system installation environment you can use, it serves one for simplicity ,but users can write their own.
+- Because we like to Hack the Kernel!
+- Tinkerbell architecture leaves an open door in terms of the operating system installation environment you can use, it serves one for simplicity ,but users can write their own.
   This is an implementation to validate that the model works (it does!! this is why we are here)
-* Looking at the CI/CD build time for OSIE is ~1h on average
-* The building process is not standardised, which is critical for an open-source project because it causes friction for contributors.
+- Looking at the CI/CD build time for OSIE is ~1h on average
+- The building process is not standardised, which is critical for an open-source project because it causes friction for contributors.
   This project, as highlighted later in this page, uses [LinuxKit] a tool provided by Docker, now part of the Linux Computing Foundation.
   It gives us:
-    * Documentation about how the building phase works
-    * A clear and defined CLI and [specification] (YAML)
-    * A community that is built and supportive
-    * LinuxKit  cross-compiles in many architectures
-    * [Different output formats]: ISO, init ramkdisk, aws, docker, rpi3...
-* It is not easy to explain to the Tinkerbell community how OSIE works and the components it is made for, a lot of them are coming from specific Equinix Metal operational experience and they are not strictly needed in Tinkerbell.
+  - Documentation about how the building phase works
+  - A clear and defined CLI and [specification] (YAML)
+  - A community that is built and supportive
+  - LinuxKit cross-compiles in many architectures
+  - [Different output formats]: ISO, init ramkdisk, aws, docker, rpi3...
+- It is not easy to explain to the Tinkerbell community how OSIE works and the components it is made for, a lot of them are coming from specific Equinix Metal operational experience and they are not strictly needed in Tinkerbell.
   There is an ongoing conversation from the contributors about a replacement or a complete refactoring for OSIE.
 
 ## Architecture
@@ -90,7 +90,6 @@ tar -xf hook-bc3e58a-dirty.tar.gz -C ../sandbox/deploy/state/webroot/misc/osie/c
 
 Now you are ready to boot the worker, it will pick up the new operating system installation environment.
 
-
 ### The automation way
 
 Sandbox has a file called [current_versions.sh].
@@ -101,13 +100,13 @@ If you change `OSIE_DOWNLOAD_LINK` with the hook link the setup.sh script will d
 ```
 make dist
 ```
+
 The `dist` make target will do a couple of things:
 
 1. Build the required docker images using `docker buildx`.
 2. It will use `linuxkit build` to prepare the init ramdisk and the kernel.
 3. It will convert the init ramkdisk in the right format that iPXE can boot
 4. It will create a `tar.gz` archive in the root of the project containing all the files in the proper format, ready to be served via Tinkerbell.
-
 
 ## Build for local testing (only the local architecture)
 
@@ -154,6 +153,7 @@ Second: you can copy paste `./hack/build-and-deploy.sh` elsewhere and change the
 #!/usr/bin/env nix-shell
 #!nix-shell -i bash ../shell.nix
 ```
+
 With `#!/bin/bash` or something similar.
 
 [current_versions.sh]: https://github.com/tinkerbell/sandbox/blob/main/current_versions.sh

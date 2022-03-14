@@ -2,21 +2,21 @@ name: For each Kernel commit
 on:
   push:
     paths:
-    - kernel/**
-    - "!kernel/README.md"
+      - kernel/**
+      - "!kernel/README.md"
 jobs:
   kernel-publish:
     runs-on: self-hosted
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Login to quay.io
-      if: ${{ github.actor != 'dependabot[bot]' }}
-      uses: docker/login-action@v1
-      with:
-        registry: quay.io
-        username: ${{ secrets.QUAY_USERNAME }}
-        password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Login to quay.io
+        if: ${{ github.actor != 'dependabot[bot]' }}
+        uses: docker/login-action@v1
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
 
-    - run: make -C kernel build
+      - run: make -C kernel build

@@ -58,6 +58,11 @@ The `bootkit` container will parse the `/proc/cmdline` and the metadata service 
 
 ## How to use hook with Sandbox
 
+Recent versions of sandbox have already been modified to use a public version of hook instead of OSIE during setup.
+This can be seen in the `OSIE_DOWNLOAD_URLS` variable in [https://github.com/tinkerbell/sandbox/blob/main/deploy/compose/.env]().
+
+## How to use older versions of sandbox (which currently use OSIE) with hook
+
 [sandbox](https://github.com/tinkerbell/sandbox) is a project that helps you to
 create and run the Tinkerbell stack locally with Vagrant, on Equinix Metal with
 Terraform and, acts as a guide to deploying Tinkerbell wherever you like. I will

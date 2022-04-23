@@ -14,6 +14,12 @@ onboot:
   - name: dhcpcd
     image: linuxkit/dhcpcd:v0.8
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+    binds.add:
+     - /var/lib/dhcpcd:/var/lib/dhcpcd
+     - /run:/run
+    runtime:
+      mkdir:
+        - /var/lib/dhcpcd
 services:
   - name: getty
     image: linuxkit/getty:v0.8
@@ -23,6 +29,12 @@ services:
     image: linuxkit/rngd:v0.8
   - name: dhcpcd
     image: linuxkit/dhcpcd:v0.8
+    binds.add:
+     - /var/lib/dhcpcd:/var/lib/dhcpcd
+     - /run:/run
+    runtime:
+      mkdir:
+        - /var/lib/dhcpcd
   - name: ntpd
     image: linuxkit/openntpd:v0.8
     binds:

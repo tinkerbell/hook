@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -38,6 +39,12 @@ type tinkConfig struct {
 
 	// Metadata ID ... plus the other IDs :shrug:
 	MetadataID string `json:"id"`
+
+	// tinkWorkerImage is the Tink worker image location.
+	tinkWorkerImage string
+
+	// tinkServerTLS is whether or not to use TLS for tink-server communication.
+	tinkServerTLS string
 }
 
 func main() {
@@ -61,7 +68,18 @@ func main() {
 	}
 
 	// Generate the path to the tink-worker
-	imageName := fmt.Sprintf("%s/tink-worker:latest", cfg.registry)
+	var imageName string
+	if cfg.registry != "" {
+		imageName = path.Join(cfg.registry, "tink-worker:latest")
+	}
+	if cfg.tinkWorkerImage != "" {
+		imageName = cfg.tinkWorkerImage
+	}
+	if imageName == "" {
+		// TODO(jacobweinstock): Don't panic, ever. This whole main function should ideally be a control loop that never exits.
+		// Just keep trying all the things until they work. Similar idea to controllers in Kubernetes. Doesn't need to be that heavy though.
+		panic("cannot pull image for tink-worker, 'docker_registry' and/or 'tink_worker_image' NOT specified in /proc/cmdline")
+	}
 
 	// Generate the configuration of the container
 	tinkContainer := &container.Config{
@@ -72,6 +90,7 @@ func main() {
 			fmt.Sprintf("REGISTRY_PASSWORD=%s", cfg.password),
 			fmt.Sprintf("TINKERBELL_GRPC_AUTHORITY=%s", cfg.grpcAuthority),
 			fmt.Sprintf("TINKERBELL_CERT_URL=%s", cfg.grpcCertURL),
+			fmt.Sprintf("TINKERBELL_TLS=%s", cfg.tinkServerTLS),
 			fmt.Sprintf("WORKER_ID=%s", cfg.workerID),
 			fmt.Sprintf("ID=%s", cfg.workerID),
 			fmt.Sprintf("container_uuid=%s", cfg.MetadataID),
@@ -178,6 +197,10 @@ func parseCmdLine(cmdLines []string) (cfg tinkConfig) {
 		// Find the worker configuration
 		case "worker_id":
 			cfg.workerID = cmdLine[1]
+		case "tink_worker_image":
+			cfg.tinkWorkerImage = cmdLine[1]
+		case "tinkerbell_tls":
+			cfg.tinkServerTLS = cmdLine[1]
 		}
 	}
 	return cfg

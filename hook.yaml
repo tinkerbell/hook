@@ -23,6 +23,8 @@ onboot:
 services:
   - name: getty
     image: linuxkit/getty:v0.8
+    binds.add:
+     - /etc/profile.d/local.sh:/etc/profile.d/local.sh
     env:
      - INSECURE=true
   - name: rngd
@@ -80,7 +82,8 @@ files:
     contents: '{"debug": true}'
   - path: etc/profile.d/local.sh
     contents: |
-      alias docker='ctr -n services.linuxkit tasks exec --tty --exec-id shell docker docker'
+      alias docker='ctr -n services.linuxkit tasks exec --tty --exec-id cmd docker docker'
+      alias docker-shell='ctr -n services.linuxkit tasks exec --tty --exec-id shell docker sh'
     mode: "0644"
 trust:
   org:

@@ -53,7 +53,6 @@ services:
     binds:
      - /etc/resolv.conf:/etc/resolv.conf
      - /lib/modules:/lib/modules
-     - /etc/docker/daemon.json:/etc/docker/daemon.json
      - /var/run/docker:/var/run
      - /var/run/worker:/worker
      - /dev/console:/dev/console
@@ -78,8 +77,6 @@ services:
       mkdir:
         - /var/run/docker
 files:
-  - path: etc/docker/daemon.json
-    contents: '{"debug": true}'
   - path: etc/profile.d/local.sh
     contents: |
       alias docker='ctr -n services.linuxkit tasks exec --tty --exec-id cmd docker docker'

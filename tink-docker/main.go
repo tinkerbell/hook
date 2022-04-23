@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -15,8 +16,15 @@ type tinkConfig struct {
 	registry   string
 	baseURL    string
 	tinkerbell string
+	syslogHost string
 
 	// TODO add others
+}
+
+type dockerConfig struct {
+	Debug     bool              `json:"debug"`
+	LogDriver string            `json:"log-driver,omitempty"`
+	LogOpts   map[string]string `json:"log-opts,omitempty"`
 }
 
 func main() {
@@ -45,6 +53,17 @@ func main() {
 	}
 	fmt.Println("Downloaded the repository certificates, starting the Docker Engine")
 
+	d := dockerConfig{
+		Debug:     true,
+		LogDriver: "syslog",
+		LogOpts: map[string]string{
+			"syslog-address": fmt.Sprintf("udp://%v:514", cfg.syslogHost),
+		},
+	}
+	if err := d.writeToDisk("/etc/docker/daemon.json"); err != nil {
+		fmt.Println("Failed to write docker config:", err)
+	}
+
 	// Build the command, and execute
 	cmd := exec.Command("/usr/local/bin/docker-init", "/usr/local/bin/dockerd")
 	cmd.Stdout = os.Stdout
@@ -53,6 +72,19 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+// writeToDisk writes the dockerConfig to loc.
+func (d dockerConfig) writeToDisk(loc string) error {
+	b, err := json.Marshal(d)
+	if err != nil {
+		return fmt.Errorf("unable to marshal docker config: %w", err)
+	}
+	if err := ioutil.WriteFile(loc, b, 0600); err != nil {
+		return fmt.Errorf("Error writing daemon.json: %w", err)
+	}
+
+	return nil
 }
 
 // parseCmdLine will parse the command line.
@@ -71,6 +103,8 @@ func parseCmdLine(cmdLines []string) (cfg tinkConfig) {
 			cfg.baseURL = cmdLine[1]
 		case "tinkerbell":
 			cfg.tinkerbell = cmdLine[1]
+		case "syslog_host":
+			cfg.syslogHost = cmdLine[1]
 		}
 	}
 	return cfg

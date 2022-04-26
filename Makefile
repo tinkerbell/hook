@@ -11,10 +11,10 @@ LINUXKIT_CONFIG ?= hook.yaml
 
 dev: dev-bootkitBuild dev-tink-dockerBuild
 ifeq ($(ARCH),x86_64)
-dev: image-amd64
+dev: dev-image-amd64
 endif
 ifeq ($(ARCH),aarch64)
-dev: image-arm64
+dev: dev-image-arm64
 endif
 
 # This option is for running docker manifest command
@@ -27,6 +27,14 @@ image-amd64:
 image-arm64:
 	mkdir -p out
 	linuxkit build -docker -pull -arch arm64 -format kernel+initrd -name hook-aarch64 -dir out $(LINUXKIT_CONFIG)
+
+dev-image-amd64:
+	mkdir -p out
+	linuxkit build -docker -format kernel+initrd -name hook-x86_64 -dir out $(LINUXKIT_CONFIG)
+
+dev-image-arm64:
+	mkdir -p out
+	linuxkit build -docker -arch arm64 -format kernel+initrd -name hook-aarch64 -dir out $(LINUXKIT_CONFIG)
 
 image: image-amd64 image-arm64
 

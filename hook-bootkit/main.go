@@ -31,7 +31,6 @@ type tinkConfig struct {
 
 	// Grpc stuff (dunno)
 	grpcAuthority string
-	grpcCertURL   string
 
 	// Worker ID(s) .. why are there two?
 	workerID string
@@ -89,7 +88,6 @@ func main() {
 			fmt.Sprintf("REGISTRY_USERNAME=%s", cfg.username),
 			fmt.Sprintf("REGISTRY_PASSWORD=%s", cfg.password),
 			fmt.Sprintf("TINKERBELL_GRPC_AUTHORITY=%s", cfg.grpcAuthority),
-			fmt.Sprintf("TINKERBELL_CERT_URL=%s", cfg.grpcCertURL),
 			fmt.Sprintf("TINKERBELL_TLS=%s", cfg.tinkServerTLS),
 			fmt.Sprintf("WORKER_ID=%s", cfg.workerID),
 			fmt.Sprintf("ID=%s", cfg.workerID),
@@ -192,8 +190,6 @@ func parseCmdLine(cmdLines []string) (cfg tinkConfig) {
 		// Find GRPC configuration
 		case "grpc_authority":
 			cfg.grpcAuthority = cmdLine[1]
-		case "grpc_cert_url":
-			cfg.grpcCertURL = cmdLine[1]
 		// Find the worker configuration
 		case "worker_id":
 			cfg.workerID = cmdLine[1]

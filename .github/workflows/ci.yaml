@@ -53,7 +53,7 @@ jobs:
         GIT_VERSION: ${{ github.sha }}
 
     # TODO: add artifacts for the built images
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: hook-${{ github.sha }}.tar.gz
         path: hook-${{ github.sha }}.tar.gz

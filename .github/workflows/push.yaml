@@ -49,7 +49,7 @@ jobs:
       env:
         GIT_VERSION: ${{ github.sha }}
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: hook-${{ github.sha }}.tar.gz
         path: hook-${{ github.sha }}.tar.gz

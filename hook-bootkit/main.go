@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
@@ -45,6 +46,8 @@ type tinkConfig struct {
 	// tinkServerTLS is whether or not to use TLS for tink-server communication.
 	tinkServerTLS string
 }
+
+const maxRetryAttempts = 20
 
 func main() {
 	fmt.Println("Starting BootKit")
@@ -144,14 +147,30 @@ func main() {
 
 	fmt.Printf("Pulling image [%s]", imageName)
 
-	out, err := cli.ImagePull(ctx, imageName, pullOpts)
-	if err != nil {
+	// TODO: Ideally if this function becomes a loop that runs forever and keeps retrying
+	// anything that failed, this retry would not be needed. For now, this addresses the specific
+	// race condition case of when the linuxkit network or dns is in the process of, but not quite
+	// fully set up yet.
+
+	var out io.ReadCloser
+	imagePullOperation := func() error {
+		out, err = cli.ImagePull(ctx, imageName, pullOpts)
+		if err != nil {
+			fmt.Printf("Image pull failure %s, %v\n", imageName, err)
+			return err
+		}
+		return nil
+	}
+	if err = backoff.Retry(imagePullOperation, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), maxRetryAttempts)); err != nil {
 		panic(err)
 	}
 
-	_, err = io.Copy(os.Stdout, out)
-	if err != nil {
+	if _, err = io.Copy(os.Stdout, out); err != nil {
 		panic(err)
+	}
+
+	if err = out.Close(); err != nil {
+		fmt.Printf("error closing io.ReadCloser out: %s", err)
 	}
 
 	resp, err := cli.ContainerCreate(ctx, tinkContainer, tinkHostConfig, nil, nil, "")

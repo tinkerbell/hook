@@ -1,8 +1,8 @@
+bin/
+bootkit/local/
+dist/
 .env
 hook-*.tar.gz
-dist/
 out/
-tink-docker/local/
-bootkit/local/
-
 *.swp
+tink-docker/local/

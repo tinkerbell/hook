@@ -1,21 +1,15 @@
 let _pkgs = import <nixpkgs> { };
-in
-{ pkgs ?
-  import
-    (_pkgs.fetchFromGitHub {
-      owner = "NixOS";
-      repo = "nixpkgs";
-      #branch@date: nixpkgs-unstable@2021-01-25
-      rev = "ce7b327a52d1b82f82ae061754545b1c54b06c66";
-      sha256 = "1rc4if8nmy9lrig0ddihdwpzg2s8y36vf20hfywb8hph5hpsg4vj";
-    }) { }
-}:
+in { pkgs ? import (_pkgs.fetchFromGitHub {
+  owner = "NixOS";
+  repo = "nixpkgs";
+  #branch@date: nixpkgs-unstable@2021-01-25
+  rev = "ce7b327a52d1b82f82ae061754545b1c54b06c66";
+  sha256 = "1rc4if8nmy9lrig0ddihdwpzg2s8y36vf20hfywb8hph5hpsg4vj";
+}) { } }:
 
 with pkgs;
 let
-  docker-ov = docker.override {
-    buildxSupport = true;
-  };
+  docker-ov = docker.override { buildxSupport = true; };
 
   linuxkit-ov = linuxkit.overrideAttrs (oldAttrs: rec {
     version = "unstable-g${builtins.substring 0 9 src.rev}";
@@ -26,8 +20,7 @@ let
       sha256 = "1hx5k0l9gniz9aj9li8dkiniqs77pyfcl979y75yqm3mynrdz9ca";
     };
   });
-in
-mkShell {
+in mkShell {
   buildInputs = [
     docker-ov
     git
@@ -35,6 +28,7 @@ mkShell {
     gnused
     linuxkit-ov
     ncurses
+    nixfmt
     s3cmd
     util-linux
   ];

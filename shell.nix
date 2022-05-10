@@ -32,6 +32,9 @@ in mkShell {
     ncurses
     nixfmt
     nodePackages.prettier
+    python3Packages.pip
+    python3Packages.setuptools
+    python3Packages.wheel
     s3cmd
     shfmt
     util-linux

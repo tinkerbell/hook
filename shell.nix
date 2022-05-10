@@ -16,8 +16,8 @@ let
     src = fetchFromGitHub {
       owner = "linuxkit";
       repo = "linuxkit";
-      rev = "ccece6a4889e15850dfbaf6d5170939c83edb103";
-      sha256 = "1hx5k0l9gniz9aj9li8dkiniqs77pyfcl979y75yqm3mynrdz9ca";
+      rev = "b710224cdf9a8425a7129cdcb84fc1af00f926d7";
+      sha256 = "sha256-UqPX+r3by7v+PL+/xUiSZVsB7EO7VUr3aDfVIhQDEgY=";
     };
   });
 

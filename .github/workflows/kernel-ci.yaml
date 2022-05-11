@@ -24,7 +24,7 @@ jobs:
       - run: make -C kernel devbuild ORG=${REGISTRY}:5000
 
     # TODO: add artifacts for the built images
-    #- uses: actions/upload-artifact@v2
+    #- uses: actions/upload-artifact@v3
     #  with:
     #    name: TODO
     #    path: TODO

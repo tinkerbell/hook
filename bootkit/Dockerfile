@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:experimental
 
-FROM golang:1.15-alpine as dev
+FROM golang:1.17-alpine as dev
 COPY . /src/
 WORKDIR /src
 ENV GO111MODULE=on

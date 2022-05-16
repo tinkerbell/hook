@@ -80,8 +80,8 @@ func (d dockerConfig) writeToDisk(loc string) error {
 	if err != nil {
 		return fmt.Errorf("unable to marshal docker config: %w", err)
 	}
-	if err := ioutil.WriteFile(loc, b, 0600); err != nil {
-		return fmt.Errorf("Error writing daemon.json: %w", err)
+	if err := ioutil.WriteFile(loc, b, 0o600); err != nil {
+		return fmt.Errorf("error writing daemon.json: %w", err)
 	}
 
 	return nil
@@ -130,6 +130,8 @@ func downloadFile(filepath string, url string) error {
 		if err == nil {
 			break
 		}
+		resp.Body.Close()
+
 		if retries == maxRetryCount-1 {
 			return err
 		}

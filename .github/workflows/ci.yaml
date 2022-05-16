@@ -2,7 +2,7 @@ name: For each PR
 on:
   pull_request:
     paths-ignore:
-    - kernel/**
+      - kernel/**
 jobs:
   validation:
     runs-on: ubuntu-20.04
@@ -12,48 +12,54 @@ jobs:
         ports:
           - 5000:5000
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v1.1.0
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
 
-    - name: Set up Docker Buildx
-      id: buildx
-      uses: docker/setup-buildx-action@v1.3.0
-      with:
-        driver-opts: network=host
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          driver-opts: network=host
 
-    - name: Build and push bootkit
-      uses: docker/build-push-action@v2.4.0
-      with:
-        context: ./bootkit/
-        platforms: linux/amd64,linux/arm64
-        push: true
-        tags: localhost:5000/tinkerbell/hook-bootkit:0.0
+      - name: Build and push bootkit
+        uses: docker/build-push-action@v3
+        with:
+          context: ./bootkit/
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: localhost:5000/tinkerbell/hook-bootkit:0.0
 
-    - name: Build and push tink-docker
-      uses: docker/build-push-action@v2.4.0
-      with:
-        context: ./tink-docker/
-        platforms: linux/amd64,linux/arm64
-        push: true
-        tags: localhost:5000/tinkerbell/hook-docker:0.0
+      - name: Build and push tink-docker
+        uses: docker/build-push-action@v3
+        with:
+          context: ./tink-docker/
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: localhost:5000/tinkerbell/hook-docker:0.0
 
-    - uses: cachix/install-nix-action@v16
-      with:
-        nix_path: nixpkgs=channel:nixos-unstable
+      - uses: cachix/install-nix-action@v17
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
 
-    # Replace hook-{bootkit,docker} but not hook-kernel
-    - run: sed -E -e 's,quay.io/tinkerbell/hook-(bootkit|docker),localhost:5000/tinkerbell/hook-\1,g' hook.yaml | tee hook-ci.yaml
+      - name: Fetch Nix Deps
+        run: nix-shell --command true
 
-    - run: ./hack/ci-build.sh
-      env:
-        LINUXKIT_CONFIG: hook-ci.yaml
-        GIT_VERSION: ${{ github.sha }}
+      - name: Run formatters and linters
+        run: nix-shell --run .github/workflows/formatters-and-linters.sh
 
-    # TODO: add artifacts for the built images
-    - uses: actions/upload-artifact@v2
-      with:
-        name: hook-${{ github.sha }}.tar.gz
-        path: hook-${{ github.sha }}.tar.gz
+      # Replace hook-{bootkit,docker} but not hook-kernel
+      - run: sed -E -e 's,quay.io/tinkerbell/hook-(bootkit|docker),localhost:5000/tinkerbell/hook-\1,g' hook.yaml | tee hook-ci.yaml
+
+      - run: ./hack/ci-build.sh
+        env:
+          LINUXKIT_CONFIG: hook-ci.yaml
+          GIT_VERSION: ${{ github.sha }}
+
+      # TODO: add artifacts for the built images
+      - uses: actions/upload-artifact@v3
+        with:
+          name: hook-${{ github.sha }}.tar.gz
+          path: hook-${{ github.sha }}.tar.gz

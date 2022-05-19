@@ -1,13 +1,11 @@
 ORG ?= quay.io/tinkerbell
 ARCH := $(shell uname -m)
 
-GIT_VERSION ?= $(shell git log -1 --format="%h")
-ifneq ($(shell git status --porcelain),)
-  GIT_VERSION := $(GIT_VERSION)-dirty
+ifeq ($(strip $(TAG)),)
+  # ^ guards against TAG being defined but empty string which makes `TAG ?=` not work
+  TAG := latest
 endif
 default: bootkitBuild tink-dockerBuild image
-
-LINUXKIT_CONFIG ?= hook.yaml
 
 dev: dev-bootkitBuild dev-tink-dockerBuild
 ifeq ($(ARCH),x86_64)
@@ -20,21 +18,27 @@ endif
 # This option is for running docker manifest command
 export DOCKER_CLI_EXPERIMENTAL := enabled
 
-image-amd64:
-	mkdir -p out
-	linuxkit build -docker -pull -format kernel+initrd -name hook-x86_64 -dir out $(LINUXKIT_CONFIG)
+LINUXKIT_CONFIG ?= hook.in.yaml
+.PHONY: hook.yaml
+hook.yaml: $(LINUXKIT_CONFIG)
+	sed '/quay.io/ s|:latest|:$(TAG)|' $^ > $@.tmp
+	mv $@.tmp $@
 
-image-arm64:
+image-amd64: hook.yaml
 	mkdir -p out
-	linuxkit build -docker -pull -arch arm64 -format kernel+initrd -name hook-aarch64 -dir out $(LINUXKIT_CONFIG)
+	linuxkit build -docker -pull -format kernel+initrd -name hook-x86_64 -dir out hook.yaml
 
-dev-image-amd64:
+image-arm64: hook.yaml
 	mkdir -p out
-	linuxkit build -docker -format kernel+initrd -name hook-x86_64 -dir out $(LINUXKIT_CONFIG)
+	linuxkit build -docker -pull -arch arm64 -format kernel+initrd -name hook-aarch64 -dir out hook.yaml
 
-dev-image-arm64:
+dev-image-amd64: hook.yaml
 	mkdir -p out
-	linuxkit build -docker -arch arm64 -format kernel+initrd -name hook-aarch64 -dir out $(LINUXKIT_CONFIG)
+	linuxkit build -docker -format kernel+initrd -name hook-x86_64 -dir out hook.yaml
+
+dev-image-arm64: hook.yaml
+	mkdir -p out
+	linuxkit build -docker -arch arm64 -format kernel+initrd -name hook-aarch64 -dir out hook.yaml
 
 image: image-amd64 image-arm64
 
@@ -58,16 +62,16 @@ run:
 	sudo ~/go/bin/linuxkit run qemu --mem 2048 out/hook-${ARCH}
 
 dev-bootkitBuild:
-	cd bootkit; docker buildx build --load -t $(ORG)/hook-bootkit:0.0 .
+	cd bootkit; docker buildx build --load -t $(ORG)/hook-bootkit:$(TAG) .
 
 bootkitBuild:
-	cd bootkit; docker buildx build --platform linux/amd64,linux/arm64 --push -t $(ORG)/hook-bootkit:0.0 .
+	cd bootkit; docker buildx build --platform linux/amd64,linux/arm64 --push -t $(ORG)/hook-bootkit:$(TAG) .
 
 dev-tink-dockerBuild:
-	cd tink-docker; docker buildx build --load -t $(ORG)/hook-docker:0.0 .
+	cd tink-docker; docker buildx build --load -t $(ORG)/hook-docker:$(TAG) .
 
 tink-dockerBuild:
-	cd tink-docker; docker buildx build --platform linux/amd64,linux/arm64 --push -t $(ORG)/hook-docker:0.0 .
+	cd tink-docker; docker buildx build --platform linux/amd64,linux/arm64 --push -t $(ORG)/hook-docker:$(TAG) .
 
 dev-convert:
 	rm -rf ./convert
@@ -92,7 +96,7 @@ dist: default convert
 		mv ./out/hook-$$a-kernel ./dist/vmlinuz-$$a; \
 	done
 	rm -rf out
-	cd ./dist && tar -czvf ../hook-${GIT_VERSION}.tar.gz ./*
+	cd ./dist && tar -czvf ../hook-${TAG}.tar.gz ./*
 
 dist-existing-images: image convert
 	rm -rf ./dist ./convert
@@ -102,7 +106,7 @@ dist-existing-images: image convert
 		mv ./out/hook-$$a-kernel ./dist/vmlinuz-$$a; \
 	done
 	rm -rf out
-	cd ./dist && tar -czvf ../hook-${GIT_VERSION}.tar.gz ./*
+	cd ./dist && tar -czvf ../hook-${TAG}.tar.gz ./*
 
 
 dev-dist: dev dev-convert
@@ -111,17 +115,17 @@ dev-dist: dev dev-convert
 	mv ./initramfs-${ARCH}.gz ./dist/initramfs-${ARCH}
 	mv ./out/hook-${ARCH}-kernel ./dist/vmlinuz-${ARCH}
 	rm -rf out
-	cd ./dist && tar -czvf ../hook-${GIT_VERSION}.tar.gz ./*
+	cd ./dist && tar -czvf ../hook-${TAG}.tar.gz ./*
 
 deploy: dist
 ifeq ($(shell git rev-parse --abbrev-ref HEAD),main)
-	s3cmd sync ./hook-${GIT_VERSION}.tar.gz s3://s.gianarb.it/hook/${GIT_VERSION}.tar.gz
-	s3cmd cp s3://s.gianarb.it/hook/hook-${GIT_VERSION}.tar.gz s3://s.gianarb.it/hook/hook-main.tar.gz
+	s3cmd sync ./hook-${TAG}.tar.gz s3://s.gianarb.it/hook/${TAG}.tar.gz
+	s3cmd cp s3://s.gianarb.it/hook/hook-${TAG}.tar.gz s3://s.gianarb.it/hook/hook-main.tar.gz
 endif
 
 .PHONY: clean
 clean:
-	rm ./hook-${GIT_VERSION}.tar.gz
+	rm ./hook-${TAG}.tar.gz
 	rm -rf dist/ out/ tink-docker/local/ bootkit/local/
 
 -include lint.mk

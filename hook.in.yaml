@@ -41,8 +41,9 @@ services:
     image: linuxkit/openntpd:v0.8
     binds:
       - /var/run:/var/run
+
   - name: docker
-    image: quay.io/tinkerbell/hook-docker:0.0
+    image: quay.io/tinkerbell/hook-docker:latest
     capabilities:
       - all
     net: host
@@ -63,8 +64,9 @@ services:
         - /var/run/images
         - /var/run/docker
         - /var/run/worker
+
   - name: bootkit
-    image: quay.io/tinkerbell/hook-bootkit:0.0
+    image: quay.io/tinkerbell/hook-bootkit:latest
     capabilities:
       - all
     net: host

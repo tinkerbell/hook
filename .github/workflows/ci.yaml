@@ -30,7 +30,7 @@ jobs:
           context: ./bootkit/
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: localhost:5000/tinkerbell/hook-bootkit:0.0
+          tags: localhost:5000/tinkerbell/hook-bootkit:latest
 
       - name: Build and push tink-docker
         uses: docker/build-push-action@v3
@@ -38,7 +38,7 @@ jobs:
           context: ./tink-docker/
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: localhost:5000/tinkerbell/hook-docker:0.0
+          tags: localhost:5000/tinkerbell/hook-docker:latest
 
       - uses: cachix/install-nix-action@v17
         with:
@@ -51,12 +51,10 @@ jobs:
         run: nix-shell --run .github/workflows/formatters-and-linters.sh
 
       # Replace hook-{bootkit,docker} but not hook-kernel
-      - run: sed -E -e 's,quay.io/tinkerbell/hook-(bootkit|docker),localhost:5000/tinkerbell/hook-\1,g' hook.yaml | tee hook-ci.yaml
+      - run: sed -E -i 's,quay.io/tinkerbell/hook-(bootkit|docker),localhost:5000/tinkerbell/hook-\1,g' hook.in.yaml
 
-      - run: ./hack/ci-build.sh
-        env:
-          LINUXKIT_CONFIG: hook-ci.yaml
-          GIT_VERSION: ${{ github.sha }}
+      - name: Build
+        run: ./hack/ci-build.sh
 
       # TODO: add artifacts for the built images
       - uses: actions/upload-artifact@v3

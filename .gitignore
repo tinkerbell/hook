@@ -3,6 +3,7 @@ bootkit/local/
 dist/
 .env
 hook-*.tar.gz
+hook.yaml
 out/
 *.swp
 tink-docker/local/

@@ -31,7 +31,7 @@ jobs:
           context: ./bootkit/
           platforms: linux/amd64,linux/arm64
           push: ${{ github.actor != 'dependabot[bot]' }}
-          tags: quay.io/tinkerbell/hook-bootkit:0.0
+          tags: quay.io/tinkerbell/hook-bootkit:latest,quay.io/tinkerbell/hook-bootkit:sha-${GITHUB_SHA::8}
 
       - name: Build and push tink-docker
         uses: docker/build-push-action@v3
@@ -39,7 +39,7 @@ jobs:
           context: ./tink-docker/
           platforms: linux/amd64,linux/arm64
           push: ${{ github.actor != 'dependabot[bot]' }}
-          tags: quay.io/tinkerbell/hook-docker:0.0
+          tags: quay.io/tinkerbell/hook-docker:latest,quay.io/tinkerbell/hook-docker:sha-${GITHUB_SHA::8}
 
       - uses: cachix/install-nix-action@v17
         with:
@@ -51,9 +51,10 @@ jobs:
       - name: Run formatters and linters
         run: nix-shell --run .github/workflows/formatters-and-linters.sh
 
-      - run: ./hack/build-and-deploy.sh
-        env:
-          GIT_VERSION: ${{ github.sha }}
+      - name: Build & Deploy
+        run: |
+          ./hack/build-and-deploy.sh
+          TAG=sha-${GITHUB_SHA::8} ./hack/build-and-deploy.sh
 
       - uses: actions/upload-artifact@v3
         with:

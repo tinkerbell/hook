@@ -4,6 +4,6 @@ dist/
 hook-bootkit/local/
 hook-docker/local/
 hook-*.tar.gz
-hook.yaml
+hook.*.yaml
 out/
 *.swp

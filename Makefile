@@ -18,27 +18,26 @@ endif
 # This option is for running docker manifest command
 export DOCKER_CLI_EXPERIMENTAL := enabled
 
-LINUXKIT_CONFIG ?= hook.in.yaml
-.PHONY: hook.yaml
-hook.yaml: $(LINUXKIT_CONFIG)
+LINUXKIT_CONFIG ?= hook.yaml
+hook.$(TAG).yaml: $(LINUXKIT_CONFIG)
 	sed '/quay.io/ s|:latest|:$(TAG)|' $^ > $@.tmp
 	mv $@.tmp $@
 
-image-amd64: hook.yaml
+image-amd64: hook.$(TAG).yaml
 	mkdir -p out
-	linuxkit build -docker -pull -format kernel+initrd -name hook-x86_64 -dir out hook.yaml
+	linuxkit build -docker -pull -format kernel+initrd -name hook-x86_64 -dir out $^
 
-image-arm64: hook.yaml
+image-arm64: hook.$(TAG).yaml
 	mkdir -p out
-	linuxkit build -docker -pull -arch arm64 -format kernel+initrd -name hook-aarch64 -dir out hook.yaml
+	linuxkit build -docker -pull -arch arm64 -format kernel+initrd -name hook-aarch64 -dir out $^
 
-dev-image-amd64: hook.yaml
+dev-image-amd64: hook.$(TAG).yaml
 	mkdir -p out
-	linuxkit build -docker -format kernel+initrd -name hook-x86_64 -dir out hook.yaml
+	linuxkit build -docker -format kernel+initrd -name hook-x86_64 -dir out $^
 
-dev-image-arm64: hook.yaml
+dev-image-arm64: hook.$(TAG).yaml
 	mkdir -p out
-	linuxkit build -docker -arch arm64 -format kernel+initrd -name hook-aarch64 -dir out hook.yaml
+	linuxkit build -docker -arch arm64 -format kernel+initrd -name hook-aarch64 -dir out $^
 
 image: image-amd64 image-arm64
 

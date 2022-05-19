@@ -25,13 +25,18 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
 
+      - name: Figure Commit Short ID
+        id: commitid
+        run: |
+          echo ::set-output name=short::$(git rev-parse --short HEAD)
+
       - name: Build and push bootkit
         uses: docker/build-push-action@v3
         with:
           context: ./bootkit/
           platforms: linux/amd64,linux/arm64
           push: ${{ github.actor != 'dependabot[bot]' }}
-          tags: quay.io/tinkerbell/hook-bootkit:latest,quay.io/tinkerbell/hook-bootkit:sha-${GITHUB_SHA::8}
+          tags: quay.io/tinkerbell/hook-bootkit:latest,quay.io/tinkerbell/hook-bootkit:sha-${{steps.commitid.outputs.short}}
 
       - name: Build and push tink-docker
         uses: docker/build-push-action@v3
@@ -39,7 +44,7 @@ jobs:
           context: ./tink-docker/
           platforms: linux/amd64,linux/arm64
           push: ${{ github.actor != 'dependabot[bot]' }}
-          tags: quay.io/tinkerbell/hook-docker:latest,quay.io/tinkerbell/hook-docker:sha-${GITHUB_SHA::8}
+          tags: quay.io/tinkerbell/hook-docker:latest,quay.io/tinkerbell/hook-docker:sha-${{steps.commitid.outputs.short}}
 
       - uses: cachix/install-nix-action@v17
         with:
@@ -54,9 +59,9 @@ jobs:
       - name: Build & Deploy
         run: |
           ./hack/build-and-deploy.sh
-          TAG=sha-${GITHUB_SHA::8} ./hack/build-and-deploy.sh
+          TAG=sha-${{steps.commitid.outputs.short}} ./hack/build-and-deploy.sh
 
       - uses: actions/upload-artifact@v3
         with:
-          name: hook-${{ github.sha }}.tar.gz
-          path: hook-${{ github.sha }}.tar.gz
+          name: hook-${{steps.commitid.outputs.short}}.tar.gz
+          path: hook-${{steps.commitid.outputs.short}}.tar.gz

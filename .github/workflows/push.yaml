@@ -30,22 +30,6 @@ jobs:
         run: |
           echo ::set-output name=short::$(git rev-parse --short HEAD)
 
-      - name: Build and push hook-bootkit
-        uses: docker/build-push-action@v3
-        with:
-          context: ./hook-bootkit/
-          platforms: linux/amd64,linux/arm64
-          push: ${{ github.actor != 'dependabot[bot]' }}
-          tags: quay.io/tinkerbell/hook-bootkit:latest,quay.io/tinkerbell/hook-bootkit:sha-${{steps.commitid.outputs.short}}
-
-      - name: Build and push hook-docker
-        uses: docker/build-push-action@v3
-        with:
-          context: ./hook-docker/
-          platforms: linux/amd64,linux/arm64
-          push: ${{ github.actor != 'dependabot[bot]' }}
-          tags: quay.io/tinkerbell/hook-docker:latest,quay.io/tinkerbell/hook-docker:sha-${{steps.commitid.outputs.short}}
-
       - uses: cachix/install-nix-action@v17
         with:
           nix_path: nixpkgs=channel:nixos-unstable
@@ -58,6 +42,10 @@ jobs:
 
       - name: Build & Deploy
         run: |
+          # Build and push the container images
+          nix-shell --run 'make TAG=latest push'
+          nix-shell --run 'make TAG=sha-${{steps.commitid.outputs.short}} push'
+          # Build and push the linuxkit images
           nix-shell --run 'make TAG=latest deploy'
           nix-shell --run 'make TAG=sha-${{steps.commitid.outputs.short}} deploy'
 

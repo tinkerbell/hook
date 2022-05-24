@@ -1,4 +1,4 @@
-module github.com/tinkerbell/hook/bootkit
+module github.com/tinkerbell/hook/hook-bootkit
 
 go 1.17
 

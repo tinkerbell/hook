@@ -15,8 +15,15 @@
 # This option is for running docker manifest command
 export DOCKER_CLI_EXPERIMENTAL := enabled
 
-# Name and Org on Hub
-ORG?=quay.io/tinkerbell
+# set ORG in the env or make call
+# having it in the makefile is dangerous as its too easy to overwrite previous pushes/tags
+ifeq ($(strip $(ORG)),)
+# ^ guards against ORG being defined but empty string which makes `ORG ?=` not work
+  ORG := quay.io/tinkerbell
+endif
+# makes sure there's no trailing / so we can just add them in the recipes which looks nicer
+ORG := $(shell echo "${ORG}" | sed 's|/*$$||')
+
 IMAGE:=hook-kernel
 IMAGE_BCC:=hook-kernel-bcc
 IMAGE_PERF:=hook-kernel-perf

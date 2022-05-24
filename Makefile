@@ -1,131 +1,37 @@
-ORG ?= quay.io/tinkerbell
-ARCH := $(shell uname -m)
+# set the ORG
+### !!NOTE!!
+# If this is changed then a fresh output dir is required (`git clean -fxd` or just `rm -rf out`)
+# Handling this better shows some of make's suckiness compared to newer build tools (redo, tup ...) where the command lines to tools invoked isn't tracked by make
+ORG := quay.io/tinkerbell
+# makes sure there's no trailing / so we can just add them in the recipes which looks nicer
+ORG := $(shell echo "${ORG}" | sed 's|/*$$||')
+
+# The following `ifeq` are the equivalent of FOO ?= except that they work correctly if FOO is set but empty
+ifeq ($(strip $(LINUXKIT_CONFIG)),)
+  LINUXKIT_CONFIG := hook.yaml
+endif
 
 ifeq ($(strip $(TAG)),)
-  # ^ guards against TAG being defined but empty string which makes `TAG ?=` not work
-  TAG := latest
+  TAG := sha-$(shell git rev-parse --short HEAD)
 endif
-default: bootkitBuild tink-dockerBuild image
+T := $(strip $(TAG))
 
-dev: dev-bootkitBuild dev-tink-dockerBuild
-ifeq ($(ARCH),x86_64)
-dev: dev-image-amd64
-endif
-ifeq ($(ARCH),aarch64)
-dev: dev-image-arm64
-endif
+help: ## Print this help
+	@grep --no-filename -E '^[[:alnum:]_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sed 's/:.*## /·/' | sort | column -t -s '·' -c $$(tput cols)
 
-# This option is for running docker manifest command
-export DOCKER_CLI_EXPERIMENTAL := enabled
+include rules.mk
+include lint.mk
 
-LINUXKIT_CONFIG ?= hook.in.yaml
-.PHONY: hook.yaml
-hook.yaml: $(LINUXKIT_CONFIG)
-	sed '/quay.io/ s|:latest|:$(TAG)|' $^ > $@.tmp
-	mv $@.tmp $@
+all: containers images ## Build release mode boot files and container images for all supported architectures
 
-image-amd64: hook.yaml
-	mkdir -p out
-	linuxkit build -docker -pull -format kernel+initrd -name hook-x86_64 -dir out hook.yaml
+dev: image-dbg-$(ARCH) ## Build debug mode boot files and container images for currently running architecture
 
-image-arm64: hook.yaml
-	mkdir -p out
-	linuxkit build -docker -pull -arch arm64 -format kernel+initrd -name hook-aarch64 -dir out hook.yaml
+images: ## Build release mode boot files for all supported architectures
 
-dev-image-amd64: hook.yaml
-	mkdir -p out
-	linuxkit build -docker -format kernel+initrd -name hook-x86_64 -dir out hook.yaml
+containers: hook-bootkit hook-docker ## Build container images
 
-dev-image-arm64: hook.yaml
-	mkdir -p out
-	linuxkit build -docker -arch arm64 -format kernel+initrd -name hook-aarch64 -dir out hook.yaml
+debug: ## Build debug mode boot files and container images for all supported architectures
 
-image: image-amd64 image-arm64
+push: push-hook-bootkit push-hook-docker ## Push container images to registry
 
-debug-image-amd64:
-	mkdir -p out/amd64
-	linuxkit build --docker -format kernel+initrd -name debug-x86_64 -dir out hook_debug.yaml
-
-debug-image-arm64:
-	mkdir -p out/arm64
-	linuxkit build --docker -arch arm64 -format kernel+initrd -name debug-aarch64 -dir out hook_debug.yaml
-
-debug-image: debug-image-amd64 debug-image-arm64
-
-run-amd64:
-	sudo ~/go/bin/linuxkit run qemu --mem 2048 out/hook-x86_64
-
-run-arm64:
-	sudo ~/go/bin/linuxkit run qemu --mem 2048 out/hook-aarch64
-
-run:
-	sudo ~/go/bin/linuxkit run qemu --mem 2048 out/hook-${ARCH}
-
-dev-bootkitBuild:
-	cd bootkit; docker buildx build --load -t $(ORG)/hook-bootkit:$(TAG) .
-
-bootkitBuild:
-	cd bootkit; docker buildx build --platform linux/amd64,linux/arm64 --push -t $(ORG)/hook-bootkit:$(TAG) .
-
-dev-tink-dockerBuild:
-	cd tink-docker; docker buildx build --load -t $(ORG)/hook-docker:$(TAG) .
-
-tink-dockerBuild:
-	cd tink-docker; docker buildx build --platform linux/amd64,linux/arm64 --push -t $(ORG)/hook-docker:$(TAG) .
-
-dev-convert:
-	rm -rf ./convert
-	mkdir ./convert
-	cp out/hook-${ARCH}-initrd.img ./convert/initrd.gz
-	cd convert/; gunzip ./initrd.gz; cpio -idv < initrd; rm initrd; find . -print0 | cpio --null -ov --format=newc > ../initramfs-${ARCH}; gzip ../initramfs-${ARCH}
-
-.PHONY: convert
-convert:
-	for a in x86_64 aarch64; do \
-		rm -rf ./convert; \
-		mkdir ./convert; \
-		cp out/hook-$$a-initrd.img ./convert/initrd.gz; \
-		cd convert/; gunzip ./initrd.gz; cpio -idv < initrd; rm initrd; find . -print0 | cpio --null -ov --format=newc > ../initramfs-$$a; gzip ../initramfs-$$a; cd ../;\
-	done
-
-dist: default convert
-	rm -rf ./dist ./convert
-	mkdir ./dist
-	for a in x86_64 aarch64; do \
-		mv ./initramfs-$$a.gz ./dist/initramfs-$$a; \
-		mv ./out/hook-$$a-kernel ./dist/vmlinuz-$$a; \
-	done
-	rm -rf out
-	cd ./dist && tar -czvf ../hook-${TAG}.tar.gz ./*
-
-dist-existing-images: image convert
-	rm -rf ./dist ./convert
-	mkdir ./dist
-	for a in x86_64 aarch64; do \
-		mv ./initramfs-$$a.gz ./dist/initramfs-$$a; \
-		mv ./out/hook-$$a-kernel ./dist/vmlinuz-$$a; \
-	done
-	rm -rf out
-	cd ./dist && tar -czvf ../hook-${TAG}.tar.gz ./*
-
-
-dev-dist: dev dev-convert
-	rm -rf ./dist ./convert
-	mkdir ./dist
-	mv ./initramfs-${ARCH}.gz ./dist/initramfs-${ARCH}
-	mv ./out/hook-${ARCH}-kernel ./dist/vmlinuz-${ARCH}
-	rm -rf out
-	cd ./dist && tar -czvf ../hook-${TAG}.tar.gz ./*
-
-deploy: dist
-ifeq ($(shell git rev-parse --abbrev-ref HEAD),main)
-	s3cmd sync ./hook-${TAG}.tar.gz s3://s.gianarb.it/hook/${TAG}.tar.gz
-	s3cmd cp s3://s.gianarb.it/hook/hook-${TAG}.tar.gz s3://s.gianarb.it/hook/hook-main.tar.gz
-endif
-
-.PHONY: clean
-clean:
-	rm ./hook-${TAG}.tar.gz
-	rm -rf dist/ out/ tink-docker/local/ bootkit/local/
-
--include lint.mk
+run: run-$(ARCH) ## Boot system using qemu

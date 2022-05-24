@@ -20,7 +20,7 @@ func TestWriteToDisk(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			// Create a temporary directory
-			dir, err := ioutil.TempDir("", "tink-docker")
+			dir, err := ioutil.TempDir("", "hook-docker")
 			if err != nil {
 				t.Fatal(err)
 			}

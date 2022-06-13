@@ -47,7 +47,7 @@ out/$T/$(1)/$(2)/cmdline out/$T/$(1)/$(2)/initrd.img out/$T/$(1)/$(2)/kernel: ou
 out/$T/$(1)/$(2)/hook.yaml: $$(LINUXKIT_CONFIG)
 	sed '/hook-\(bootkit\|docker\):/ { s|:latest|:$T-$(2)|; s|quay.io/tinkerbell|$(ORG)|; }' $$< > $$@
 	if [[ $(1) == dbg ]]; then
-	    sed -i '/^\s*dbg/ s|#dbg||' $$@
+	    sed -i '/^\s*#dbg/ s|#dbg||' $$@
 	fi
 endef
 $(foreach m,$(modes),$(foreach a,$(arches),$(eval $(call foreach_mode_arch_rules,$m,$a))))

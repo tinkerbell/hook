@@ -94,8 +94,8 @@ services:
 files:
   - path: etc/profile.d/local.sh
     contents: |
-      alias docker='ctr -n services.linuxkit tasks exec --tty --exec-id cmd docker docker'
-      alias docker-shell='ctr -n services.linuxkit tasks exec --tty --exec-id shell docker sh'
+      alias       docker='ctr -n services.linuxkit tasks exec --tty --exec-id cmd hook-docker docker'
+      alias docker-shell='ctr -n services.linuxkit tasks exec --tty --exec-id shell hook-docker sh'
     mode: "0644"
 
 #dbg  - path: root/.ssh/authorized_keys

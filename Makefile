@@ -22,16 +22,10 @@ help: ## Print this help
 include rules.mk
 include lint.mk
 
-all: containers images ## Build release mode boot files and container images for all supported architectures
-
-dev: image-dbg-$(ARCH) ## Build debug mode boot files and container images for currently running architecture
-
-images: ## Build release mode boot files for all supported architectures
-
+all: dist dbg-dist ## Build release mode boot files and container images for all supported architectures
 containers: hook-bootkit hook-docker ## Build container images
-
 debug: ## Build debug mode boot files and container images for all supported architectures
-
+dev: dbg-image-$(ARCH) ## Build debug mode boot files and container images for currently running architecture
+images: ## Build release mode boot files for all supported architectures
 push: push-hook-bootkit push-hook-docker ## Push container images to registry
-
 run: run-$(ARCH) ## Boot system using qemu

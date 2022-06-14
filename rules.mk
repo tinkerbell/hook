@@ -23,10 +23,13 @@ ARCH = arm64
 endif
 
 arches := amd64 arm64
-modes := rel dbg
+DOCKER_2_HW_amd64 := x86_64
+DOCKER_2_HW_arm64 := aarch64
 
+dist-files :=
 hook-bootkit-deps := $(wildcard hook-bootkit/*)
 hook-docker-deps := $(wildcard hook-docker/*)
+modes := rel dbg
 
 define foreach_mode_arch_rules =
 # mode := $(1)
@@ -49,17 +52,22 @@ out/$T/$(1)/$(2)/hook.yaml: $$(LINUXKIT_CONFIG)
 	if [[ $(1) == dbg ]]; then
 	    sed -i '/^\s*#dbg/ s|#dbg||' $$@
 	fi
+
+out/$T/$(1)/hook_$(DOCKER_2_HW_$(2)).tar.gz: out/$T/$(1)/initramfs-$(DOCKER_2_HW_$(2)) out/$T/$(1)/vmlinuz-$(DOCKER_2_HW_$(2))
+out/$T/$(1)/initramfs-$(DOCKER_2_HW_$(2)): out/$T/$(1)/$(2)/initrd.img
+out/$T/$(1)/vmlinuz-$(DOCKER_2_HW_$(2)): out/$T/$(1)/$(2)/kernel
+dist-files += out/$T/$(1)/initramfs-$(DOCKER_2_HW_$(2)) out/$T/$(1)/vmlinuz-$(DOCKER_2_HW_$(2))
 endef
 $(foreach m,$(modes),$(foreach a,$(arches),$(eval $(call foreach_mode_arch_rules,$m,$a))))
 
 define foreach_arch_rules =
 # arch := $(1)
 
-debug: out/$T/dbg/$(1)/hook.tar
+debug: dbg-image-$(1)
+dbg-image-$(1): out/$T/dbg/$(1)/hook.tar
+dist: out/$T/rel/hook_$(DOCKER_2_HW_$(1)).tar.gz
 images: out/$T/rel/$(1)/hook.tar
-image-dbg-$(1): out/$T/dbg/$(1)/hook.tar
 
-out/$T/rel/hook.tar: out/$T/rel/$(1)/initrd.img out/$T/rel/$(1)/kernel
 hook-bootkit: out/$T/hook-bootkit-$(1)
 hook-docker: out/$T/hook-docker-$(1)
 
@@ -77,6 +85,15 @@ run-$(1):
 endef
 $(foreach a,$(arches),$(eval $(call foreach_arch_rules,$a)))
 
+define foreach_mode_rules =
+# mode := $(1)
+
+out/$T/$(1)/hook_%.tar.gz:
+	tar -C $$(@D) -cvf- $$(^F) | pigz > $$@
+
+endef
+$(foreach m,$(modes),$(eval $(call foreach_mode_rules,$m)))
+
 push-hook-bootkit: $(hook-bootkit-deps)
 push-hook-docker: $(hook-docker-deps)
 push-hook-bootkit push-hook-docker: platforms=$(addprefix linux/,$(arches))
@@ -87,21 +104,17 @@ push-hook-bootkit push-hook-docker:
 	docker buildx build --platform $$platforms --push -t $(ORG)/$(container):$T $(container)
 
 .PHONY: dist
-dist: out/$T/rel/hook-$T.tar.gz ## Build tarball for distribution
-out/$T/rel/hook-$T.tar.gz: out/$T/rel/hook.tar
-	pigz < $< > $@
+dist: ## Build tarballs for distribution
+$(dist-files):
+	cp $< $@
 
-out/$T/rel/hook.tar:
-	rm -rf out/$T/rel/dist
-	mkdir -p out/$T/rel/dist
-	for a in $(arches); do
-		cp out/$T/rel/$$a/initrd.img out/$T/rel/dist/initramfs-$$a
-		cp out/$T/rel/$$a/kernel out/$T/rel/dist/vmlinuz-$$a
-	done
-	cd out/$T/rel/dist && tar -cvf ../$(@F) ./*
+.PHONY: dbg-dist
+dbg-dist: out/$T/dbg/hook_$(DOCKER_2_HW_$(ARCH)).tar.gz ## Build debug enabled tarball
 
+.PHONY: deploy
 deploy: dist ## Push tarball to S3
-ifeq ($(shell git rev-parse --abbrev-ref HEAD),main)
-	s3cmd sync ./out/hook-$T.tar.gz s3://s.gianarb.it/hook/$T.tar.gz
-	s3cmd cp s3://s.gianarb.it/hook/hook-$T.tar.gz s3://s.gianarb.it/hook/hook-main.tar.gz
-endif
+	exit 1
+	for f in out/$T/rel/hook_*.tar.gz; do
+	    s3cmd sync $$f s3://s.gianarb.it/hook/$T/
+	    s3cmd cp s3://s.gianarb.it/hook/$T/$$(basename $$f) s3://s.gianarb.it/hook/latest/
+	done

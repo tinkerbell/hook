@@ -100,11 +100,3 @@ dist dbg-dist:
 	tar -xf $$f -C $$d/ initrd.img && mv $$d/initrd.img $$d/initramfs-$$arch
 	tar -cf- -C $$d initramfs-$$arch vmlinuz-$$arch | pigz > $$d/hook_$$arch.tar.gz
 	done
-
-.PHONY: deploy
-deploy: dist ## Push tarball to S3
-	exit 1
-	for f in out/$T/rel/hook_*.tar.gz; do
-	    s3cmd sync $$f s3://s.gianarb.it/hook/$T/
-	    s3cmd cp s3://s.gianarb.it/hook/$T/$$(basename $$f) s3://s.gianarb.it/hook/latest/
-	done

@@ -23,13 +23,10 @@ ARCH = arm64
 endif
 
 arches := amd64 arm64
-DOCKER_2_HW_amd64 := x86_64
-DOCKER_2_HW_arm64 := aarch64
+modes := rel dbg
 
-dist-files :=
 hook-bootkit-deps := $(wildcard hook-bootkit/*)
 hook-docker-deps := $(wildcard hook-docker/*)
-modes := rel dbg
 
 define foreach_mode_arch_rules =
 # mode := $(1)
@@ -52,11 +49,6 @@ out/$T/$(1)/$(2)/hook.yaml: $$(LINUXKIT_CONFIG)
 	if [[ $(1) == dbg ]]; then
 	    sed -i '/^\s*#dbg/ s|#dbg||' $$@
 	fi
-
-out/$T/$(1)/hook_$(DOCKER_2_HW_$(2)).tar.gz: out/$T/$(1)/initramfs-$(DOCKER_2_HW_$(2)) out/$T/$(1)/vmlinuz-$(DOCKER_2_HW_$(2))
-out/$T/$(1)/initramfs-$(DOCKER_2_HW_$(2)): out/$T/$(1)/$(2)/initrd.img
-out/$T/$(1)/vmlinuz-$(DOCKER_2_HW_$(2)): out/$T/$(1)/$(2)/kernel
-dist-files += out/$T/$(1)/initramfs-$(DOCKER_2_HW_$(2)) out/$T/$(1)/vmlinuz-$(DOCKER_2_HW_$(2))
 endef
 $(foreach m,$(modes),$(foreach a,$(arches),$(eval $(call foreach_mode_arch_rules,$m,$a))))
 
@@ -65,7 +57,6 @@ define foreach_arch_rules =
 
 debug: dbg-image-$(1)
 dbg-image-$(1): out/$T/dbg/$(1)/hook.tar
-dist: out/$T/rel/hook_$(DOCKER_2_HW_$(1)).tar.gz
 images: out/$T/rel/$(1)/hook.tar
 
 hook-bootkit: out/$T/hook-bootkit-$(1)
@@ -85,15 +76,6 @@ run-$(1):
 endef
 $(foreach a,$(arches),$(eval $(call foreach_arch_rules,$a)))
 
-define foreach_mode_rules =
-# mode := $(1)
-
-out/$T/$(1)/hook_%.tar.gz:
-	tar -C $$(@D) -cvf- $$(^F) | pigz > $$@
-
-endef
-$(foreach m,$(modes),$(eval $(call foreach_mode_rules,$m)))
-
 push-hook-bootkit: $(hook-bootkit-deps)
 push-hook-docker: $(hook-docker-deps)
 push-hook-bootkit push-hook-docker: platforms=$(addprefix linux/,$(arches))
@@ -104,12 +86,20 @@ push-hook-bootkit push-hook-docker:
 	docker buildx build --platform $$platforms --push -t $(ORG)/$(container):$T $(container)
 
 .PHONY: dist
-dist: ## Build tarballs for distribution
-$(dist-files):
-	cp $< $@
-
-.PHONY: dbg-dist
-dbg-dist: out/$T/dbg/hook_$(DOCKER_2_HW_$(ARCH)).tar.gz ## Build debug enabled tarball
+dist: out/$T/rel/amd64/hook.tar out/$T/rel/arm64/hook.tar ## Build tarballs for distribution
+dbg-dist: out/$T/dbg/$(ARCH)/hook.tar ## Build debug enabled tarball
+dist dbg-dist:
+	for f in $^; do
+	case $$f in
+	*amd64*) arch=x86_64 ;;
+	*arm64*) arch=aarch64 ;;
+	*) echo unknown arch && exit 1;;
+	esac
+	d=$$(dirname $$(dirname $$f))
+	tar -xf $$f -C $$d/ kernel && mv $$d/kernel $$d/vmlinuz-$$arch
+	tar -xf $$f -C $$d/ initrd.img && mv $$d/initrd.img $$d/initramfs-$$arch
+	tar -cf- -C $$d initramfs-$$arch vmlinuz-$$arch | pigz > $$d/hook_$$arch.tar.gz
+	done
 
 .PHONY: deploy
 deploy: dist ## Push tarball to S3

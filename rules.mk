@@ -29,49 +29,50 @@ hook-bootkit-deps := $(wildcard hook-bootkit/*)
 hook-docker-deps := $(wildcard hook-docker/*)
 
 define foreach_mode_arch_rules =
-# mode := $(1)
-# arch := $(2)
+mode := $(1)
+arch := $(2)
 
-$$(shell mkdir -p out/$T/$(1)/$(2))
+$$(shell mkdir -p out/$T/$(mode)/$(arch))
 
-.PHONY: hook-$(1)-$(2)
-image-$(1)-$(2): out/$T/$(1)/$(2)/hook.tar
-out/$T/$(1)/$(2)/hook.tar: out/$T/$(1)/$(2)/hook.yaml out/$T/hook-bootkit-$(2) out/$T/hook-docker-$(2)
-	linuxkit build -docker -arch $(2) -format tar-kernel-initrd -name hook -dir $$(@D) $$<
+.PHONY: image-$(mode)-$(arch)
+image-$(mode)-$(arch): out/$T/$(mode)/$(arch)/hook.tar
+
+out/$T/$(mode)/$(arch)/hook.tar: out/$T/$(mode)/$(arch)/hook.yaml out/$T/hook-bootkit-$(arch) out/$T/hook-docker-$(arch)
+	linuxkit build -docker -arch $(arch) -format tar-kernel-initrd -name hook -dir $$(@D) $$<
 	mv $$(@D)/hook-initrd.tar $$@
 
-out/$T/$(1)/$(2)/cmdline out/$T/$(1)/$(2)/initrd.img out/$T/$(1)/$(2)/kernel: out/$T/$(1)/$(2)/hook.tar
+out/$T/$(mode)/$(arch)/cmdline out/$T/$(mode)/$(arch)/initrd.img out/$T/$(mode)/$(arch)/kernel: out/$T/$(mode)/$(arch)/hook.tar
 	tar xf $$^ -C $$(@D) $$(@F)
 	touch $$@
 
-out/$T/$(1)/$(2)/hook.yaml: $$(LINUXKIT_CONFIG)
-	sed '/hook-\(bootkit\|docker\):/ { s|:latest|:$T-$(2)|; s|quay.io/tinkerbell|$(ORG)|; }' $$< > $$@
-	if [[ $(1) == dbg ]]; then
+out/$T/$(mode)/$(arch)/hook.yaml: $$(LINUXKIT_CONFIG)
+	sed '/hook-\(bootkit\|docker\):/ { s|:latest|:$T-$(arch)|; s|quay.io/tinkerbell|$(ORG)|; }' $$< > $$@
+	if [[ $(mode) == dbg ]]; then
 	    sed -i '/^\s*#dbg/ s|#dbg||' $$@
 	fi
 endef
 $(foreach m,$(modes),$(foreach a,$(arches),$(eval $(call foreach_mode_arch_rules,$m,$a))))
 
 define foreach_arch_rules =
-# arch := $(1)
+arch := $(1)
 
-debug: dbg-image-$(1)
-dbg-image-$(1): out/$T/dbg/$(1)/hook.tar
-images: out/$T/rel/$(1)/hook.tar
+debug: dbg-image-$(arch)
+dbg-image-$(arch): out/$T/dbg/$(arch)/hook.tar
+images: out/$T/rel/$(arch)/hook.tar
 
-hook-bootkit: out/$T/hook-bootkit-$(1)
-hook-docker: out/$T/hook-docker-$(1)
+hook-bootkit: out/$T/hook-bootkit-$(arch)
+hook-docker: out/$T/hook-docker-$(arch)
 
-out/$T/hook-bootkit-$(1): $$(hook-bootkit-deps)
-out/$T/hook-docker-$(1): $$(hook-docker-deps)
-out/$T/hook-bootkit-$(1) out/$T/hook-docker-$(1): platform=linux/$$(lastword $$(subst -, ,$$(notdir $$@)))
-out/$T/hook-bootkit-$(1) out/$T/hook-docker-$(1): container=hook-$$(word 2,$$(subst -, ,$$(notdir $$@)))
-out/$T/hook-bootkit-$(1) out/$T/hook-docker-$(1):
-	docker buildx build --platform $$(platform) --load -t $(ORG)/$$(container):$T-$(1) $$(container)
+out/$T/hook-bootkit-$(arch): $$(hook-bootkit-deps)
+out/$T/hook-docker-$(arch): $$(hook-docker-deps)
+out/$T/hook-bootkit-$(arch) out/$T/hook-docker-$(arch): platform=linux/$$(lastword $$(subst -, ,$$(notdir $$@)))
+out/$T/hook-bootkit-$(arch) out/$T/hook-docker-$(arch): container=hook-$$(word 2,$$(subst -, ,$$(notdir $$@)))
+out/$T/hook-bootkit-$(arch) out/$T/hook-docker-$(arch):
+	docker buildx build --platform $$(platform) --load -t $(ORG)/$$(container):$T-$(arch) $$(container)
 	touch $$@
 
-run-$(1): out/$T/dbg/$(1)/hook.tar
-run-$(1):
+run-$(arch): out/$T/dbg/$(arch)/hook.tar
+run-$(arch):
 	linuxkit run qemu --mem 2048 $$^
 endef
 $(foreach a,$(arches),$(eval $(call foreach_arch_rules,$a)))

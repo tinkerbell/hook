@@ -9,14 +9,14 @@ collaborators:
   # Approvers
   - username: tstromberg
     permission: push
+  - username: ScottGarman
+    permission: push
   # Reviewers
   - username: jacobweinstock
     permission: triage
   - username: jmpolom
     permission: triage
   - username: Raj-Dharwadkar
-    permission: triage
-  - username: ScottGarman
     permission: triage
 
   # Note: `permission` is only valid on organization-owned repositories.

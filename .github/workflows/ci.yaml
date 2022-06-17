@@ -56,9 +56,6 @@ jobs:
           # Build and push the container images
           nix-shell --run 'make TAG=${{steps.commitid.outputs.short}} push'
           nix-shell --run 'make TAG=latest push'
-          # Build and push the linuxkit images
-          nix-shell --run 'make TAG=${{steps.commitid.outputs.short}} deploy'
-          nix-shell --run 'make TAG=latest deploy'
 
       - uses: actions/upload-artifact@v3
         with:

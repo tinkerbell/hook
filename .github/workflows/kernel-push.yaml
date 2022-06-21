@@ -4,6 +4,8 @@ on:
     paths:
       - kernel/**
       - "!kernel/README.md"
+    branches:
+      - "**"
 jobs:
   kernel-publish:
     runs-on: self-hosted

@@ -9,6 +9,8 @@ on:
 jobs:
   validation:
     runs-on: ubuntu-20.04
+    outputs:
+      commitid: ${{steps.commitid.outputs.short}}
     steps:
       - name: Setup Dynamic Env
         run: |
@@ -61,3 +63,85 @@ jobs:
         with:
           name: hook-${{steps.commitid.outputs.short}}
           path: out/${{steps.commitid.outputs.short}}/rel/hook_*.tar.gz
+
+  publish-release-latest:
+    runs-on: ubuntu-20.04
+    if: github.ref == 'refs/heads/main'
+    needs: validation
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: hook-${{needs.validation.outputs.commitid}}
+
+      - name: Delete Tag
+        run: |
+          git tag -d latest || echo "no local tag to delete"
+          git push origin :latest -f || echo "no remote tag to delete"
+
+      - name: Generate Release Notes
+        run: |
+          generated_release_notes=$(gh api 'repos/{owner}/{repo}/releases/generate-notes' -F tag_name=latest --jq .body)
+          cat >>"$GITHUB_ENV" <<-EOF
+          	RELEASE_NOTES<<RELEASE_NOTES_EOF
+          	# :warning: :rotating_light: :boom: Note!!! :boom: :rotating_light: :warning:
+
+          	The uploaded files will be updated on the next merge to main, as such download them before use to avoid surprises.
+
+          	---
+          	Commit: ${{needs.validation.outputs.commitid}}
+          	---
+
+          	$generated_release_notes
+          	RELEASE_NOTES_EOF
+          EOF
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Update Tag
+        uses: rickstaa/action-create-tag@v1
+        with:
+          tag: latest
+          message: "Latest development build"
+
+      - name: Update latest release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Hook Latest Development Build
+          body: ${{env.RELEASE_NOTES}}
+          files: hook_*.tar.gz
+          prerelease: true
+          tag_name: latest
+
+  publish-release-tag:
+    runs-on: ubuntu-20.04
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: validation
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: hook-${{needs.validation.outputs.commitid}}
+
+      - name: Generate Release Notes
+        run: |
+          generated_release_notes=$(gh api 'repos/{owner}/{repo}/releases/generate-notes' -F tag_name=${{github.ref}} --jq .body)
+          cat >>"$GITHUB_ENV" <<-EOF
+          	RELEASE_NOTES<<RELEASE_NOTES_EOF
+          	$generated_release_notes
+          	RELEASE_NOTES_EOF
+          EOF
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Update latest release
+        uses: softprops/action-gh-release@v1
+        with:
+          body: ${{env.RELEASE_NOTES}}
+          files: hook_*.tar.gz

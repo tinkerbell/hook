@@ -12,18 +12,19 @@ import (
 )
 
 type tinkConfig struct {
-	registry   string
-	baseURL    string
-	tinkerbell string
-	syslogHost string
-
+	registry            string
+	baseURL             string
+	tinkerbell          string
+	syslogHost          string
+	insecure_registries []string
 	// TODO add others
 }
 
 type dockerConfig struct {
-	Debug     bool              `json:"debug"`
-	LogDriver string            `json:"log-driver,omitempty"`
-	LogOpts   map[string]string `json:"log-opts,omitempty"`
+	Debug               bool              `json:"debug"`
+	LogDriver           string            `json:"log-driver,omitempty"`
+	LogOpts             map[string]string `json:"log-opts,omitempty"`
+	Insecure_registries []string          `json:"insecure-registries,omitempty"`
 }
 
 func main() {
@@ -58,8 +59,19 @@ func main() {
 		LogOpts: map[string]string{
 			"syslog-address": fmt.Sprintf("udp://%v:514", cfg.syslogHost),
 		},
+		Insecure_registries: cfg.insecure_registries,
 	}
-	if err := d.writeToDisk("/etc/docker/daemon.json"); err != nil {
+
+	path = "/etc/docker/"
+
+	err = os.MkdirAll(path, os.ModeDir)
+	if err != nil {
+		panic(err)
+	}
+
+	daemonPath := fmt.Sprintf("%sdaemon.json", path)
+
+	if err := d.writeToDisk(daemonPath); err != nil {
 		fmt.Println("Failed to write docker config:", err)
 	}
 
@@ -98,6 +110,9 @@ func parseCmdLine(cmdLines []string) (cfg tinkConfig) {
 		// Find Registry configuration
 		case "docker_registry":
 			cfg.registry = cmdLine[1]
+		case "insecure_registries":
+			registries := strings.Split(cmdLine[1], ",")
+			cfg.insecure_registries = registries
 		case "packet_base_url":
 			cfg.baseURL = cmdLine[1]
 		case "tinkerbell":

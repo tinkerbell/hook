@@ -7,13 +7,13 @@ collaborators:
   - username: thebsdbox
     permission: maintain
   # Approvers
+  - username: jacobweinstock
+    permission: push
   - username: tstromberg
     permission: push
   - username: ScottGarman
     permission: push
   # Reviewers
-  - username: jacobweinstock
-    permission: triage
   - username: jmpolom
     permission: triage
   - username: Raj-Dharwadkar

@@ -13,10 +13,11 @@ import (
 )
 
 type tinkConfig struct {
-	registry   string
-	baseURL    string
-	tinkerbell string
-	syslogHost string
+	registry      string
+	baseURL       string
+	tinkerbell    string
+	syslogHost    string
+	tinkServerTLS bool
 
 	// TODO add others
 }
@@ -39,19 +40,22 @@ func main() {
 	cmdLines := strings.Split(string(content), " ")
 	cfg := parseCmdLine(cmdLines)
 
-	path := fmt.Sprintf("/etc/docker/certs.d/%s/", cfg.registry)
+	// if tinkServerTLS is not enabled, skip downloading the certs
+	if cfg.tinkServerTLS {
+		path := fmt.Sprintf("/etc/docker/certs.d/%s/", cfg.registry)
 
-	// Create the directory
-	err = os.MkdirAll(path, os.ModeDir)
-	if err != nil {
-		panic(err)
+		// Create the directory
+		err = os.MkdirAll(path, os.ModeDir)
+		if err != nil {
+			panic(err)
+		}
+		// Download the configuration
+		err = downloadFile(path+"ca.crt", cfg.baseURL+"/ca.pem")
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println("Downloaded the repository certificates, starting the Docker Engine")
 	}
-	// Download the configuration
-	err = downloadFile(path+"ca.crt", cfg.baseURL+"/ca.pem")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("Downloaded the repository certificates, starting the Docker Engine")
 
 	d := dockerConfig{
 		Debug:     true,

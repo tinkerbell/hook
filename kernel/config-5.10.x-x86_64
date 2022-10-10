@@ -2153,7 +2153,8 @@ CONFIG_BNXT_HWMON=y
 # CONFIG_NET_VENDOR_CADENCE is not set
 # CONFIG_NET_VENDOR_CAVIUM is not set
 # CONFIG_NET_VENDOR_CHELSIO is not set
-# CONFIG_NET_VENDOR_CISCO is not set
+CONFIG_NET_VENDOR_CISCO=y
+# CONFIG_ENIC is not set
 # CONFIG_NET_VENDOR_CORTINA is not set
 # CONFIG_CX_ECAT is not set
 # CONFIG_DNET is not set
@@ -2360,7 +2361,24 @@ CONFIG_WLAN_VENDOR_QUANTENNA=y
 #
 # Enable WiMAX (Networking options) to see the WiMAX drivers
 #
-# CONFIG_WAN is not set
+CONFIG_WAN=y
+# CONFIG_LANMEDIA is not set
+CONFIG_HDLC=m
+# CONFIG_HDLC_RAW is not set
+# CONFIG_HDLC_RAW_ETH is not set
+CONFIG_HDLC_CISCO=m
+# CONFIG_HDLC_FR is not set
+# CONFIG_HDLC_PPP is not set
+
+#
+# X.25/LAPB support is disabled
+#
+# CONFIG_PCI200SYN is not set
+# CONFIG_WANXL is not set
+# CONFIG_PC300TOO is not set
+# CONFIG_FARSYNC is not set
+# CONFIG_DLCI is not set
+# CONFIG_SBNI is not set
 CONFIG_XEN_NETDEV_FRONTEND=y
 CONFIG_VMXNET3=y
 # CONFIG_FUJITSU_ES is not set

@@ -152,7 +152,7 @@ $ docker buildx build --load -t hook-nix-dev -f hack/Dockerfile .
 $ docker run -it -v "$PWD:$PWD" -w "$PWD" -v /var/run/docker.sock:/var/run/docker.sock hook-nix-dev bash
 ```
 
-Alternitavely, don't use nix at all.
+Alternatively, don't use nix at all.
 We use nix-shell just for binaries/$PATH management, so if you have the binaries available you don't need nix at all.
 Of course be prepared for CI to complain about formatting/linting due to possible version differences.
 

@@ -15,6 +15,12 @@ onboot:
   - name: sysfs
     image: linuxkit/sysfs:v0.8
 
+  - name: vlan
+    image: linuxkit/ip:6cc44dd4e18ddb02de01bc4b34b5799971b6a7bf
+    binds.add:
+      - /etc/ip/vlan.sh:/etc/ip/vlan.sh
+    command: ["/etc/ip/vlan.sh"]
+
   - name: dhcpcd
     image: linuxkit/dhcpcd:v0.8
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
@@ -96,6 +102,27 @@ files:
       alias       docker='ctr -n services.linuxkit tasks exec --tty --exec-id cmd hook-docker docker'
       alias docker-shell='ctr -n services.linuxkit tasks exec --tty --exec-id shell hook-docker sh'
     mode: "0644"
+
+  - path: etc/ip/vlan.sh
+    contents: |
+      #!/bin/sh
+      # This script will set up VLAN interfaces if `vlan_id=` in `/proc/cmdline` has a value
+      set -x
+
+      for x in $(cat /proc/cmdline); do
+        echo "$x" | grep -qe 'vlan_id*' || continue
+        vlan_id="${x#vlan_id=}"
+        if [ ! -z "$vlan_id" ]; then
+          for x in $(ip -4 -o link show | awk -F': ' '{print $2}'); do
+            [ "$x" == "lo" ] && continue
+            [ "$x" == "docker0" ] && continue
+            ip link add link "$x" name "$x.$vlan_id" type vlan id "$vlan_id"
+            ip link set "$x.$vlan_id" up
+          done
+          exit 0
+        fi
+      done
+    mode: "0777"
 
 #dbg  - path: root/.ssh/authorized_keys
 #dbg    source: ~/.ssh/id_rsa.pub

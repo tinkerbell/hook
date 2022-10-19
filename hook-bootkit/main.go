@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -51,7 +50,7 @@ func main() {
 	// // Read entire file content, giving us little control but
 	// // making it very simple. No need to close the file.
 
-	content, err := ioutil.ReadFile("/proc/cmdline")
+	content, err := os.ReadFile("/proc/cmdline")
 	if err != nil {
 		panic(err)
 	}

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -32,7 +31,7 @@ func main() {
 	go rebootWatch()
 
 	// Parse the cmdline in order to find the urls for the repository and path to the cert
-	content, err := ioutil.ReadFile("/proc/cmdline")
+	content, err := os.ReadFile("/proc/cmdline")
 	if err != nil {
 		panic(err)
 	}
@@ -80,7 +79,7 @@ func (d dockerConfig) writeToDisk(loc string) error {
 	if err != nil {
 		return fmt.Errorf("unable to marshal docker config: %w", err)
 	}
-	if err := ioutil.WriteFile(loc, b, 0o600); err != nil {
+	if err := os.WriteFile(loc, b, 0o600); err != nil {
 		return fmt.Errorf("error writing daemon.json: %w", err)
 	}
 

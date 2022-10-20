@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"errors"
-	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -20,7 +19,7 @@ func TestWriteToDisk(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			// Create a temporary directory
-			dir, err := ioutil.TempDir("", "hook-docker")
+			dir, err := os.MkdirTemp("", "hook-docker")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -33,7 +32,7 @@ func TestWriteToDisk(t *testing.T) {
 			}
 
 			if tt.wantErr == nil {
-				got, err := ioutil.ReadFile(loc)
+				got, err := os.ReadFile(loc)
 				if err != nil {
 					t.Fatal(err)
 				}

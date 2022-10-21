@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"path"
 	"strings"
@@ -37,9 +35,6 @@ type tinkConfig struct {
 	workerID string
 	ID       string
 
-	// Metadata ID ... plus the other IDs :shrug:
-	MetadataID string `json:"id"`
-
 	// tinkWorkerImage is the Tink worker image location.
 	tinkWorkerImage string
 
@@ -55,19 +50,13 @@ func main() {
 	// // Read entire file content, giving us little control but
 	// // making it very simple. No need to close the file.
 
-	content, err := ioutil.ReadFile("/proc/cmdline")
+	content, err := os.ReadFile("/proc/cmdline")
 	if err != nil {
 		panic(err)
 	}
 
 	cmdLines := strings.Split(string(content), " ")
 	cfg := parseCmdLine(cmdLines)
-
-	// Get the ID from the metadata service
-	err = cfg.metaDataQuery()
-	if err != nil {
-		panic(err)
-	}
 
 	// Generate the path to the tink-worker
 	var imageName string
@@ -94,7 +83,6 @@ func main() {
 			fmt.Sprintf("TINKERBELL_TLS=%s", cfg.tinkServerTLS),
 			fmt.Sprintf("WORKER_ID=%s", cfg.workerID),
 			fmt.Sprintf("ID=%s", cfg.workerID),
-			fmt.Sprintf("container_uuid=%s", cfg.MetadataID),
 		},
 		AttachStdout: true,
 		AttachStderr: true,
@@ -219,44 +207,4 @@ func parseCmdLine(cmdLines []string) (cfg tinkConfig) {
 		}
 	}
 	return cfg
-}
-
-// metaDataQuery will query the metadata.
-func (cfg *tinkConfig) metaDataQuery() error {
-	spaceClient := http.Client{
-		Timeout: time.Second * 60, // Timeout after 60 seconds (seems massively long is this dial-up?)
-	}
-
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s:50061/metadata", cfg.tinkerbell), nil)
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("User-Agent", "bootkit")
-
-	res, getErr := spaceClient.Do(req)
-	if getErr != nil {
-		return err
-	}
-
-	if res.Body != nil {
-		defer res.Body.Close()
-	}
-
-	body, readErr := ioutil.ReadAll(res.Body)
-	if readErr != nil {
-		return err
-	}
-
-	var metadata struct {
-		ID string `json:"id"`
-	}
-
-	jsonErr := json.Unmarshal(body, &metadata)
-	if jsonErr != nil {
-		return err
-	}
-
-	cfg.MetadataID = metadata.ID
-	return err
 }

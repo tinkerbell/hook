@@ -22,7 +22,7 @@ We started this project for the following reasons:
   - A clear and defined CLI and [specification] (YAML)
   - A shared community that is supportive
   - LinuxKit cross-compiles in many architectures
-  - Different output formats: ISO, init ramkdisk, aws, docker, rpi3... see [formats].
+  - Different output formats: ISO, init ramdisk, aws, docker, rpi3... see [formats].
 - It was not easy to explain to the Tinkerbell community how [OSIE] works and the components it is made for.
   A lot of the components were Equinix Metal specific and are not strictly needed in Tinkerbell.
 

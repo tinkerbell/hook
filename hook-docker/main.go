@@ -11,13 +11,15 @@ import (
 )
 
 type tinkConfig struct {
-	syslogHost string
+	syslogHost         string
+	insecureRegistries []string
 }
 
 type dockerConfig struct {
-	Debug     bool              `json:"debug"`
-	LogDriver string            `json:"log-driver,omitempty"`
-	LogOpts   map[string]string `json:"log-opts,omitempty"`
+	Debug              bool              `json:"debug"`
+	LogDriver          string            `json:"log-driver,omitempty"`
+	LogOpts            map[string]string `json:"log-opts,omitempty"`
+	InsecureRegistries []string          `json:"insecure-registries,omitempty"`
 }
 
 func main() {
@@ -40,6 +42,7 @@ func main() {
 		LogOpts: map[string]string{
 			"syslog-address": fmt.Sprintf("udp://%v:514", cfg.syslogHost),
 		},
+		InsecureRegistries: cfg.insecureRegistries,
 	}
 	path := "/etc/docker"
 	// Create the directory for the docker config
@@ -85,6 +88,8 @@ func parseCmdLine(cmdLines []string) (cfg tinkConfig) {
 		switch cmd := cmdLine[0]; cmd {
 		case "syslog_host":
 			cfg.syslogHost = cmdLine[1]
+		case "insecure_registries":
+			cfg.insecureRegistries = strings.Split(cmdLine[1], ",")
 		}
 	}
 	return cfg

@@ -51,7 +51,7 @@ func main() {
 		panic(err)
 	}
 	if err := d.writeToDisk(filepath.Join(path, "daemon.json")); err != nil {
-		fmt.Println("Failed to write docker config:", err)
+		panic(fmt.Sprintf("Failed to write docker config: %v", err))
 	}
 
 	// Build the command, and execute

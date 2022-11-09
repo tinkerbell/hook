@@ -3,27 +3,23 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 )
 
 type tinkConfig struct {
-	registry   string
-	baseURL    string
-	tinkerbell string
-	syslogHost string
-
-	// TODO add others
+	syslogHost         string
+	insecureRegistries []string
 }
 
 type dockerConfig struct {
-	Debug     bool              `json:"debug"`
-	LogDriver string            `json:"log-driver,omitempty"`
-	LogOpts   map[string]string `json:"log-opts,omitempty"`
+	Debug              bool              `json:"debug"`
+	LogDriver          string            `json:"log-driver,omitempty"`
+	LogOpts            map[string]string `json:"log-opts,omitempty"`
+	InsecureRegistries []string          `json:"insecure-registries,omitempty"`
 }
 
 func main() {
@@ -38,19 +34,7 @@ func main() {
 	cmdLines := strings.Split(string(content), " ")
 	cfg := parseCmdLine(cmdLines)
 
-	path := fmt.Sprintf("/etc/docker/certs.d/%s/", cfg.registry)
-
-	// Create the directory
-	err = os.MkdirAll(path, os.ModeDir)
-	if err != nil {
-		panic(err)
-	}
-	// Download the configuration
-	err = downloadFile(path+"ca.crt", cfg.baseURL+"/ca.pem")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("Downloaded the repository certificates, starting the Docker Engine")
+	fmt.Println("Starting the Docker Engine")
 
 	d := dockerConfig{
 		Debug:     true,
@@ -58,9 +42,16 @@ func main() {
 		LogOpts: map[string]string{
 			"syslog-address": fmt.Sprintf("udp://%v:514", cfg.syslogHost),
 		},
+		InsecureRegistries: cfg.insecureRegistries,
 	}
-	if err := d.writeToDisk("/etc/docker/daemon.json"); err != nil {
-		fmt.Println("Failed to write docker config:", err)
+	path := "/etc/docker"
+	// Create the directory for the docker config
+	err = os.MkdirAll(path, os.ModeDir)
+	if err != nil {
+		panic(err)
+	}
+	if err := d.writeToDisk(filepath.Join(path, "daemon.json")); err != nil {
+		panic(fmt.Sprintf("Failed to write docker config: %v", err))
 	}
 
 	// Build the command, and execute
@@ -95,59 +86,13 @@ func parseCmdLine(cmdLines []string) (cfg tinkConfig) {
 		}
 
 		switch cmd := cmdLine[0]; cmd {
-		// Find Registry configuration
-		case "docker_registry":
-			cfg.registry = cmdLine[1]
-		case "packet_base_url":
-			cfg.baseURL = cmdLine[1]
-		case "tinkerbell":
-			cfg.tinkerbell = cmdLine[1]
 		case "syslog_host":
 			cfg.syslogHost = cmdLine[1]
+		case "insecure_registries":
+			cfg.insecureRegistries = strings.Split(cmdLine[1], ",")
 		}
 	}
 	return cfg
-}
-
-// downloadFile will download a url to a local file. It's efficient because it will
-// write as it downloads and not load the whole file into memory.
-func downloadFile(filepath string, url string) error {
-	// As all functions in the LinuxKit services run in parallel, ensure that we can fail
-	// successfully until we accept that networking is actually broken
-
-	var maxRetryCount int
-	var timeOut time.Duration
-	maxRetryCount = 10
-	timeOut = time.Millisecond * 500 // 0.5 seconds
-	var resp *http.Response
-	var err error
-
-	// Retry this task
-	for retries := 0; retries < maxRetryCount; retries++ {
-		// Get the data
-		resp, err = http.Get(url)
-		if err == nil {
-			break
-		}
-		resp.Body.Close()
-
-		if retries == maxRetryCount-1 {
-			return err
-		}
-		time.Sleep(timeOut)
-	}
-	defer resp.Body.Close()
-
-	// Create the file
-	out, err := os.Create(filepath)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	// Write the body to file
-	_, err = io.Copy(out, resp.Body)
-	return err
 }
 
 func rebootWatch() {

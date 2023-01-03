@@ -6,6 +6,8 @@ collaborators:
     permission: maintain
   - username: thebsdbox
     permission: maintain
+  - username: chrisdoherty4
+    permission: maintain
   # Approvers
   - username: jacobweinstock
     permission: push

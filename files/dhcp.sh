@@ -7,19 +7,21 @@
 # false: run the dhcp client as a service
 set -x
 
+parse_cmdline() {
+	c=$(cat /proc/cmdline)
+	c="${c##*"$1"=}"
+	c="${c%% *}"
+	echo "$c"
+}
+
 run_dhcp_client() {
 	one_shot="$1"
 	al="eth*"
 
-	# shellcheck disable=SC2013
-	for x in $(cat /proc/cmdline); do
-		# shellcheck disable=SC2022
-		echo "$x" | grep -qe 'vlan_id*' || continue
-		vlan_id="${x#vlan_id=}"
-		if [ -n "$vlan_id" ]; then
-			al="eth*.*"
-		fi
-	done
+	vlan_id=$(parse_cmdline vlan_id)
+	if [ -n "$vlan_id" ]; then
+		al="eth*.*"
+	fi
 
 	# Boots send kernel command line parameter "ip=dhcp", this causes the system to configure the network interface(s) with DHCP.
 	# When an environment's network configuration has this machine connected a trunked interface with a default/native VLAN, the

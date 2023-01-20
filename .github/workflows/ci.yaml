@@ -49,6 +49,9 @@ jobs:
       - name: Run formatters and linters
         run: nix-shell --run .github/workflows/formatters-and-linters.sh
 
+      - name: Debugging
+        run: df -ah; du -sh /; du -sh .; du -sh ./*
+
       - name: Build Hook Tarballs
         run: nix-shell --run 'make TAG=${{steps.commitid.outputs.short}} dist'
 

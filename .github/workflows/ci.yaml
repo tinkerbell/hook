@@ -52,15 +52,15 @@ jobs:
       - name: Debugging Pre Build
         run: |
           echo "df -ah"
-          df -ah
+          df -ah || true
           echo "du -sh ./*"
-          du -sh ./*
-          echo "du -sh /mnt"
-          du -sh /mnt
+          du -sh ./* || true
+          echo "du -sh /mnt" 
+          du -sh /mnt || true
           echo "pwd"
-          pwd
+          pwd || true
           echo "docker system df -v"
-          docker system df -v
+          docker system df -v || true
 
       - name: Build Hook Tarballs
         run: |
@@ -70,15 +70,15 @@ jobs:
       - name: Debugging Post Build
         run: |
           echo "df -ah"
-          df -ah
+          df -ah || true
           echo "du -sh ./*"
-          du -sh ./*
-          echo "du -sh /mnt"
-          du -sh /mnt
+          du -sh ./* || true
+          echo "du -sh /mnt" 
+          du -sh /mnt || true
           echo "pwd"
-          pwd
+          pwd || true
           echo "docker system df -v"
-          docker system df -v
+          docker system df -v || true
 
       - name: Publish Hook
         if: github.ref == 'refs/heads/main'

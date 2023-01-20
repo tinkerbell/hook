@@ -55,7 +55,7 @@ jobs:
           df -ah || true
           echo "du -sh ./*"
           du -sh ./* || true
-          echo "du -sh /mnt" 
+          echo "du -sh /mnt"
           du -sh /mnt || true
           echo "pwd"
           pwd || true
@@ -73,7 +73,7 @@ jobs:
           df -ah || true
           echo "du -sh ./*"
           du -sh ./* || true
-          echo "du -sh /mnt" 
+          echo "du -sh /mnt"
           du -sh /mnt || true
           echo "pwd"
           pwd || true

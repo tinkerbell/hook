@@ -50,7 +50,10 @@ jobs:
         run: nix-shell --run .github/workflows/formatters-and-linters.sh
 
       - name: Build Hook Tarballs
-        run: nix-shell --run 'make TAG=${{steps.commitid.outputs.short}} dist'
+        run: |
+          # fixes "write /run/user/1001/355792648: no space left on device" error
+          sudo mount -o remount,size=3G /run/user/1001 || true
+          nix-shell --run 'make TAG=${{steps.commitid.outputs.short}} dist'
 
       - name: Publish Hook
         if: github.ref == 'refs/heads/main'

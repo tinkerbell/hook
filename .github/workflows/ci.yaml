@@ -63,7 +63,9 @@ jobs:
           docker system df -v
 
       - name: Build Hook Tarballs
-        run: nix-shell --run 'make TAG=${{steps.commitid.outputs.short}} dist' || true
+        run: |
+          mount -o remount,size=3G /run/user/1001 || true
+          nix-shell --run 'make TAG=${{steps.commitid.outputs.short}} dist' || true
 
       - name: Debugging Post Build
         run: |

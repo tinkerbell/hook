@@ -40,6 +40,9 @@ type tinkConfig struct {
 
 	// tinkServerTLS is whether or not to use TLS for tink-server communication.
 	tinkServerTLS string
+	httpProxy string
+	httpsProxy string
+	noProxy string
 }
 
 const maxRetryAttempts = 20
@@ -83,6 +86,9 @@ func main() {
 			fmt.Sprintf("TINKERBELL_TLS=%s", cfg.tinkServerTLS),
 			fmt.Sprintf("WORKER_ID=%s", cfg.workerID),
 			fmt.Sprintf("ID=%s", cfg.workerID),
+			fmt.Sprintf("HTTP_PROXY=%s", cfg.httpProxy),
+			fmt.Sprintf("HTTPS_PROXY=%s", cfg.httpsProxy),
+			fmt.Sprintf("NO_PROXY=%s", cfg.noProxy),
 		},
 		AttachStdout: true,
 		AttachStderr: true,
@@ -125,6 +131,10 @@ func main() {
 	// Alternatively we watch for the socket being created
 	time.Sleep(time.Second * 3)
 	fmt.Println("Starting Communication with Docker Engine")
+
+	os.Setenv("HTTP_PROXY", cfg.httpProxy)
+	os.Setenv("HTTPS_PROXY", cfg.httpsProxy)
+	os.Setenv("NO_PROXY", cfg.noProxy)
 
 	// Create Docker client with API (socket)
 	ctx := context.Background()
@@ -204,6 +214,12 @@ func parseCmdLine(cmdLines []string) (cfg tinkConfig) {
 			cfg.tinkWorkerImage = cmdLine[1]
 		case "tinkerbell_tls":
 			cfg.tinkServerTLS = cmdLine[1]
+		case "HTTP_PROXY":
+			cfg.httpProxy = cmdLine[1]
+		case "HTTPS_PROXY":
+			cfg.httpsProxy = cmdLine[1]
+		case "NO_PROXY":
+			cfg.noProxy = cmdLine[1]
 		}
 	}
 	return cfg

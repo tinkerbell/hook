@@ -13,6 +13,9 @@ import (
 type tinkConfig struct {
 	syslogHost         string
 	insecureRegistries []string
+	httpProxy          string
+	httpsProxy         string
+	noProxy            string
 }
 
 type dockerConfig struct {
@@ -58,6 +61,14 @@ func main() {
 	cmd := exec.Command("/usr/local/bin/docker-init", "/usr/local/bin/dockerd")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+
+	myEnvs := make([]string, 0, 3)
+	myEnvs = append(myEnvs, fmt.Sprintf("HTTP_PROXY=%s", cfg.httpProxy))
+	myEnvs = append(myEnvs, fmt.Sprintf("HTTPS_PROXY=%s", cfg.httpsProxy))
+	myEnvs = append(myEnvs, fmt.Sprintf("NO_PROXY=%s", cfg.noProxy))
+
+	cmd.Env = append(os.Environ(), myEnvs...)
+
 	err = cmd.Run()
 	if err != nil {
 		panic(err)
@@ -90,6 +101,12 @@ func parseCmdLine(cmdLines []string) (cfg tinkConfig) {
 			cfg.syslogHost = cmdLine[1]
 		case "insecure_registries":
 			cfg.insecureRegistries = strings.Split(cmdLine[1], ",")
+		case "HTTP_PROXY":
+			cfg.httpProxy = cmdLine[1]
+		case "HTTPS_PROXY":
+			cfg.httpsProxy = cmdLine[1]
+		case "NO_PROXY":
+			cfg.noProxy = cmdLine[1]
 		}
 	}
 	return cfg

@@ -29,6 +29,8 @@ IMAGE_BCC:=hook-kernel-bcc
 IMAGE_PERF:=hook-kernel-perf
 IMAGE_ZFS:=hook-zfs-kmod
 
+# newline to test kernel builds
+
 # You can specify an extra options for the Makefile. This will:
 # - append a config$(EXTRA) to the kernel config for your kernel/arch
 # - append $(EXTRA) to the CONFIG_LOCALVERSION of your kernel

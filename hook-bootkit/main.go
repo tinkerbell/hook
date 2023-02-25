@@ -40,9 +40,9 @@ type tinkConfig struct {
 
 	// tinkServerTLS is whether or not to use TLS for tink-server communication.
 	tinkServerTLS string
-	httpProxy string
-	httpsProxy string
-	noProxy string
+	httpProxy     string
+	httpsProxy    string
+	noProxy       string
 }
 
 const maxRetryAttempts = 20

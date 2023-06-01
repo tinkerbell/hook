@@ -11,7 +11,7 @@ run_dhcp_client() {
 	one_shot="$1"
 	al="eth*"
 
-	vlan_id=$(cat /proc/cmdline | sed -n 's/.*vlan_id=\([0-9]*\).*/\1/p')
+	vlan_id=$(sed -n 's/.*vlan_id=\([0-9]*\).*/\1/p' /proc/cmdline)
 	if [ -n "$vlan_id" ]; then
 		al="eth*.*"
 	fi

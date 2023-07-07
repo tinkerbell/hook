@@ -1,11 +1,7 @@
 name: For each PR and Push
 on:
   pull_request:
-    paths-ignore:
-      - kernel/**
   push:
-    paths-ignore:
-      - kernel/**
 jobs:
   validation:
     runs-on: ubuntu-20.04

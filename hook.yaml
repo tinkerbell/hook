@@ -3,17 +3,18 @@ kernel:
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0"
 
 init:
-  - linuxkit/init:v0.8
+  - linuxkit/init:144c9cee8aed9e30a16940f2bf1d3813883aceda
+  # can't use the latest version of runc because it has a bug that prevents docker from starting containers properly.
   - linuxkit/runc:v0.8
-  - linuxkit/containerd:v0.8
-  - linuxkit/ca-certificates:v0.8
+  - linuxkit/containerd:d445de33c7f08470187b068d247b1c0dea240f0a
+  - linuxkit/ca-certificates:c1c73ef590dffb6a0138cf758fe4a4305c9864f4
 
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:v0.8
+    image: linuxkit/sysctl:a88a50c104d538b58da5e1441f6f0b4b738f76a6
 
   - name: sysfs
-    image: linuxkit/sysfs:v0.8
+    image: linuxkit/sysfs:5fd982d39ff7bec8e480c67a110acb2d3794c291
 
   - name: vlan
     image: linuxkit/ip:6cc44dd4e18ddb02de01bc4b34b5799971b6a7bf
@@ -22,7 +23,7 @@ onboot:
     command: ["/etc/ip/vlan.sh"]
 
   - name: dhcpcd
-    image: linuxkit/dhcpcd:v0.8
+    image: linuxkit/dhcpcd:52d2c4df0311b182e99241cdc382ff726755c450
     command: ["/etc/ip/dhcp.sh", "true"]
     binds.add:
       - /var/lib/dhcpcd:/var/lib/dhcpcd
@@ -35,17 +36,18 @@ onboot:
 
 services:
   - name: getty
-    image: linuxkit/getty:v0.8
+    image: linuxkit/getty:76951a596aa5e0867a38e28f0b94d620e948e3e8
     binds.add:
       - /etc/profile.d/local.sh:/etc/profile.d/local.sh
+      - /etc/motd:/etc/motd
     env:
       - INSECURE=true
 
   - name: rngd
-    image: linuxkit/rngd:v0.8
+    image: linuxkit/rngd:310c16ec5315bd07d4b8f5332cfa7dc5cbc7d368
 
   - name: dhcpcd
-    image: linuxkit/dhcpcd:v0.8
+    image: linuxkit/dhcpcd:52d2c4df0311b182e99241cdc382ff726755c450
     command: ["/etc/ip/dhcp.sh", "false"]
     binds.add:
       - /var/lib/dhcpcd:/var/lib/dhcpcd
@@ -57,7 +59,7 @@ services:
         - /var/lib/dhcpcd
 
   - name: ntpd
-    image: linuxkit/openntpd:v0.8
+    image: linuxkit/openntpd:d6c36ac367ed26a6eeffd8db78334d9f8041b038
     binds:
       - /var/run:/var/run
 
@@ -107,6 +109,21 @@ files:
       alias       docker='ctr -n services.linuxkit tasks exec --tty --exec-id cmd hook-docker docker'
       alias docker-shell='ctr -n services.linuxkit tasks exec --tty --exec-id shell hook-docker sh'
     mode: "0644"
+
+  - path: etc/motd
+    mode: "0644"
+    contents: |
+      Welcome to HookOS! Your Tinkerbell operating system installation environment.
+
+      ██   ██  ██████   ██████  ██   ██  ██████  ███████ 
+      ██   ██ ██    ██ ██    ██ ██  ██  ██    ██ ██      
+      ███████ ██    ██ ██    ██ █████   ██    ██ ███████ 
+      ██   ██ ██    ██ ██    ██ ██  ██  ██    ██      ██ 
+      ██   ██  ██████   ██████  ██   ██  ██████  ███████ 
+
+      - Press `enter` to get a prompt.
+      - Use `docker` commands to access the tink worker/agent container and workflow action containers.
+      - Logs are located in the `/var/log/` directory.
 
   - path: etc/ip/vlan.sh
     source: "files/vlan.sh"

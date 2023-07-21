@@ -2,33 +2,22 @@ let _pkgs = import <nixpkgs> { };
 in { pkgs ? import (_pkgs.fetchFromGitHub {
   owner = "NixOS";
   repo = "nixpkgs";
-  #branch@date: nixpkgs-unstable@2022-05-09
-  rev = "51d859cdab1ef58755bd342d45352fc607f5e59b";
-  sha256 = "02wi4nll9ninm3szny31r5a40lpg8vgmqr2n87gxyysb50c17w4i";
+  #branch@date: nixpkgs-unstable@2023-03-11T16:44:21-05:00
+  rev = "8ad5e8132c5dcf977e308e7bf5517cc6cc0bf7d8";
+  sha256 = "17v6wigks04x1d63a2wcd7cc4z9ca6qr0f4xvw1pdw83f8a3c0nj";
 }) { } }:
 
 with pkgs;
 let
-  docker-ov = docker.override { buildxSupport = true; };
-
-  linuxkit-ov = linuxkit.overrideAttrs (oldAttrs: rec {
-    version = "unstable-g${builtins.substring 0 9 src.rev}";
-    src = fetchFromGitHub {
-      owner = "linuxkit";
-      repo = "linuxkit";
-      rev = "b710224cdf9a8425a7129cdcb84fc1af00f926d7";
-      sha256 = "sha256-UqPX+r3by7v+PL+/xUiSZVsB7EO7VUr3aDfVIhQDEgY=";
-    };
-  });
 
 in mkShell {
   buildInputs = [
-    docker-ov
+    docker
     git
     gnumake
     gnused
     go
-    linuxkit-ov
+    linuxkit
     ncurses
     nixfmt
     nodePackages.prettier

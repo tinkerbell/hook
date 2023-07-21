@@ -70,7 +70,7 @@ FIXERS += golangci-lint-fix
 golangci-lint-fix: $(GOLANGCI_LINT_BIN)
 	find . -name go.mod -execdir "$(GOLANGCI_LINT_BIN)" run -c "$(GOLANGCI_LINT_CONFIG)" --fix \;
 
-YAMLLINT_VERSION ?= 1.26.3
+YAMLLINT_VERSION ?= 1.32.0
 YAMLLINT_ROOT := $(LINT_ROOT)/out/linters/yamllint-$(YAMLLINT_VERSION)
 YAMLLINT_BIN := $(YAMLLINT_ROOT)/dist/bin/yamllint
 $(YAMLLINT_BIN):

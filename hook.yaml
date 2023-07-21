@@ -115,11 +115,11 @@ files:
     contents: |
       Welcome to HookOS! Your Tinkerbell operating system installation environment.
 
-      ██   ██  ██████   ██████  ██   ██  ██████  ███████ 
-      ██   ██ ██    ██ ██    ██ ██  ██  ██    ██ ██      
-      ███████ ██    ██ ██    ██ █████   ██    ██ ███████ 
-      ██   ██ ██    ██ ██    ██ ██  ██  ██    ██      ██ 
-      ██   ██  ██████   ██████  ██   ██  ██████  ███████ 
+      ██   ██  ██████   ██████  ██   ██  ██████  ███████
+      ██   ██ ██    ██ ██    ██ ██  ██  ██    ██ ██
+      ███████ ██    ██ ██    ██ █████   ██    ██ ███████
+      ██   ██ ██    ██ ██    ██ ██  ██  ██    ██      ██
+      ██   ██  ██████   ██████  ██   ██  ██████  ███████
 
       - Press `enter` to get a prompt.
       - Use `docker` commands to access the tink worker/agent container and workflow action containers.

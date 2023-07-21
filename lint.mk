@@ -20,7 +20,7 @@ endif
 LINTERS :=
 FIXERS :=
 
-SHELLCHECK_VERSION ?= v0.8.0
+SHELLCHECK_VERSION ?= v0.9.0
 SHELLCHECK_BIN := $(LINT_ROOT)/out/linters/shellcheck-$(SHELLCHECK_VERSION)-$(LINT_ARCH)
 $(SHELLCHECK_BIN):
 	mkdir -p $(LINT_ROOT)/out/linters
@@ -40,7 +40,7 @@ FIXERS += shellcheck-fix
 shellcheck-fix: $(SHELLCHECK_BIN)
 	$(SHELLCHECK_BIN) $(shell find . -name "*.sh") -f diff | { read -t 1 line || exit 0; { echo "$$line" && cat; } | git apply -p2; }
 
-HADOLINT_VERSION ?= v2.8.0
+HADOLINT_VERSION ?= v2.12.0
 HADOLINT_BIN := $(LINT_ROOT)/out/linters/hadolint-$(HADOLINT_VERSION)-$(LINT_ARCH)
 $(HADOLINT_BIN):
 	mkdir -p $(LINT_ROOT)/out/linters
@@ -54,7 +54,7 @@ hadolint-lint: $(HADOLINT_BIN)
 	$(HADOLINT_BIN) --no-fail $(shell find . -name "*Dockerfile")
 
 GOLANGCI_LINT_CONFIG := $(LINT_ROOT)/.golangci.yml
-GOLANGCI_LINT_VERSION ?= v1.50.0
+GOLANGCI_LINT_VERSION ?= v1.53.3
 GOLANGCI_LINT_BIN := $(LINT_ROOT)/out/linters/golangci-lint-$(GOLANGCI_LINT_VERSION)-$(LINT_ARCH)
 $(GOLANGCI_LINT_BIN):
 	mkdir -p $(LINT_ROOT)/out/linters
@@ -70,7 +70,7 @@ FIXERS += golangci-lint-fix
 golangci-lint-fix: $(GOLANGCI_LINT_BIN)
 	find . -name go.mod -execdir "$(GOLANGCI_LINT_BIN)" run -c "$(GOLANGCI_LINT_CONFIG)" --fix \;
 
-YAMLLINT_VERSION ?= 1.26.3
+YAMLLINT_VERSION ?= 1.32.0
 YAMLLINT_ROOT := $(LINT_ROOT)/out/linters/yamllint-$(YAMLLINT_VERSION)
 YAMLLINT_BIN := $(YAMLLINT_ROOT)/dist/bin/yamllint
 $(YAMLLINT_BIN):

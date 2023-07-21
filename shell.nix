@@ -27,5 +27,6 @@ in mkShell {
     python3Packages.wheel
     shfmt
     util-linux
+    curl
   ];
 }

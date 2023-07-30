@@ -48,20 +48,17 @@ type tinkConfig struct {
 
 const maxRetryAttempts = 20
 
-func main() {
-	fmt.Println("Starting BootKit")
-
+func run() error {
 	// // Read entire file content, giving us little control but
 	// // making it very simple. No need to close the file.
 
 	content, err := os.ReadFile("/proc/cmdline")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	cmdLines := strings.Split(string(content), " ")
 	cfg := parseCmdLine(cmdLines)
-
 	// Generate the path to the tink-worker
 	var imageName string
 	if cfg.registry != "" {
@@ -71,9 +68,7 @@ func main() {
 		imageName = cfg.tinkWorkerImage
 	}
 	if imageName == "" {
-		// TODO(jacobweinstock): Don't panic, ever. This whole main function should ideally be a control loop that never exits.
-		// Just keep trying all the things until they work. Similar idea to controllers in Kubernetes. Doesn't need to be that heavy though.
-		panic("cannot pull image for tink-worker, 'docker_registry' and/or 'tink_worker_image' NOT specified in /proc/cmdline")
+		return fmt.Errorf("cannot pull image for tink-worker, 'docker_registry' and/or 'tink_worker_image' NOT specified in /proc/cmdline")
 	}
 
 	// Generate the configuration of the container
@@ -119,7 +114,7 @@ func main() {
 
 	encodedJSON, err := json.Marshal(authConfig)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
@@ -141,7 +136,7 @@ func main() {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	fmt.Printf("Pulling image [%s]", imageName)
@@ -161,11 +156,11 @@ func main() {
 		return nil
 	}
 	if err = backoff.Retry(imagePullOperation, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), maxRetryAttempts)); err != nil {
-		panic(err)
+		return err
 	}
 
 	if _, err = io.Copy(os.Stdout, out); err != nil {
-		panic(err)
+		return err
 	}
 
 	if err = out.Close(); err != nil {
@@ -174,14 +169,28 @@ func main() {
 
 	resp, err := cli.ContainerCreate(ctx, tinkContainer, tinkHostConfig, nil, nil, "")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-		panic(err)
+		return err
 	}
 
 	fmt.Println(resp.ID)
+
+	return nil
+}
+
+func main() {
+	fmt.Println("Starting BootKit")
+
+	for {
+		if err := run(); err != nil {
+			fmt.Println("error starting BootKit", err)
+			fmt.Println("will retry in 10 seconds")
+			time.Sleep(10 * time.Second)
+		}
+	}
 }
 
 // parseCmdLine will parse the command line.

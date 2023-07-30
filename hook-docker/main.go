@@ -25,14 +25,11 @@ type dockerConfig struct {
 	InsecureRegistries []string          `json:"insecure-registries,omitempty"`
 }
 
-func main() {
-	fmt.Println("Starting Tink-Docker")
-	go rebootWatch()
-
+func run() error {
 	// Parse the cmdline in order to find the urls for the repository and path to the cert
 	content, err := os.ReadFile("/proc/cmdline")
 	if err != nil {
-		panic(err)
+		return err
 	}
 	cmdLines := strings.Split(string(content), " ")
 	cfg := parseCmdLine(cmdLines)
@@ -51,12 +48,11 @@ func main() {
 	// Create the directory for the docker config
 	err = os.MkdirAll(path, os.ModeDir)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	if err := d.writeToDisk(filepath.Join(path, "daemon.json")); err != nil {
-		panic(fmt.Sprintf("Failed to write docker config: %v", err))
+		return fmt.Errorf("failed to write docker config: %w", err)
 	}
-
 	// Build the command, and execute
 	cmd := exec.Command("/usr/local/bin/docker-init", "/usr/local/bin/dockerd")
 	cmd.Stdout = os.Stdout
@@ -71,7 +67,20 @@ func main() {
 
 	err = cmd.Run()
 	if err != nil {
-		panic(err)
+		return err
+	}
+	return nil
+}
+
+func main() {
+	fmt.Println("Starting Docker")
+	go rebootWatch()
+	for {
+		if err := run(); err != nil {
+			fmt.Println("error starting up Docker", err)
+			fmt.Println("will retry in 10 seconds")
+			time.Sleep(10 * time.Second)
+		}
 	}
 }
 
@@ -123,7 +132,9 @@ func rebootWatch() {
 			cmd.Stderr = os.Stderr
 			err := cmd.Run()
 			if err != nil {
-				panic(err)
+				fmt.Printf("error calling /sbin/reboot: %v\n", err)
+				time.Sleep(time.Second)
+				continue
 			}
 			break
 		}

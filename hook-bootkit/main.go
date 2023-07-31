@@ -218,7 +218,6 @@ func run(ctx context.Context, log logr.Logger) error {
 		},
 		NetworkMode: "host",
 		Privileged:  true,
-		//AutoRemove:  true,
 	}
 	resp, err := cli.ContainerCreate(ctx, tinkContainer, tinkHostConfig, nil, nil, "tink-worker")
 	if err != nil {

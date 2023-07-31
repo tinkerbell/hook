@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"path"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -17,6 +19,10 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
+	"github.com/go-logr/logr"
+	"github.com/go-logr/zerologr"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/pkgerrors"
 )
 
 type tinkConfig struct {
@@ -46,17 +52,59 @@ type tinkConfig struct {
 	noProxy       string
 }
 
-const maxRetryAttempts = 20
+// defaultLogger is a zerolog logr implementation.
+func defaultLogger(level string) logr.Logger {
+	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
+	zl := zerolog.New(os.Stdout)
+	zl = zl.With().Stack().Caller().Timestamp().Logger()
+	var l zerolog.Level
+	switch level {
+	case "debug":
+		l = zerolog.DebugLevel
+	default:
+		l = zerolog.InfoLevel
+	}
+	zl = zl.Level(l)
 
-func run() error {
-	// // Read entire file content, giving us little control but
-	// // making it very simple. No need to close the file.
+	return zerologr.New(&zl)
+}
 
+func main() {
+	ctx, done := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGHUP, syscall.SIGTERM)
+	defer done()
+	log := defaultLogger("debug")
+	log.Info("starting BootKit: the tink-worker bootstrapper")
+
+	for {
+		if err := run(ctx, log); err != nil {
+			log.Error(err, "error bootstrapping tink-worker")
+			log.Info("will retry in 5 seconds")
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		break
+	}
+	log.Info("BootKit: the tink-worker bootstrapper finished")
+}
+
+// TODO(jacobweinstock): clean up func run().
+// 1. read /proc/cmdline
+// 2. parse and populate tinkConfig from contents of /proc/cmdline
+// 3. do validation/sanitization on tinkConfig
+// 4. setup docker client
+// 4. configure any registry auth
+// 5. pull tink-worker image
+// 6. remove any existing tink-worker container
+// 7. setup tink-worker container config
+// 8. create tink-worker container
+// 9. start tink-worker container
+// 10. check that the tink-worker container is running
+
+func run(ctx context.Context, log logr.Logger) error {
 	content, err := os.ReadFile("/proc/cmdline")
 	if err != nil {
 		return err
 	}
-
 	cmdLines := strings.Split(string(content), " ")
 	cfg := parseCmdLine(cmdLines)
 	// Generate the path to the tink-worker
@@ -71,6 +119,71 @@ func run() error {
 		return fmt.Errorf("cannot pull image for tink-worker, 'docker_registry' and/or 'tink_worker_image' NOT specified in /proc/cmdline")
 	}
 
+	// Give time for Docker to start
+	// Alternatively we watch for the socket being created
+	log.Info("setuping up the Docker client")
+
+	os.Setenv("HTTP_PROXY", cfg.httpProxy)
+	os.Setenv("HTTPS_PROXY", cfg.httpsProxy)
+	os.Setenv("NO_PROXY", cfg.noProxy)
+	// Create Docker client with API (socket)
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return err
+	}
+
+	log.Info("Pulling image", "imageName", imageName)
+	authConfig := registry.AuthConfig{
+		Username: cfg.username,
+		Password: strings.TrimSuffix(cfg.password, "\n"),
+	}
+
+	encodedJSON, err := json.Marshal(authConfig)
+	if err != nil {
+		return err
+	}
+
+	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
+
+	pullOpts := types.ImagePullOptions{
+		RegistryAuth: authStr,
+	}
+	var out io.ReadCloser
+	imagePullOperation := func() error {
+		out, err = cli.ImagePull(ctx, imageName, pullOpts)
+		if err != nil {
+			log.Error(err, "Image pull failure", "imageName", imageName)
+			return err
+		}
+		return nil
+	}
+	if err = backoff.Retry(imagePullOperation, backoff.NewExponentialBackOff()); err != nil {
+		return err
+	}
+
+	if _, err = io.Copy(os.Stdout, out); err != nil {
+		return err
+	}
+
+	if err = out.Close(); err != nil {
+		log.Error(err, "error when closing image pull logs")
+	}
+
+	cs, err := cli.ContainerList(ctx, types.ContainerListOptions{All: true})
+	if err != nil {
+		return fmt.Errorf("error listing containers used for checking for an existing tink-worker container: %w", err)
+	}
+	for _, c := range cs {
+		for _, n := range c.Names {
+			if n == "/tink-worker" {
+				log.Info("Removing existing tink-worker container")
+				if err := cli.ContainerRemove(ctx, c.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
+					return fmt.Errorf("error removing existing tink-worker container: %w", err)
+				}
+			}
+		}
+	}
+	log.Info("Creating tink-worker container")
 	// Generate the configuration of the container
 	tinkContainer := &container.Config{
 		Image: imageName,
@@ -105,92 +218,36 @@ func run() error {
 		},
 		NetworkMode: "host",
 		Privileged:  true,
+		//AutoRemove:  true,
 	}
-
-	authConfig := registry.AuthConfig{
-		Username: cfg.username,
-		Password: strings.TrimSuffix(cfg.password, "\n"),
-	}
-
-	encodedJSON, err := json.Marshal(authConfig)
+	resp, err := cli.ContainerCreate(ctx, tinkContainer, tinkHostConfig, nil, nil, "tink-worker")
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating tink-worker container: %w", err)
 	}
 
-	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
-
-	pullOpts := types.ImagePullOptions{
-		RegistryAuth: authStr,
-	}
-
-	// Give time to Docker to start
-	// Alternatively we watch for the socket being created
-	time.Sleep(time.Second * 3)
-	fmt.Println("Starting Communication with Docker Engine")
-
-	os.Setenv("HTTP_PROXY", cfg.httpProxy)
-	os.Setenv("HTTPS_PROXY", cfg.httpsProxy)
-	os.Setenv("NO_PROXY", cfg.noProxy)
-
-	// Create Docker client with API (socket)
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("Pulling image [%s]", imageName)
-
-	// TODO: Ideally if this function becomes a loop that runs forever and keeps retrying
-	// anything that failed, this retry would not be needed. For now, this addresses the specific
-	// race condition case of when the linuxkit network or dns is in the process of, but not quite
-	// fully set up yet.
-
-	var out io.ReadCloser
-	imagePullOperation := func() error {
-		out, err = cli.ImagePull(ctx, imageName, pullOpts)
-		if err != nil {
-			fmt.Printf("Image pull failure %s, %v\n", imageName, err)
-			return err
-		}
-		return nil
-	}
-	if err = backoff.Retry(imagePullOperation, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), maxRetryAttempts)); err != nil {
-		return err
-	}
-
-	if _, err = io.Copy(os.Stdout, out); err != nil {
-		return err
-	}
-
-	if err = out.Close(); err != nil {
-		fmt.Printf("error closing io.ReadCloser out: %s", err)
-	}
-
-	resp, err := cli.ContainerCreate(ctx, tinkContainer, tinkHostConfig, nil, nil, "")
-	if err != nil {
-		return err
-	}
-
+	log.Info("Starting tink-worker container")
 	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-		return err
+		return fmt.Errorf("error starting tink-worker container: %w", err)
 	}
 
-	fmt.Println(resp.ID)
+	time.Sleep(time.Second * 3)
+	// if tink-worker is not running return error so we try again
+	if err := checkContainerRunning(ctx, cli, resp.ID); err != nil {
+		return fmt.Errorf("error checking if tink-worker container is running: %w", err)
+	}
 
 	return nil
 }
 
-func main() {
-	fmt.Println("Starting BootKit")
-
-	for {
-		if err := run(); err != nil {
-			fmt.Println("error starting BootKit", err)
-			fmt.Println("will retry in 10 seconds")
-			time.Sleep(10 * time.Second)
-		}
+func checkContainerRunning(ctx context.Context, cli *client.Client, containerID string) error {
+	inspect, err := cli.ContainerInspect(ctx, containerID)
+	if err != nil {
+		return err
 	}
+	if !inspect.State.Running {
+		return fmt.Errorf("tink-worker container is not running")
+	}
+	return nil
 }
 
 // parseCmdLine will parse the command line.

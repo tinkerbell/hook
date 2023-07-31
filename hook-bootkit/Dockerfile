@@ -4,6 +4,6 @@ WORKDIR /src
 RUN go mod download
 RUN CGO_ENABLED=0 go build -a -ldflags '-w -extldflags "-static"' -o /bootkit
 
-FROM scratch
+FROM alpine
 COPY --from=dev /bootkit .
 ENTRYPOINT ["/bootkit"]

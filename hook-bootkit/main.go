@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -24,22 +25,17 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type tinkConfig struct {
+type tinkWorkerConfig struct {
 	// Registry configuration
 	registry string
 	username string
 	password string
 
-	// Tinkerbell server configuration
-	baseURL    string
-	tinkerbell string
-
-	// Grpc stuff (dunno)
+	// Tink Server GRPC address:port
 	grpcAuthority string
 
-	// Worker ID(s) .. why are there two?
+	// Worker ID
 	workerID string
-	ID       string
 
 	// tinkWorkerImage is the Tink worker image location.
 	tinkWorkerImage string
@@ -49,22 +45,6 @@ type tinkConfig struct {
 	httpProxy     string
 	httpsProxy    string
 	noProxy       string
-}
-
-// defaultLogger is a zerolog logr implementation.
-func defaultLogger(level string) logr.Logger {
-	zl := zerolog.New(os.Stdout)
-	zl = zl.With().Caller().Timestamp().Logger()
-	var l zerolog.Level
-	switch level {
-	case "debug":
-		l = zerolog.DebugLevel
-	default:
-		l = zerolog.InfoLevel
-	}
-	zl = zl.Level(l)
-
-	return zerologr.New(&zl)
 }
 
 func main() {
@@ -119,7 +99,7 @@ func run(ctx context.Context, log logr.Logger) error {
 
 	// Give time for Docker to start
 	// Alternatively we watch for the socket being created
-	log.Info("setuping up the Docker client")
+	log.Info("setting up the Docker client")
 
 	os.Setenv("HTTP_PROXY", cfg.httpProxy)
 	os.Setenv("HTTPS_PROXY", cfg.httpsProxy)
@@ -150,39 +130,35 @@ func run(ctx context.Context, log logr.Logger) error {
 	imagePullOperation := func() error {
 		out, err = cli.ImagePull(ctx, imageName, pullOpts)
 		if err != nil {
-			log.Error(err, "Image pull failure", "imageName", imageName)
+			log.Error(err, "image pull failure", "imageName", imageName)
 			return err
 		}
 		return nil
 	}
-	if err = backoff.Retry(imagePullOperation, backoff.NewExponentialBackOff()); err != nil {
+	if err := backoff.Retry(imagePullOperation, backoff.NewExponentialBackOff()); err != nil {
 		return err
 	}
 
-	if _, err = io.Copy(os.Stdout, out); err != nil {
-		return err
-	}
+	buf := bufio.NewScanner(out)
+	for buf.Scan() {
+		structured := make(map[string]interface{})
+		if err := json.Unmarshal(buf.Bytes(), &structured); err != nil {
+			log.Info("image pull logs", "output", buf.Text())
+		} else {
+			log.Info("image pull logs", "logs", structured)
+		}
 
-	if err = out.Close(); err != nil {
+	}
+	if err := out.Close(); err != nil {
 		log.Error(err, "closing image pull logs failed")
 	}
 
-	cs, err := cli.ContainerList(ctx, types.ContainerListOptions{All: true})
-	if err != nil {
-		return fmt.Errorf("listing containers, used for checking for an existing tink-worker container, failed: %w", err)
+	log.Info("Removing any existing tink-worker container")
+	if err := removeTinkWorkerContainer(ctx, cli); err != nil {
+		return fmt.Errorf("failed to remove existing tink-worker container: %w", err)
 	}
-	for _, c := range cs {
-		for _, n := range c.Names {
-			if n == "/tink-worker" {
-				log.Info("Removing existing tink-worker container")
-				if err := cli.ContainerRemove(ctx, c.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
-					return fmt.Errorf("removing existing tink-worker container failed: %w", err)
-				}
-			}
-		}
-	}
+
 	log.Info("Creating tink-worker container")
-	// Generate the configuration of the container
 	tinkContainer := &container.Config{
 		Image: imageName,
 		Env: []string{
@@ -236,6 +212,7 @@ func run(ctx context.Context, log logr.Logger) error {
 	return nil
 }
 
+// checkContainerRunning checks if the tink-worker container is running.
 func checkContainerRunning(ctx context.Context, cli *client.Client, containerID string) error {
 	inspect, err := cli.ContainerInspect(ctx, containerID)
 	if err != nil {
@@ -247,8 +224,28 @@ func checkContainerRunning(ctx context.Context, cli *client.Client, containerID 
 	return nil
 }
 
+// removeTinkWorkerContainer removes the tink-worker container if it exists.
+func removeTinkWorkerContainer(ctx context.Context, cli *client.Client) error {
+	cs, err := cli.ContainerList(ctx, types.ContainerListOptions{All: true})
+	if err != nil {
+		return fmt.Errorf("listing containers, in order to find an existing tink-worker container, failed: %w", err)
+	}
+	for _, c := range cs {
+		for _, n := range c.Names {
+			if n == "/tink-worker" {
+				if err := cli.ContainerRemove(ctx, c.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
+					return fmt.Errorf("removing existing tink-worker container failed: %w", err)
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // parseCmdLine will parse the command line.
-func parseCmdLine(cmdLines []string) (cfg tinkConfig) {
+// These values follow what Boots sends to the auto.ipxe Script.
+// https://github.com/tinkerbell/boots/blob/main/ipxe/hook.go
+func parseCmdLine(cmdLines []string) (cfg tinkWorkerConfig) {
 	for i := range cmdLines {
 		cmdLine := strings.Split(cmdLines[i], "=")
 		if len(cmdLine) == 0 {
@@ -256,22 +253,14 @@ func parseCmdLine(cmdLines []string) (cfg tinkConfig) {
 		}
 
 		switch cmd := cmdLine[0]; cmd {
-		// Find Registry configuration
 		case "docker_registry":
 			cfg.registry = cmdLine[1]
 		case "registry_username":
 			cfg.username = cmdLine[1]
 		case "registry_password":
 			cfg.password = cmdLine[1]
-		// Find Tinkerbell servers settings
-		case "packet_base_url":
-			cfg.baseURL = cmdLine[1]
-		case "tinkerbell":
-			cfg.tinkerbell = cmdLine[1]
-		// Find GRPC configuration
 		case "grpc_authority":
 			cfg.grpcAuthority = cmdLine[1]
-		// Find the worker configuration
 		case "worker_id":
 			cfg.workerID = cmdLine[1]
 		case "tink_worker_image":
@@ -287,4 +276,20 @@ func parseCmdLine(cmdLines []string) (cfg tinkConfig) {
 		}
 	}
 	return cfg
+}
+
+// defaultLogger is a zerolog logr implementation.
+func defaultLogger(level string) logr.Logger {
+	zl := zerolog.New(os.Stdout)
+	zl = zl.With().Caller().Timestamp().Logger()
+	var l zerolog.Level
+	switch level {
+	case "debug":
+		l = zerolog.DebugLevel
+	default:
+		l = zerolog.InfoLevel
+	}
+	zl = zl.Level(l)
+
+	return zerologr.New(&zl)
 }

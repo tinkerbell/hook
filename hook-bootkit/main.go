@@ -22,7 +22,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/go-logr/zerologr"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/pkgerrors"
 )
 
 type tinkConfig struct {
@@ -54,9 +53,8 @@ type tinkConfig struct {
 
 // defaultLogger is a zerolog logr implementation.
 func defaultLogger(level string) logr.Logger {
-	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 	zl := zerolog.New(os.Stdout)
-	zl = zl.With().Stack().Caller().Timestamp().Logger()
+	zl = zl.With().Caller().Timestamp().Logger()
 	var l zerolog.Level
 	switch level {
 	case "debug":
@@ -77,7 +75,7 @@ func main() {
 
 	for {
 		if err := run(ctx, log); err != nil {
-			log.Error(err, "error bootstrapping tink-worker")
+			log.Error(err, "bootstrapping tink-worker failed")
 			log.Info("will retry in 5 seconds")
 			time.Sleep(5 * time.Second)
 			continue
@@ -166,19 +164,19 @@ func run(ctx context.Context, log logr.Logger) error {
 	}
 
 	if err = out.Close(); err != nil {
-		log.Error(err, "error when closing image pull logs")
+		log.Error(err, "closing image pull logs failed")
 	}
 
 	cs, err := cli.ContainerList(ctx, types.ContainerListOptions{All: true})
 	if err != nil {
-		return fmt.Errorf("error listing containers used for checking for an existing tink-worker container: %w", err)
+		return fmt.Errorf("listing containers, used for checking for an existing tink-worker container, failed: %w", err)
 	}
 	for _, c := range cs {
 		for _, n := range c.Names {
 			if n == "/tink-worker" {
 				log.Info("Removing existing tink-worker container")
 				if err := cli.ContainerRemove(ctx, c.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
-					return fmt.Errorf("error removing existing tink-worker container: %w", err)
+					return fmt.Errorf("removing existing tink-worker container failed: %w", err)
 				}
 			}
 		}
@@ -221,18 +219,18 @@ func run(ctx context.Context, log logr.Logger) error {
 	}
 	resp, err := cli.ContainerCreate(ctx, tinkContainer, tinkHostConfig, nil, nil, "tink-worker")
 	if err != nil {
-		return fmt.Errorf("error creating tink-worker container: %w", err)
+		return fmt.Errorf("creating tink-worker container failed: %w", err)
 	}
 
 	log.Info("Starting tink-worker container")
 	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-		return fmt.Errorf("error starting tink-worker container: %w", err)
+		return fmt.Errorf("starting tink-worker container failed: %w", err)
 	}
 
 	time.Sleep(time.Second * 3)
 	// if tink-worker is not running return error so we try again
 	if err := checkContainerRunning(ctx, cli, resp.ID); err != nil {
-		return fmt.Errorf("error checking if tink-worker container is running: %w", err)
+		return fmt.Errorf("checking if tink-worker container is running failed: %w", err)
 	}
 
 	return nil

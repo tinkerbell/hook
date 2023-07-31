@@ -73,7 +73,10 @@ out/$T/hook-bootkit-$(arch) out/$T/hook-docker-$(arch):
 
 run-$(arch): out/$T/dbg/$(arch)/hook.tar
 run-$(arch):
-	linuxkit run qemu --mem 2048 $$^
+	mkdir -p out/$T/run/$(arch)
+	tar --overwrite -xf $$^ -C out/$T/run/$(arch) --transform 's/^/hook-/'
+	grep -q "tink_worker_image=quay.io/tinkerbell/tink-worker:latest" out/$T/run/$(arch)/hook-cmdline || sed -i 's?^?tink_worker_image=quay.io/tinkerbell/tink-worker:latest ?' out/$T/run/$(arch)/hook-cmdline
+	linuxkit run qemu --mem 2048 -kernel out/$T/run/$(arch)/hook
 endef
 $(foreach a,$(arches),$(eval $(call foreach_arch_rules,$a)))
 

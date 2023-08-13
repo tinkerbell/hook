@@ -1,8 +1,19 @@
 # Releasing
 
-## Process
-
 For version v0.x.y:
+
+## Prerequisites
+
+1. Update the `VERSION`, `VERSION_ID`, and `PRETTY_NAME` values in the `hook.yaml` file under `files -> "- path: etc/os-release"` to use `0.x.y`. This can be done with:
+
+    ```bash
+    make update-os-release NEW_VERSION=0.x.y
+    ```
+
+1. Commit, push, PR, and merge the version changes
+   - `git commit -sm "Update version to v0.x.y" hook.yaml`
+
+## Release Process
 
 1. Create the annotated tag
    > NOTE: To use your GPG signature when pushing the tag, use `SIGN_TAG=1 ./contrib/tag-release.sh v0.x.y` instead

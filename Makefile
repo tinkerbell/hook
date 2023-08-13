@@ -29,3 +29,12 @@ dev: dbg-image-$(ARCH) ## Build debug mode boot files and container images for c
 images: ## Build release mode boot files for all supported architectures
 push: push-hook-bootkit push-hook-docker ## Push container images to registry
 run: run-$(ARCH) ## Boot system using qemu
+
+.PHONY: update-os-release
+update-os-release: ## Update the os-release file versions
+  ## NEW_VERSION should be set from a variable passed to the make command
+  ## e.g. `make update-os-release NEW_VERSION=0.1.0`
+	for elem in VERSION VERSION_ID; do
+		sed -i "s/$${elem}=".*"/$${elem}="${NEW_VERSION}"/" hook.yaml
+	done
+	sed -i 's/PRETTY_NAME="HookOS .*"/PRETTY_NAME="HookOS ${NEW_VERSION}"/' hook.yaml

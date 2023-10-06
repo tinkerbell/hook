@@ -106,12 +106,20 @@ jobs:
           tag: latest
           message: "Latest development build"
 
+      - name: Generate checksum
+        uses: jmgilman/actions-generate-checksum@v1
+        with:
+          method: sha512
+          patterns: hook_*.tar.gz
+
       - name: Update latest release
         uses: softprops/action-gh-release@v1
         with:
           name: Hook Latest Development Build
           body: ${{env.RELEASE_NOTES}}
-          files: hook_*.tar.gz
+          files: |
+            hook_*.tar.gz
+            checksum.txt
           prerelease: true
           tag_name: latest
 
@@ -139,8 +147,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
+      - name: Generate checksum
+        uses: jmgilman/actions-generate-checksum@v1
+        with:
+          method: sha512
+          patterns: hook_*.tar.gz
+
       - name: Update latest release
         uses: softprops/action-gh-release@v1
         with:
           body: ${{env.RELEASE_NOTES}}
-          files: hook_*.tar.gz
+          files: |
+            hook_*.tar.gz
+            checksum.txt

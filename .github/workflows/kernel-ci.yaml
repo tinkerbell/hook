@@ -14,10 +14,4 @@ jobs:
       - name: Use docker buildx
         run: docker buildx create --use
 
-      - run: make -C kernel build ORG=quay.io/tinkerbell IMAGE=hook-kernel
-
-    # TODO: add artifacts for the built images
-    #- uses: actions/upload-artifact@v3
-    #  with:
-    #    name: TODO
-    #    path: TODO
+      - run: make build_5.15.x

@@ -104,3 +104,9 @@ dist dbg-dist:
 	tar -xf $$f -C $$d/ initrd.img && mv $$d/initrd.img $$d/initramfs-$$arch
 	tar -cf- -C $$d initramfs-$$arch vmlinuz-$$arch | pigz > $$d/hook_$$arch.tar.gz
 	done
+
+build_5.15.x:
+	$(MAKE) -C kernel ORG=$(ORG) IMAGE=hook-kernel build_5.15.x
+
+build_5.10.x:
+	$(MAKE) -C kernel ORG=$(ORG) IMAGE=hook-kernel build_5.10.x

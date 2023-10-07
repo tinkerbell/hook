@@ -13,23 +13,12 @@
 # kernel packages.
 
 # Name and Org on Hub
-
-# This option is for running docker manifest command
-export DOCKER_CLI_EXPERIMENTAL := enabled
-
-# set ORG in the env or make call
-# having it in the makefile is dangerous as its too easy to overwrite previous pushes/tags
-ifeq ($(strip $(ORG)),)
-# ^ guards against ORG being defined but empty string which makes `ORG ?=` not work
-  ORG := quay.io/tinkerbell
-endif
-# makes sure there's no trailing / so we can just add them in the recipes which looks nicer
-ORG := $(shell echo "${ORG}" | sed 's|/*$$||')
-
-IMAGE:=hook-kernel
-IMAGE_BCC:=hook-kernel-bcc
-IMAGE_PERF:=hook-kernel-perf
-IMAGE_ZFS:=hook-zfs-kmod
+ORG?=linuxkit
+PLATFORMS?=linux/amd64,linux/arm64
+IMAGE?=kernel
+IMAGE_BCC:=kernel-bcc
+IMAGE_PERF:=kernel-perf
+IMAGE_ZFS:=zfs-kmod
 IMAGE_BUILDER=linuxkit/alpine:2be490394653b7967c250e86fd42cef88de428ba
 
 # You can specify an extra options for the Makefile. This will:

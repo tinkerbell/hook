@@ -21,4 +21,4 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
 
-      - run: make -C kernel build
+      - run: make -C kernel ORG=quay.io/tinkerbell IMAGE=hook-kernel build

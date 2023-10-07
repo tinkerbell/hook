@@ -7,7 +7,7 @@ the official LinuxKit kernels is at
 [linuxkit/kernels](https://hub.docker.com/r/linuxkit/kernel/).
 
 The LinuxKit kernels are based on the latest stable releases and are
-updated frequently to include bug and security fixes.  For some
+updated frequently to include bug and security fixes. For some
 kernels we do carry additional patches, which are mostly back-ported
 fixes from newer kernels. The full kernel source with patches can be
 found on [github](https://github.com/linuxkit/linux). Each kernel
@@ -32,10 +32,10 @@ use cases for the promising IoT scenarios. All -rt patches are grabbed from
 https://www.kernel.org/pub/linux/kernel/projects/rt/. But so far we just
 enable it over 4.14.x.
 
-
 ## Loading kernel modules
 
 Most kernel modules are autoloaded with `mdev` but if you need to `modprobe` a module manually you can use the `modprobe` package in the `onboot` section like this:
+
 ```
   - name: modprobe
     image: linuxkit/modprobe:<hash>
@@ -50,9 +50,9 @@ these are to be built for a specific version of the kernel. For
 the examples, we will assume 5.10.104; replace with your desired
 version.
 
-* source available to your modules - you need to get those on your own
-* kernel development headers - available in the `linuxkit/kernel` image as `kernel-dev.tar`, e.g. `linuxkit/kernel:5.10.104`
-* OS with sources and compiler - this **must** be the exact same version as that used to compile the kernel
+- source available to your modules - you need to get those on your own
+- kernel development headers - available in the `linuxkit/kernel` image as `kernel-dev.tar`, e.g. `linuxkit/kernel:5.10.104`
+- OS with sources and compiler - this **must** be the exact same version as that used to compile the kernel
 
 As described above, the `linuxkit/kernel` images include `kernel-dev.tar` which contains
 the headers and other files required to compile kernel modules against
@@ -63,8 +63,8 @@ modules offline and then include the modules in the initial RAM disk.
 The source is available as the same name as the `linuxkit/kernel` image, with the addition of `-builder` on the tag.
 For example:
 
-* `linuxkit/kernel:5.10.92` has builder `linuxkit/kernel:5.10.92-builder`
-* `linuxkit/kernel:5.15.15` has builder `linuxkit/kernel:5.15.15-builder`
+- `linuxkit/kernel:5.10.92` has builder `linuxkit/kernel:5.10.92-builder`
+- `linuxkit/kernel:5.15.15` has builder `linuxkit/kernel:5.15.15-builder`
 
 With the above in hand, you can create a multi-stage `Dockerfile` build to compile your modules.
 There is an [example](../test/cases/020_kernel/113_kmod_5.10.x), but
@@ -98,9 +98,9 @@ As described above, the OS builder is referenced via `<kernel-image>-builder`, e
 As a fallback, in case the `-builder` image is not available or you cannot access it from your development environment,
 you have 3 total places to determine the correct version of the OS image with sources and compiler:
 
-* `-builder` tag added to the kernel version, e.g. `linuxkit/kernel:5.10.104-builder`
-* labels on the kernel image, e.g. `docker inspect linuxkit/kernel:5.10.104 | jq -r '.[].Config.Labels["org.mobyproject.linuxkit.kernel.buildimage"]'`
-* `/kernel-builder` file in the kernel image
+- `-builder` tag added to the kernel version, e.g. `linuxkit/kernel:5.10.104-builder`
+- labels on the kernel image, e.g. `docker inspect linuxkit/kernel:5.10.104 | jq -r '.[].Config.Labels["org.mobyproject.linuxkit.kernel.buildimage"]'`
+- `/kernel-builder` file in the kernel image
 
 You **should** use `-builder` tag as the `AS build` in your `Dockerfile`, but you **can** use
 the direct source, extracted from the labels or `/kernel-builder` file in the kernel image, in the `AS build`.
@@ -211,7 +211,6 @@ additional kernel config options enabled.
 If you want additional patches being applied, just copy them to the
 `patches-4.X.x` and the build process will pick them up.
 
-
 ## Working with Linux kernel patches for LinuxKit
 
 We may apply patches to the Linux kernel used in LinuxKit, primarily to
@@ -219,12 +218,13 @@ cherry-pick some upstream patches or to add some additional
 functionality, not yet accepted upstream.
 
 Patches are located in `kernel/patches-<kernel version>` and should follow these rules:
-- Patches *must* be in `git am` format, i.e. they should contain a
+
+- Patches _must_ be in `git am` format, i.e. they should contain a
   complete and sensible commit message.
-- Patches *must* contain a Developer's Certificate of Origin.
-- Patch files *must* have a numeric prefix to ensure the ordering in
+- Patches _must_ contain a Developer's Certificate of Origin.
+- Patch files _must_ have a numeric prefix to ensure the ordering in
   which they are applied.
-- If patches are cherry-picked, they *must* be cherry-picked with `-x`
+- If patches are cherry-picked, they _must_ be cherry-picked with `-x`
   to contain the original commit ID.
 - If patches are from a different git tree (other than the stable
   tree), or from a mailing list posting they should contain an
@@ -240,7 +240,6 @@ If you want to add or remove patches currently used, please also ping
 ensure that patches are carried forward if we update the kernel in the
 future.
 
-
 ### Preparation
 
 Patches are applied to point releases of the linux stable tree. You
@@ -253,9 +252,10 @@ git clone git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
 Add it as a remote to a clone of the [LinuxKit clone](https://github.com/linuxkit/linux).
 
 We use the following variables:
+
 - `KITSRC`: Base directory of LinuxKit repository
 - `LINUXSRC`: Base directory of Linux stable kernel repository
-e.g.:
+  e.g.:
 
 ```sh
 KITSRC=~/src/linuxkit/linuxkit
@@ -263,7 +263,6 @@ LINUXSRC=~/src/linuxkit/linux
 ```
 
 to refer to the location of the LinuxKit and Linux kernel trees.
-
 
 ### Updating the patches to a new kernel version
 
@@ -304,7 +303,6 @@ git rebase --onto ${NEWTAG} ${NEWTAG} ${NEWTAG}-linuxkit
 
 Again, resolve any conflicts as described above.
 
-
 ### Adding/Removing patches
 
 If you want to add or remove patches make sure you have an up-to-date
@@ -336,7 +334,6 @@ git format-patch -o $KITSRC/kernel/patches-4.9.x v4.9.15..HEAD
 
 Then, create a PR for LinuxKit.
 
-
 ## Using `perf`
 
 The `kernel-perf` package contains a statically linked `perf` binary
@@ -355,7 +352,6 @@ nsenter -m/proc/1/ns/mnt ash
 
 Alternatively, you can add the `kernel-perf` package as stage in a
 multi-stage build to add it to a custom package.
-
 
 ## ZFS
 

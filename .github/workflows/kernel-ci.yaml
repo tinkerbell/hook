@@ -7,11 +7,6 @@ on:
 jobs:
   kernel-validation:
     runs-on: self-hosted
-    services:
-      registry:
-        image: registry:2
-        ports:
-          - 5000:5000
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -19,9 +14,7 @@ jobs:
       - name: Use docker buildx
         run: docker buildx create --use
 
-      - run: echo "REGISTRY=$(ip addr show dev bond0 | awk '$1 == "inet" { sub("/.*", "", $2); print $2 }' | head -n 1)" >> $GITHUB_ENV
-
-      - run: make -C kernel devbuild ORG=${REGISTRY}:5000 IMAGE=hook-kernel
+      - run: make -C kernel build ORG=quay.io/tinkerbell IMAGE=hook-kernel
 
     # TODO: add artifacts for the built images
     #- uses: actions/upload-artifact@v3

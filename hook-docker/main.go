@@ -122,7 +122,7 @@ func parseCmdLine(cmdLines []string) (cfg tinkConfig) {
 }
 
 func rebootWatch() {
-	fmt.Println("Starting Reboot Watcher")
+	fmt.Println("Starting Reboot / Poweroff Watcher")
 
 	// Forever loop
 	for {
@@ -136,12 +136,26 @@ func rebootWatch() {
 				time.Sleep(time.Second)
 				continue
 			}
+			fmt.Println("Rebooting")
+			break
+		}
+
+		if fileExists("/worker/poweroff") {
+			cmd := exec.Command("/sbin/poweroff")
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			err := cmd.Run()
+			if err != nil {
+				fmt.Printf("error calling /sbin/poweroff: %v\n", err)
+				time.Sleep(time.Second)
+				continue
+			}
+			fmt.Println("Powering Off")
 			break
 		}
 		// Wait one second before looking for file
 		time.Sleep(time.Second)
 	}
-	fmt.Println("Rebooting")
 }
 
 func fileExists(filename string) bool {

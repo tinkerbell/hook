@@ -58,7 +58,7 @@ jobs:
           nix-shell --run 'make TAG=${{steps.commitid.outputs.short}} push'
           nix-shell --run 'make TAG=latest push'
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: hook-${{steps.commitid.outputs.short}}
           path: out/${{steps.commitid.outputs.short}}/rel/hook_*.tar.gz

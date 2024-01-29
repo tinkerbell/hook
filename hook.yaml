@@ -62,6 +62,7 @@ services:
     image: linuxkit/openntpd:d6c36ac367ed26a6eeffd8db78334d9f8041b038
     binds:
       - /var/run:/var/run
+      - /etc/resolv.conf:/etc/resolv.conf
 
   - name: hook-docker
     image: quay.io/tinkerbell/hook-docker:latest
@@ -106,8 +107,13 @@ services:
 files:
   - path: etc/profile.d/local.sh
     contents: |
+      #!/bin/bash
       alias       docker='ctr -n services.linuxkit tasks exec --tty --exec-id cmd hook-docker docker'
       alias docker-shell='ctr -n services.linuxkit tasks exec --tty --exec-id shell hook-docker sh'
+      date -s @$(wget -qO- http://worldtimeapi.org/api/timezone/Etc/UTC.txt | grep unixtime | awk -F': ' '{print $2}')
+      hwclock -r --utc
+      hwclock -w --utc
+      hwclock -r --utc
     mode: "0644"
 
   - path: etc/motd

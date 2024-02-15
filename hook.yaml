@@ -23,6 +23,20 @@ onboot:
     command: ["/etc/ip/vlan.sh"]
 
 services:
+  - name: mdev
+    image: alpine
+    command: ["mdev", "-v", "-S", "-df"]
+    capabilities:
+      - all
+    binds:
+      - /dev/:/dev/
+      - /lib/modules:lib/modules
+      - /etc/mdev.conf:/etc/mdev.conf
+    rootfsPropagation: shared
+    devices:
+      - path: all
+        type: b
+
   - name: getty
     image: linuxkit/getty:76951a596aa5e0867a38e28f0b94d620e948e3e8
     binds.add:
@@ -139,6 +153,10 @@ files:
 
   - path: dhcpcd.conf
     source: "files/dhcpcd.conf"
+    mode: "0644"
+
+  - path: etc/mdev.conf
+    source: "files/mdev.conf"
     mode: "0644"
 
 #dbg  - path: root/.ssh/authorized_keys

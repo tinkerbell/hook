@@ -27,6 +27,7 @@ modes := rel dbg
 
 hook-bootkit-deps := $(wildcard hook-bootkit/*)
 hook-docker-deps := $(wildcard hook-docker/*)
+hook-mdev-deps := $(wildcard hook-mdev/*)
 
 define foreach_mode_arch_rules =
 mode := $(1)
@@ -37,7 +38,7 @@ $$(shell mkdir -p out/$T/$(mode)/$(arch))
 .PHONY: image-$(mode)-$(arch)
 image-$(mode)-$(arch): out/$T/$(mode)/$(arch)/hook.tar
 
-out/$T/$(mode)/$(arch)/hook.tar: out/$T/$(mode)/$(arch)/hook.yaml out/$T/hook-bootkit-$(arch) out/$T/hook-docker-$(arch)
+out/$T/$(mode)/$(arch)/hook.tar: out/$T/$(mode)/$(arch)/hook.yaml out/$T/hook-bootkit-$(arch) out/$T/hook-docker-$(arch) out/$T/hook-mdev-$(arch)
 	linuxkit build -docker -arch $(arch) -format tar-kernel-initrd -name hook -dir $$(@D) $$<
 	mv $$(@D)/hook-initrd.tar $$@
 
@@ -46,7 +47,7 @@ out/$T/$(mode)/$(arch)/cmdline out/$T/$(mode)/$(arch)/initrd.img out/$T/$(mode)/
 	touch $$@
 
 out/$T/$(mode)/$(arch)/hook.yaml: $$(LINUXKIT_CONFIG)
-	sed '/hook-\(bootkit\|docker\):/ { s|:latest|:$T-$(arch)|; s|quay.io/tinkerbell|$(ORG)|; }' $$< > $$@
+	sed '/hook-\(bootkit\|docker\|mdev\):/ { s|:latest|:$T-$(arch)|; s|quay.io/tinkerbell|$(ORG)|; }' $$< > $$@
 	if [[ $(mode) == dbg ]]; then
 	    sed -i '/^\s*#dbg/ s|#dbg||' $$@
 	fi
@@ -65,9 +66,10 @@ hook-docker: out/$T/hook-docker-$(arch)
 
 out/$T/hook-bootkit-$(arch): $$(hook-bootkit-deps)
 out/$T/hook-docker-$(arch): $$(hook-docker-deps)
-out/$T/hook-bootkit-$(arch) out/$T/hook-docker-$(arch): platform=linux/$$(lastword $$(subst -, ,$$(notdir $$@)))
-out/$T/hook-bootkit-$(arch) out/$T/hook-docker-$(arch): container=hook-$$(word 2,$$(subst -, ,$$(notdir $$@)))
-out/$T/hook-bootkit-$(arch) out/$T/hook-docker-$(arch):
+out/$T/hook-mdev-$(arch): $$(hook-mdev-deps)
+out/$T/hook-bootkit-$(arch) out/$T/hook-docker-$(arch) out/$T/hook-mdev-$(arch): platform=linux/$$(lastword $$(subst -, ,$$(notdir $$@)))
+out/$T/hook-bootkit-$(arch) out/$T/hook-docker-$(arch) out/$T/hook-mdev-$(arch): container=hook-$$(word 2,$$(subst -, ,$$(notdir $$@)))
+out/$T/hook-bootkit-$(arch) out/$T/hook-docker-$(arch) out/$T/hook-mdev-$(arch):
 	docker buildx build --platform $$(platform) --load -t $(ORG)/$$(container):$T-$(arch) $$(container)
 	touch $$@
 
@@ -82,9 +84,10 @@ $(foreach a,$(arches),$(eval $(call foreach_arch_rules,$a)))
 
 push-hook-bootkit: $(hook-bootkit-deps)
 push-hook-docker: $(hook-docker-deps)
-push-hook-bootkit push-hook-docker: platforms=$(addprefix linux/,$(arches))
-push-hook-bootkit push-hook-docker: container=hook-$(lastword $(subst -, ,$(basename $@)))
-push-hook-bootkit push-hook-docker:
+push-hook-mdev: $(hook-mdev-deps)
+push-hook-bootkit push-hook-docker push-hook-mdev: platforms=$(addprefix linux/,$(arches))
+push-hook-bootkit push-hook-docker push-hook-mdev: container=hook-$(lastword $(subst -, ,$(basename $@)))
+push-hook-bootkit push-hook-docker push-hook-mdev:
 	platforms="$(platforms)"
 	platforms=$${platforms// /,}
 	docker buildx build --platform $$platforms --push -t $(ORG)/$(container):$T $(container)

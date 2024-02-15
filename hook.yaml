@@ -24,14 +24,13 @@ onboot:
 
 services:
   - name: mdev
-    image: alpine
+    image: quay.io/tinkerbell/hook-mdev:latest
     command: ["mdev", "-v", "-S", "-df"]
     capabilities:
       - all
     binds:
       - /dev/:/dev/
       - /lib/modules:lib/modules
-      - /etc/mdev.conf:/etc/mdev.conf
     rootfsPropagation: shared
     devices:
       - path: all
@@ -153,10 +152,6 @@ files:
 
   - path: dhcpcd.conf
     source: "files/dhcpcd.conf"
-    mode: "0644"
-
-  - path: etc/mdev.conf
-    source: "files/mdev.conf"
     mode: "0644"
 
 #dbg  - path: root/.ssh/authorized_keys

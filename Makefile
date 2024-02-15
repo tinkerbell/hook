@@ -23,11 +23,11 @@ include rules.mk
 include lint.mk
 
 all: dist dbg-dist ## Build release mode boot files and container images for all supported architectures
-containers: hook-bootkit hook-docker ## Build container images
+containers: hook-bootkit hook-docker hook-mdev ## Build container images
 debug: ## Build debug mode boot files and container images for all supported architectures
 dev: dbg-image-$(ARCH) ## Build debug mode boot files and container images for currently running architecture
 images: ## Build release mode boot files for all supported architectures
-push: push-hook-bootkit push-hook-docker ## Push container images to registry
+push: push-hook-bootkit push-hook-docker push-hook-mdev ## Push container images to registry
 run: run-$(ARCH) ## Boot system using qemu
 
 .PHONY: update-os-release

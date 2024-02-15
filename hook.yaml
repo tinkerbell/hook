@@ -23,6 +23,19 @@ onboot:
     command: ["/etc/ip/vlan.sh"]
 
 services:
+  - name: mdev
+    image: quay.io/tinkerbell/hook-mdev:latest
+    command: ["mdev", "-v", "-S", "-df"]
+    capabilities:
+      - all
+    binds:
+      - /dev/:/dev/
+      - /lib/modules:lib/modules
+    rootfsPropagation: shared
+    devices:
+      - path: all
+        type: b
+
   - name: getty
     image: linuxkit/getty:76951a596aa5e0867a38e28f0b94d620e948e3e8
     binds.add:

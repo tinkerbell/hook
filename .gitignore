@@ -5,6 +5,7 @@ dist/
 hook-*
 !/hook-bootkit/
 !/hook-docker/
+!/hook-mdev/
 hook*.*.yaml
 out/
 *.swp

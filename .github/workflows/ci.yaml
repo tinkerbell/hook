@@ -113,7 +113,7 @@ jobs:
           patterns: hook_*.tar.gz
 
       - name: Update latest release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           name: Hook Latest Development Build
           body: ${{env.RELEASE_NOTES}}
@@ -154,7 +154,7 @@ jobs:
           patterns: hook_*.tar.gz
 
       - name: Update latest release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           body: ${{env.RELEASE_NOTES}}
           files: |

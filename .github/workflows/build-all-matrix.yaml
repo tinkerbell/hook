@@ -1,0 +1,158 @@
+name: All Kernels and Hooks
+on:
+  #schedule:
+  #  # every day at 5am UTC
+  #  - cron: '0 5 * * *'
+  workflow_dispatch:
+
+env: # Global environment, passed to all jobs & all steps
+  # Unfortunately quay.io seems to go down a lot. Allow to use ghcr.io easily:
+  REGISTRY: "ghcr.io" # or quay.io, determines which will be logged-in to
+  HOOK_KERNEL_OCI_BASE: "ghcr.io/${{ github.repository_owner }}/tinkerbell/kernel-"
+  HOOK_LK_CONTAINERS_OCI_BASE: "ghcr.io/${{ github.repository_owner }}/tinkerbell/linuxkit-"
+
+jobs:
+  
+  matrix_prep:
+    name: "Prepare matrix JSON"
+    runs-on: ubuntu-latest
+    outputs:
+      created: ${{ steps.date_prep.outputs.created }} # refer to as ${{needs.prepare.outputs.created}}
+      kernels_json: ${{ steps.prepare-matrix.outputs.kernels_json }}
+      arches_json: ${{ steps.prepare-matrix.outputs.arches_json }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Prepare release ID (current date) # @TODO maybe move this inside, and make it a hash of everything
+        id: date_prep
+        run: echo "created=$(date -u +'%Y%m%d-%H%M')" >> "${GITHUB_OUTPUT}"
+
+      - name: Run the matrix JSON preparation bash script
+        id: prepare-matrix
+        run: bash build.sh gha-matrix # This sets the output "kernels_json" & "arches_json" internally
+  
+  build-linuxkit-containers:
+    needs: [ matrix_prep ]
+    runs-on: "ubuntu-latest" # @TODO: one day we might implement ${{ matrix.runner }} when we have arm64 runners. For now use amd64 GH runners & qemu; notice: qemu is only used to build hook-bootkit, hook-mdev, and hook-docker
+    strategy:
+      fail-fast: true
+      matrix:
+        include: ${{ fromJSON(needs.matrix_prep.outputs.arches_json) }}
+    name: "LinuxKit containers for ${{ matrix.docker_arch }}"
+    steps:
+      - name: Checkout build repo
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker Login to quay.io
+        if: ${{ env.REGISTRY == 'quay.io' }}
+        uses: docker/login-action@v3
+        with: { registry: "quay.io", username: "${{ secrets.QUAY_USERNAME }}", password: "${{ secrets.QUAY_PASSWORD }}" }
+
+      - name: Docker Login to GitHub Container Registry
+        if: ${{ env.REGISTRY == 'ghcr.io' }}
+        uses: docker/login-action@v3
+        with: { registry: "ghcr.io", username: "${{ github.repository_owner }}", password: "${{ secrets.GITHUB_TOKEN }}" }
+
+      - name: Build and Push LinuxKit containers for ${{matrix.docker_arch}}
+        env:
+          DOCKER_ARCH: "${{ matrix.docker_arch }}"
+          DO_PUSH: "yes"
+        run: bash build.sh linuxkit-containers
+  
+  build-kernels:
+    needs: [ matrix_prep ] # depend on the previous job...
+    runs-on: "ubuntu-latest" # @TODO: one day we might implement ${{ matrix.runner }} when we have arm64 runners. For now use amd64 GH runners & qemu; notice: qemu is only used to build hook-bootkit, hook-mdev, and hook-docker
+    strategy:
+      fail-fast: false # let other jobs try to complete if one fails, kernels might take long, and they'd be skipped on the next run
+      matrix:
+        include: ${{ fromJSON(needs.matrix_prep.outputs.kernels_json) }}
+    name: "Kernel ${{ matrix.kernel }}"
+    steps:
+      - name: Checkout build repo
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx # nb: no need for qemu here, kernels are cross-compiled, instead of the compilation being emulated
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker Login to quay.io
+        if: ${{ env.REGISTRY == 'quay.io' }}
+        uses: docker/login-action@v3
+        with: { registry: "quay.io", username: "${{ secrets.QUAY_USERNAME }}", password: "${{ secrets.QUAY_PASSWORD }}" }
+
+      - name: Docker Login to GitHub Container Registry
+        if: ${{ env.REGISTRY == 'ghcr.io' }}
+        uses: docker/login-action@v3
+        with: { registry: "ghcr.io", username: "${{ github.repository_owner }}", password: "${{ secrets.GITHUB_TOKEN }}" }
+
+      - name: Build and push Kernel ${{matrix.kernel}} (${{ matrix.arch }})
+        env:
+          DO_PUSH: "yes"
+        run: bash build.sh build-kernel "${{ matrix.kernel }}"
+
+  build-hook-ensemble:
+    needs: [ matrix_prep, build-linuxkit-containers, build-kernels ] # depend on the previous job...
+    runs-on: "ubuntu-latest" # @TODO: one day we might implement ${{ matrix.runner }} when we have arm64 runners. For now use amd64 GH runners & qemu; notice: qemu is only used to build hook-bootkit, hook-mdev, and hook-docker
+    strategy:
+      fail-fast: false # let other jobs try to complete if one fails
+      matrix:
+        include: ${{ fromJSON(needs.matrix_prep.outputs.kernels_json) }}
+    name: "Hook ${{ matrix.kernel }}"
+    steps:
+      - name: Checkout build repo
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx # nb: no need for qemu here, kernels are cross-compiled, instead of the compilation being emulated
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker Login to quay.io
+        if: ${{ env.REGISTRY == 'quay.io' }}
+        uses: docker/login-action@v3
+        with: { registry: "quay.io", username: "${{ secrets.QUAY_USERNAME }}", password: "${{ secrets.QUAY_PASSWORD }}" }
+
+      - name: Docker Login to GitHub Container Registry
+        if: ${{ env.REGISTRY == 'ghcr.io' }}
+        uses: docker/login-action@v3
+        with: { registry: "ghcr.io", username: "${{ github.repository_owner }}", password: "${{ secrets.GITHUB_TOKEN }}" }
+
+      - name: Build Hook with Kernel ${{matrix.kernel}} (${{ matrix.arch }})
+        env:
+          DO_BUILD_KERNEL: "no" # we already built the kernel; this is only for hook/linuxkit.
+          DO_BUILD_LK_CONTAINERS: "no" # already built them; this is only for hook/linuxkit.
+        run: bash build.sh build "${{ matrix.kernel }}"
+
+      - name: Upload deb as artifact ${{ matrix.arch.name }} ${{ matrix.distro }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: "hook-tarball-${{ matrix.kernel }}"
+          path: out/*.tar.gz
+
+  release:
+    name: Publish all Hooks to GitHub Releases
+    needs: [ matrix_prep, build-hook-ensemble ]
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Download built Hook artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "hook-tarball-*"
+          merge-multiple: true
+          path: out
+
+      # Release the artifacts into GitHub Releases. @TODO this GHA Action is not ideal, but I can't find a better one.
+      - name: "GH Release"
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "${{needs.matrix_prep.outputs.created}}"
+          prerelease: false
+          title: "${{needs.matrix_prep.outputs.created}}"
+          files: |
+            out/*.tar.gz

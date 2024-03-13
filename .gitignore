@@ -2,10 +2,13 @@ bin/
 dbg/
 dist/
 .env
-hook-*
 !/hook-bootkit/
 !/hook-docker/
 !/hook-mdev/
 hook*.*.yaml
+!hook.template.yaml
 out/
 *.swp
+.idea
+kernel/Dockerfile.autogen.*
+linuxkit-*-*-*

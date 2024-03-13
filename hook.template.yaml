@@ -1,6 +1,14 @@
+# Attention, this is a template that is run through envsubst, but with a specific list of variables to replace. Thus:
+# - HOOK_KERNEL_IMAGE: ${HOOK_KERNEL_IMAGE}
+# - HOOK_KERNEL_ID: ${HOOK_KERNEL_ID}
+# - HOOK_CONTAINER_BOOTKIT_IMAGE: ${HOOK_CONTAINER_BOOTKIT_IMAGE}
+# - HOOK_CONTAINER_DOCKER_IMAGE: ${HOOK_CONTAINER_DOCKER_IMAGE}
+# - HOOK_CONTAINER_MDEV_IMAGE: ${HOOK_CONTAINER_MDEV_IMAGE}
+# - Other variables are not replaced: for example this is a literal dollarsign-SOMETHING: $SOMETHING and with braces: ${SOMETHING}
+
 kernel:
-  image: quay.io/tinkerbell/hook-kernel:5.10.85-d1225df88208e5a732e820a182b75fb35c737bdd
-  cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0"
+  image: "${HOOK_KERNEL_IMAGE}"
+  cmdline: "this_is_not_used=at_at_all_in_hook command_line_is_determined_by=ipxe"
 
 init:
   - linuxkit/init:144c9cee8aed9e30a16940f2bf1d3813883aceda
@@ -20,12 +28,14 @@ onboot:
     image: linuxkit/ip:6cc44dd4e18ddb02de01bc4b34b5799971b6a7bf
     binds.add:
       - /etc/ip/vlan.sh:/etc/ip/vlan.sh
-    command: ["/etc/ip/vlan.sh"]
+    command: [ "/etc/ip/vlan.sh" ]
 
 services:
+
+
   - name: mdev
-    image: quay.io/tinkerbell/hook-mdev:latest
-    command: ["mdev", "-v", "-S", "-df"]
+    image: "${HOOK_CONTAINER_MDEV_IMAGE}"
+    command: [ "mdev", "-v", "-S", "-df" ]
     capabilities:
       - all
     binds:
@@ -50,7 +60,7 @@ services:
 
   - name: dhcpcd
     image: linuxkit/dhcpcd:52d2c4df0311b182e99241cdc382ff726755c450
-    command: ["/etc/ip/dhcp.sh", "false"]
+    command: [ "/etc/ip/dhcp.sh", "false" ]
     binds.add:
       - /var/lib/dhcpcd:/var/lib/dhcpcd
       - /run:/run
@@ -66,14 +76,14 @@ services:
       - /var/run:/var/run
 
   - name: hook-docker
-    image: quay.io/tinkerbell/hook-docker:latest
+    image: "${HOOK_CONTAINER_DOCKER_IMAGE}"
     capabilities:
       - all
     net: host
     pid: host
     mounts:
       - type: cgroup
-        options: ["rw", "nosuid", "noexec", "nodev", "relatime"]
+        options: [ "rw", "nosuid", "noexec", "nodev", "relatime" ]
     binds:
       - /dev/console:/dev/console
       - /dev:/dev
@@ -89,13 +99,13 @@ services:
         - /var/run/worker
 
   - name: hook-bootkit
-    image: quay.io/tinkerbell/hook-bootkit:latest
+    image: "${HOOK_CONTAINER_BOOTKIT_IMAGE}"
     capabilities:
       - all
     net: host
     mounts:
       - type: cgroup
-        options: ["rw", "nosuid", "noexec", "nodev", "relatime"]
+        options: [ "rw", "nosuid", "noexec", "nodev", "relatime" ]
     binds:
       - /var/run/docker:/var/run
     runtime:
@@ -113,7 +123,7 @@ files:
       name_version=$(grep PRETTY_NAME= /etc/os-release | cut -d'=' -f2 | tr -d '"')
       export PS1='${name_version}:\w\$ '
       # Disable kernel messages on console
-      echo 4 > /proc/sys/kernel/printk
+      # rpardini: why? # echo 4 > /proc/sys/kernel/printk
     mode: "0644"
 
   - path: etc/motd
@@ -128,6 +138,7 @@ files:
       ██   ██ ██    ██ ██    ██ ██  ██  ██    ██      ██
       ██   ██  ██████   ██████  ██   ██  ██████  ███████
 
+      - This Hook is using kernel ${HOOK_KERNEL_ID}
       - Use `docker` commands to access the tink worker/agent container and workflow action containers.
       - Logs are located in the `/var/log/` directory.
 

@@ -71,9 +71,7 @@ services:
         - /var/lib/dhcpcd
 
   - name: ntpd
-    image: linuxkit/openntpd:d6c36ac367ed26a6eeffd8db78334d9f8041b038
-    binds:
-      - /var/run:/var/run
+    image: linuxkit/openntpd:c90c6dd90f5dfb0ca71a73aac2dad69c8d956af3
 
   - name: hook-docker
     image: "${HOOK_CONTAINER_DOCKER_IMAGE}"

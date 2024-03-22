@@ -9,10 +9,10 @@ function calculate_kernel_version_default() {
 	# Calculate the input DEFCONFIG
 	declare -g INPUT_DEFCONFIG="${KCONFIG}-${KERNEL_MAJOR}.${KERNEL_MINOR}.y-${ARCH}"
 	if [[ ! -f "kernel/configs/${INPUT_DEFCONFIG}" ]]; then
-		echo "ERROR: kernel/configs/${INPUT_DEFCONFIG} does not exist, check inputs/envs" >&2
+		log error "kernel/configs/${INPUT_DEFCONFIG} does not exist, check inputs/envs"
 		exit 1
 	fi
-	
+
 	# The default kernel output id is just the arch, unless KCONFIG is not generic
 	declare -g OUTPUT_ID="${ARCH}"
 	if [[ "${KCONFIG}" != "generic" ]]; then
@@ -34,7 +34,7 @@ function calculate_kernel_version_default() {
 			KERNEL_CROSS_COMPILE="aarch64-linux-gnu-"
 			KERNEL_OUTPUT_IMAGE="arch/arm64/boot/Image"
 			;;
-		*) echo "ERROR: ARCH ${ARCH} not supported" >&2 && exit 1 ;;
+		*) log error "ERROR: ARCH ${ARCH} not supported" && exit 1 ;;
 	esac
 
 	# Grab the latest version from kernel.org
@@ -50,11 +50,11 @@ function calculate_kernel_version_default() {
 	kernel_oci_image="${HOOK_KERNEL_OCI_BASE}${kernel_id}:${kernel_oci_version}"
 
 	# Log the obtained version & images to stderr
-	echo "Kernel arch: ${KERNEL_ARCH} (for ARCH ${ARCH})" >&2
-	echo "Kernel version: ${KERNEL_MAJOR}.${KERNEL_MINOR}.${KERNEL_POINT_RELEASE}" >&2
-	echo "Kernel OCI version: ${kernel_oci_version}" >&2
-	echo "Kernel OCI image: ${kernel_oci_image}" >&2
-	echo "Kernel cross-compiler: ${KERNEL_CROSS_COMPILE} (in pkgs ${KERNEL_CROSS_COMPILE_PKGS})"
+	log info "Kernel arch: ${KERNEL_ARCH} (for ARCH ${ARCH})"
+	log info "Kernel version: ${KERNEL_MAJOR}.${KERNEL_MINOR}.${KERNEL_POINT_RELEASE}"
+	log info "Kernel OCI version: ${kernel_oci_version}"
+	log info "Kernel OCI image: ${kernel_oci_image}"
+	log info "Kernel cross-compiler: ${KERNEL_CROSS_COMPILE} (in pkgs ${KERNEL_CROSS_COMPILE_PKGS})"
 }
 
 function common_build_args_kernel_default() {
@@ -74,11 +74,11 @@ function common_build_args_kernel_default() {
 }
 
 function configure_kernel_default() {
-	echo "Configuring default kernel" >&2
+	log info "Configuring default kernel"
 
 	declare -a build_args=()
 	common_build_args_kernel_default
-	echo "Will configure with: ${build_args[*]}" >&2
+	log info "Will configure with: ${build_args[*]}"
 
 	declare configurator_image="hook-kernel-configurator:latest"
 	(
@@ -99,10 +99,10 @@ function configure_kernel_default() {
 }
 
 function build_kernel_default() {
-	echo "Building default kernel" >&2
+	log info "Building default kernel"
 	declare -a build_args=()
 	common_build_args_kernel_default
-	echo "Will build with: ${build_args[*]}" >&2
+	log info "Will build with: ${build_args[*]}"
 
 	(
 		cd kernel

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 function build_all_hook_linuxkit_containers() {
+	log info "Building all LinuxKit containers..."
 	: "${DOCKER_ARCH:?"ERROR: DOCKER_ARCH is not defined"}"
 
 	build_hook_linuxkit_container hook-bootkit HOOK_CONTAINER_BOOTKIT_IMAGE
@@ -18,12 +19,12 @@ function build_hook_linuxkit_container() {
 	declare container_files_hash_short="${container_files_hash:0:8}"
 
 	declare container_oci_ref="${HOOK_LK_CONTAINERS_OCI_BASE}${container_dir}:${container_files_hash_short}-${DOCKER_ARCH}"
-	echo "Going to build container ${container_oci_ref} from ${container_dir} for platform ${DOCKER_ARCH}" >&2
+	log info "Going to build container ${container_oci_ref} from ${container_dir} for platform ${DOCKER_ARCH}"
 	output_var="${container_oci_ref}" # the the name reference
 
 	# Check if we can pull the image from registry; if so, skip the build.
 	if docker pull "${container_oci_ref}"; then
-		echo "Image ${container_oci_ref} already exists in registry, skipping build" >&2
+		log info "Image ${container_oci_ref} already exists in registry, skipping build"
 		return 0
 	fi
 
@@ -32,13 +33,17 @@ function build_hook_linuxkit_container() {
 		docker buildx build -t "${container_oci_ref}" --load --platform "linux/${DOCKER_ARCH}" .
 	)
 
-	echo "Built ${container_oci_ref} from ${container_dir} for platform ${DOCKER_ARCH}" >&2
+	log info "Built ${container_oci_ref} from ${container_dir} for platform ${DOCKER_ARCH}"
 
-	# Push the image to the registry
-	docker push "${container_oci_ref}" || {
-		echo "Failed to push ${container_oci_ref} to registry" >&2
-		exit 33
-	}
+	# Push the image to the registry, if DO_PUSH is set to yes
+	if [[ "${DO_PUSH}" == "yes" ]]; then
+		docker push "${container_oci_ref}" || {
+			log error "Failed to push ${container_oci_ref} to registry"
+			exit 33
+		}
+	else
+		log info "Skipping push of ${container_oci_ref} to registry; set DO_PUSH=yes to push."
+	fi
 
 	return 0
 }

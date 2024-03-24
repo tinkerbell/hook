@@ -79,14 +79,16 @@ In my fork:
 
 #### TO-DO
 
-- Find a better name for "flavor". Naming things is hard. Hats? Swords?
-- Update README.md and CONTRIBUTING.md; For now all I have is really
+- [ ] Find a better name for "flavor". Naming things is hard. Hats? Swords?
+- [x] Fix ntpd, so we can use RTC-deficient hardware (eg RaspberryPi's)
+- [x] Easy way to use `linuxkit run qemu` (`bash build.sh build-run-qemu <flavor>`)
+- [ ] Update README.md and CONTRIBUTING.md; For now all I have is really
     - `bash build.sh config-kernel <flavor>` & follow instructions to configure kernel; only works for default flavors
     - `bash build.sh build-kernel <flavor>` builds the kernel
     - `bash build.sh build <flavor>` builds Hook with that kernel
-- Restore golang & shellcheck linting
-- Update to Linuxkit 1.2.0 and new linuxkit pkgs. I tried, but there's some incompatible changes that we need to figure out.
-- Consider using `actuated` for native arm64 building? -- https://actuated.dev/blog/arm-ci-cncf-ampere
+- [ ] Restore golang & shellcheck linting
+- [ ] Update to Linuxkit 1.2.0 and new linuxkit pkgs. I tried, but there's some incompatible changes that we need to figure out.
+- [ ] Consider using `actuated` for native arm64 building? -- https://actuated.dev/blog/arm-ci-cncf-ampere
 
 ---
 

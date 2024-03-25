@@ -7,9 +7,9 @@ on:
 
 env: # Global environment, passed to all jobs & all steps
   # Unfortunately quay.io seems to go down a lot. Allow to use ghcr.io easily:
-  REGISTRY: "ghcr.io" # or quay.io, determines which will be logged-in to
-  HOOK_KERNEL_OCI_BASE: "ghcr.io/${{ github.repository_owner }}/tinkerbell/kernel-"
-  HOOK_LK_CONTAINERS_OCI_BASE: "ghcr.io/${{ github.repository_owner }}/tinkerbell/linuxkit-"
+  REGISTRY: "quay.io" # or quay.io, determines which will be logged-in to
+  #HOOK_KERNEL_OCI_BASE: "ghcr.io/${{ github.repository_owner }}/tinkerbell/kernel-"
+  #HOOK_LK_CONTAINERS_OCI_BASE: "ghcr.io/${{ github.repository_owner }}/tinkerbell/linuxkit-"
 
 jobs:
   

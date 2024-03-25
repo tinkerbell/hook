@@ -30,8 +30,27 @@ onboot:
       - /etc/ip/vlan.sh:/etc/ip/vlan.sh
     command: [ "/etc/ip/vlan.sh" ]
 
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:52d2c4df0311b182e99241cdc382ff726755c450
+    command: [ "/etc/ip/dhcp.sh", "true" ] # 2nd paramter is one-shot true/false: true for onboot, false for services
+    capabilities.add:
+      - CAP_SYS_TIME # for ntp one-shot no-max-offset after ntpd, for hardware missing RTC's that boot in 1970
+    binds.add:
+      - /var/lib/dhcpcd:/var/lib/dhcpcd
+      - /run:/run
+      - /etc/ip/dhcp.sh:/etc/ip/dhcp.sh
+      - /dhcpcd.conf:/dhcpcd.conf
+    runtime:
+      mkdir:
+        - /var/lib/dhcpcd
+
 services:
 
+  - name: rngd
+    image: linuxkit/rngd:310c16ec5315bd07d4b8f5332cfa7dc5cbc7d368
+
+  - name: ntpd
+    image: linuxkit/openntpd:c90c6dd90f5dfb0ca71a73aac2dad69c8d956af3
 
   - name: mdev
     image: "${HOOK_CONTAINER_MDEV_IMAGE}"
@@ -54,24 +73,6 @@ services:
       - /etc/os-release:/etc/os-release
     env:
       - INSECURE=true
-
-  - name: rngd
-    image: linuxkit/rngd:310c16ec5315bd07d4b8f5332cfa7dc5cbc7d368
-
-  - name: dhcpcd
-    image: linuxkit/dhcpcd:52d2c4df0311b182e99241cdc382ff726755c450
-    command: [ "/etc/ip/dhcp.sh", "false" ]
-    binds.add:
-      - /var/lib/dhcpcd:/var/lib/dhcpcd
-      - /run:/run
-      - /etc/ip/dhcp.sh:/etc/ip/dhcp.sh
-      - /dhcpcd.conf:/dhcpcd.conf
-    runtime:
-      mkdir:
-        - /var/lib/dhcpcd
-
-  - name: ntpd
-    image: linuxkit/openntpd:c90c6dd90f5dfb0ca71a73aac2dad69c8d956af3
 
   - name: hook-docker
     image: "${HOOK_CONTAINER_DOCKER_IMAGE}"

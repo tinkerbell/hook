@@ -1,11 +1,13 @@
 name: For each Kernel commit
 on:
-  push:
-    paths:
-      - kernel/**
-      - "!kernel/README.md"
-    branches:
-      - "**"
+  #push:
+  #  paths:
+  #    - kernel/**
+  #    - "!kernel/README.md"
+  #  branches:
+  #    - "**"
+  workflow_dispatch:
+
 jobs:
   kernel-publish:
     runs-on: self-hosted

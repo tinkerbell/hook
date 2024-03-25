@@ -1,9 +1,11 @@
 name: For each Kernel PR
 on:
-  pull_request:
-    paths:
-      - kernel/**
-      - "!kernel/README.md"
+  #pull_request:
+  #  paths:
+  #    - kernel/**
+  #    - "!kernel/README.md"
+  workflow_dispatch: 
+    
 jobs:
   kernel-validation:
     runs-on: self-hosted

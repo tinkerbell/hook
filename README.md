@@ -1,3 +1,10 @@
+# rpardini's intervention here
+
+- this now cross-builds kernels, has defconfigs, easy kernel configuration, linuxkit .yaml templating, etc. default kernel is updated to latest 5.10.y and works on arm64 and x86_64
+- The bad: rpardini is insane and rewrote the Makefile to both the kernel and Hook into bash scripts :clown_face:
+- @TODO update the developer docs
+- @TODO: linuxkit is still at 1.0.1, pkgs are still old, conflicts with bootkit/docker
+
 # Hook
 
 Hook is the Tinkerbell Installation Environment for bare-metal.

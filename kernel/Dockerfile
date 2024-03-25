@@ -1,59 +1,23 @@
-FROM linuxkit/alpine:e2391e0b164c57db9f6c4ae110ee84f766edc430 AS kernel-build
-RUN apk add \
-    argp-standalone \
-    automake \
-    bash \
-    bc \
-    binutils-dev \
-    bison \
-    build-base \
-    curl \
-    diffutils \
-    flex \
-    git \
-    gmp-dev \
-    gnupg \
-    installkernel \
-    kmod \
-    elfutils-dev \
-    linux-headers \
-    mpc1-dev \
-    mpfr-dev \
-    ncurses-dev \
-    openssl-dev \
-    patch \
-    rsync \
-    sed \
-    squashfs-tools \
-    tar \
-    xz \
-    xz-dev \
-    zlib-dev
+FROM debian:stable as kernel-source-unpacked
+ENV DEBIAN_FRONTEND=noninteractive
 
-# libunwind-dev pkg is missing for s390x for now. Only install on other arch
-RUN [ $(uname -m) != s390x ] && apk add libunwind-dev || true
+# crossbuild-essentials are pretty heavy; here we install for both architecures to maximize Docker layer hit cache rate during development, but only one will be used
+RUN set -x && apt -y update && \
+      apt -y install curl xz-utils gnupg2 flex bison libssl-dev libelf-dev bc libncurses-dev kmod \
+                     crossbuild-essential-amd64 crossbuild-essential-arm64 && \
+      apt -y clean
 
+ARG KERNEL_MAJOR_V
 ARG KERNEL_VERSION
-ARG KERNEL_SERIES
-ARG EXTRA
-ARG DEBUG
+ARG KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/${KERNEL_MAJOR_V}/linux-${KERNEL_VERSION}.tar.xz
+ARG KERNEL_SHA256_SUMS=https://www.kernel.org/pub/linux/kernel/${KERNEL_MAJOR_V}/sha256sums.asc
+ARG KERNEL_PGP2_SIGN=https://www.kernel.org/pub/linux/kernel/${KERNEL_MAJOR_V}/linux-${KERNEL_VERSION}.tar.sign
 
-ENV WIREGUARD_VERSION=1.0.20200506
-ENV WIREGUARD_SHA256="98a99f2b825a82d57a7213e666f1ee4f7cc02bddb09bf4908b4b09447a8f121e"
-ENV WIREGUARD_URL=https://git.zx2c4.com/wireguard-linux-compat/snapshot/wireguard-linux-compat-${WIREGUARD_VERSION}.tar.xz
-
-# We copy the entire directory. This copies some unneeded files, but
-# allows us to check for the existence /patches-${KERNEL_SERIES} to
-# build kernels without patches.
-COPY / /
+# PGP keys: 589DA6B1 (greg@kroah.com) & 6092693E (autosigner@kernel.org) & 00411886 (torvalds@linux-foundation.org)
+COPY /keys.asc /keys.asc
 
 # Download and verify kernel
-# PGP keys: 589DA6B1 (greg@kroah.com) & 6092693E (autosigner@kernel.org) & 00411886 (torvalds@linux-foundation.org)
-RUN KERNEL_MAJOR=$(echo ${KERNEL_VERSION} | cut -d . -f 1) && \
-    KERNEL_MAJOR=v${KERNEL_MAJOR}.x && \
-    KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/${KERNEL_MAJOR}/linux-${KERNEL_VERSION}.tar.xz && \
-    KERNEL_SHA256_SUMS=https://www.kernel.org/pub/linux/kernel/${KERNEL_MAJOR}/sha256sums.asc && \
-    KERNEL_PGP2_SIGN=https://www.kernel.org/pub/linux/kernel/${KERNEL_MAJOR}/linux-${KERNEL_VERSION}.tar.sign && \
+RUN set -x &&  \
     curl -fsSLO ${KERNEL_SHA256_SUMS} && \
     gpg2 -q --import keys.asc && \
     gpg2 --verify sha256sums.asc && \
@@ -66,150 +30,66 @@ RUN KERNEL_MAJOR=$(echo ${KERNEL_VERSION} | cut -d . -f 1) && \
     cat linux-${KERNEL_VERSION}.tar | tar --absolute-names -x && mv /linux-${KERNEL_VERSION} /linux
 
 
-RUN mkdir -p /out/src
+FROM kernel-source-unpacked as kernel-with-config
 
-WORKDIR /tmp
-# Download Intel ucode, create a CPIO archive for it, and keep it in the build context
-# so the firmware can also be referenced with CONFIG_EXTRA_FIRMWARE
-ENV UCODE_REPO=https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files
-ENV UCODE_COMMIT=microcode-20191115
-RUN set -e && \
-    if [ $(uname -m) == x86_64 ]; then \
-        git clone ${UCODE_REPO} ucode && \
-        cd ucode && \
-        git checkout ${UCODE_COMMIT} && \
-        iucode_tool --normal-earlyfw --write-earlyfw=/out/intel-ucode.cpio ./intel-ucode && \
-        cp license /out/intel-ucode-license.txt && \
-        mkdir -p /lib/firmware && \
-        cp -rav ./intel-ucode /lib/firmware; \
-    fi
+ARG INPUT_DEFCONFIG
+ARG KERNEL_ARCH
+ARG KERNEL_CROSS_COMPILE
 
+ENV KERNEL_ARCH=${KERNEL_ARCH}
+ENV ARCH=${KERNEL_ARCH}
+ENV CROSS_COMPILE=${KERNEL_CROSS_COMPILE}
+ENV KCFLAGS="-fdiagnostics-color=always -fno-pie"
+ENV KBUILD_BUILD_USER="hook"
+ENV KBUILD_BUILD_HOST="tinkerbell"
 
+# Copy just the defconfig needed for this build
 WORKDIR /linux
-# Apply local specific patches if present
-RUN set -e && \
-    if [ -n "${EXTRA}" ] && [ -d /patches-${KERNEL_SERIES}${EXTRA} ]; then \
-	echo "Patching ${EXTRA} kernel"; \
-	for patch in /patches-${KERNEL_SERIES}${EXTRA}/*.patch; do \
-            echo "Applying $patch"; \
-            patch -t -F0 -N -u -p1 < "$patch"; \
-	done; \
-    fi
+COPY /configs/${INPUT_DEFCONFIG} /linux/.config
 
-# Apply local common patches if present
-RUN set -e && \
-    if [ -d /patches-${KERNEL_SERIES} ]; then \
-        for patch in /patches-${KERNEL_SERIES}/*.patch; do \
-            echo "Applying $patch"; \
-            patch -t -F0 -N -u -p1 < "$patch"; \
-        done; \
-    fi
+# Kernel config; copy the correct defconfig as .config, and run olddefconfig
+RUN set -x && make "ARCH=${KERNEL_ARCH}" olddefconfig
+
+# Use this stage to run kernel configuration tasks like menuconfig / savedefconfig etc with:
+#   docker buildx build --load --progress=plain --build-arg KERNEL_VERSION=5.10.212 --build-arg KERNEL_SERIES=5.10.y -t hook-kernel:builder --target kernel-configurator .
+#   docker run -it -v "$(pwd)":/out-config hook-kernel:builder
+# Otherwise, since this stage is not referenced anywhere during normal build, it is completely skipped
+FROM kernel-with-config as kernel-configurator
+VOLUME /host
+ENTRYPOINT ["/bin/bash"]
 
 
+FROM kernel-with-config AS kernel-build
 
-# Save kernel source
-RUN tar cJf /out/src/linux.tar.xz /linux
+ARG KERNEL_OUTPUT_IMAGE
 
-# Kernel config
-# The s390x defconfig moved with 5.2.x
-RUN case $(uname -m) in \
-    x86_64) \
-        KERNEL_DEF_CONF=/linux/arch/x86/configs/x86_64_defconfig; \
-        ;; \
-    aarch64) \
-        KERNEL_DEF_CONF=/linux/arch/arm64/configs/defconfig; \
-        ;; \
-    s390x) \
-        if [ -f /linux/arch/s390/defconfig ]; then \
-            KERNEL_DEF_CONF=/linux/arch/s390/defconfig; \
-        else \
-            KERNEL_DEF_CONF=/linux/arch/s390/configs/defconfig; \
-        fi; \
-        ;; \
-    esac  && \
-    cp /config-${KERNEL_SERIES}-$(uname -m) ${KERNEL_DEF_CONF}; \
-    if [ -n "${EXTRA}" ] && [ -f "/config-${KERNEL_SERIES}-$(uname -m)${EXTRA}" ]; then \
-        cat /config-${KERNEL_SERIES}-$(uname -m)${EXTRA} >> ${KERNEL_DEF_CONF}; \
-    fi; \
-    sed -i "s/CONFIG_LOCALVERSION=\"-linuxkit\"/CONFIG_LOCALVERSION=\"-linuxkit${EXTRA}${DEBUG}\"/" ${KERNEL_DEF_CONF}; \
-    if [ -n "${DEBUG}" ]; then \
-        sed -i 's/CONFIG_PANIC_ON_OOPS=y/# CONFIG_PANIC_ON_OOPS is not set/' ${KERNEL_DEF_CONF}; \
-        cat /config${DEBUG} >> ${KERNEL_DEF_CONF}; \
-    fi && \
-    make defconfig && \
-    make oldconfig && \
-    if [ -z "${EXTRA}" ] && [ -z "${DEBUG}" ]; then diff -u .config ${KERNEL_DEF_CONF}; fi
+RUN mkdir /out
+
+# Kernel build. ENVs in previous stages are inherited; thus ARCH, CROSS_COMPILE, KCFLAGS, KBUILD_BUILD_USER, KBUILD_BUILD_HOST are available
+RUN set -x && \
+    echo "Cross compiler: ${CROSS_COMPILE}" && \
+    make -j"$(getconf _NPROCESSORS_ONLN)" && \
+    cp ${KERNEL_OUTPUT_IMAGE} /out/kernel && \
+    cp System.map /out
 
 
-# Kernel
-RUN case $(uname -m) in \
-    s390x) \
-        KCFLAGS="-fno-pie -fPIC"; \
-        ;; \
-    *) \
-        KCFLAGS="-fno-pie"; \
-        ;; \
-    esac && \
-    make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="$KCFLAGS" && \
-    case $(uname -m) in \
-    x86_64) \
-        cp arch/x86_64/boot/bzImage /out/kernel; \
-        ;; \
-    aarch64) \
-        cp arch/arm64/boot/Image /out/kernel; \
-        ;; \
-    s390x) \
-        cp arch/s390/boot/bzImage /out/kernel; \
-        ;; \
-    esac && \
-    cp System.map /out && \
-    ([ -n "${DEBUG}" ] && cp vmlinux /out || true)
-
-# WireGuard (skip kernels which have it in tree)
-RUN if [  ! -d /linux/drivers/net/wireguard ]; then \
-        curl -fsSL -o /wireguard.tar.xz "${WIREGUARD_URL}" && \
-        echo "${WIREGUARD_SHA256}  /wireguard.tar.xz" | sha256sum -c - && \
-        cp /wireguard.tar.xz /out/src/ && \
-        tar -C / --one-top-level=wireguard --strip-components=2 -xJf /wireguard.tar.xz "wireguard-linux-compat-${WIREGUARD_VERSION}/src" && \
-        make -j "$(getconf _NPROCESSORS_ONLN)" M="/wireguard" modules; \
-     fi
-
-# Modules and Device Tree binaries
-RUN make INSTALL_MOD_PATH=/tmp/kernel-modules modules_install && \
-    make INSTALL_MOD_PATH=/tmp/kernel-modules M="/wireguard" modules_install && \
+# Modules, from lib/modules go into kernel.tar (will be extracted in root filesystem by linuxkit)
+RUN set -x && \
+    make -s -j"$(getconf _NPROCESSORS_ONLN)" INSTALL_MOD_PATH=/tmp/kernel-modules modules_install && \
     ( DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdepth 1)) && \
       cd /tmp/kernel-modules/lib/modules/$DVER && \
-      rm build source && \
-      ln -s /usr/src/linux-headers-$DVER build ) && \
-    case $(uname -m) in \
-    aarch64) \
-        make INSTALL_DTBS_PATH=/tmp/kernel-modules/boot/dtb dtbs_install; \
-        ;; \
-    esac && \
+      rm build source ) && \
     ( cd /tmp/kernel-modules && tar cf /out/kernel.tar . )
 
-# Headers (userspace API)
-RUN mkdir -p /tmp/kernel-headers/usr && \
-    make INSTALL_HDR_PATH=/tmp/kernel-headers/usr headers_install && \
-    ( cd /tmp/kernel-headers && tar cf /out/kernel-headers.tar usr )
-
-# Headers (kernel development)
-RUN DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdepth 1)) && \
-    dir=/tmp/usr/src/linux-headers-$DVER && \
-    mkdir -p $dir && \
-    cp /linux/.config $dir && \
-    cp /linux/Module.symvers $dir && \
-    find . -path './include/*' -prune -o \
-           -path './arch/*/include' -prune -o \
-           -path './scripts/*' -prune -o \
-           -type f \( -name 'Makefile*' -o -name 'Kconfig*' -o -name 'Kbuild*' -o \
-                      -name '*.lds' -o -name '*.pl' -o -name '*.sh' -o \
-                      -name 'objtool' -o -name 'fixdep' -o -name 'randomize_layout_seed.h' \) | \
-         tar cf - -T - | (cd $dir; tar xf -) && \
-    ( cd /tmp && tar cf /out/kernel-dev.tar usr/src )
-
-RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\n" > /out/kernel-source-info
-
+# For arches that have DTB's, eg arm64; they go separately into dtbs.tar; for arches that don't (x86), an empty dtbs.tar is created
+RUN set -x && \
+    mkdir -p /tmp/kernel-dtb && \
+    case "$KERNEL_ARCH" in \
+    arm64) \
+        make -s -j"$(getconf _NPROCESSORS_ONLN)" INSTALL_DTBS_PATH=/tmp/kernel-dtb dtbs_install; \
+        ;; \
+    esac && \
+     ( cd /tmp/kernel-dtb && tar czvf /out/dtbs.tar.gz . )
 
 FROM scratch
 ENTRYPOINT []

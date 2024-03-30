@@ -21,9 +21,12 @@ declare -a kernels=(
 	# External kernels, taken from Armbian's OCI repos. Those are "exotic" kernels for certain SoC's.
 	# edge = (release candidates or stable but rarely LTS, more aggressive patching)
 	# current = (LTS kernels, stable-ish patching)
+	# vendor/legacy = (vendor/BSP kernels, stable patching, NOT mainline, not frequently rebased)
 	"armbian-meson64-edge"    # Armbian meson64 (Amlogic) edge Khadas VIM3/3L, Radxa Zero/2, LibreComputer Potatos, and many more -- right now v6.7.10
 	"armbian-bcm2711-current" # Armbian bcm2711 (Broadcom) current, from RaspberryPi Foundation with many CNCF-landscape fixes and patches; for the RaspberryPi 3b+/4b/5 -- v6.6.22
 	"armbian-rockchip64-edge" # Armbian rockchip64 (Rockchip) edge, for many rk356x/3399 SoCs. Not for rk3588! -- right now v6.7.10
+	"armbian-rk35xx-vendor"   # Armbian rk35xx (Rockchip) vendor, for rk3566, rk3568, rk3588, rk3588s SoCs -- 6.1-rkr1 - BSP / vendor kernel
+	"armbian-rk3588-edge"     # Armbian rk35xx (Rockchip) mainline bleeding edge for rk3588, rk3588s SoCs -- 6.8.4
 
 	# EFI capable (edk2 or such, not u-boot+EFI) machines might use those:
 	"armbian-uefi-arm64-edge" # Armbian generic edge UEFI kernel - right now v6.8.1
@@ -36,16 +39,24 @@ declare -A kernel_data=(
 	["hook-default-arm64"]="['METHOD']='default' ['ARCH']='aarch64' ['KERNEL_MAJOR']='5' ['KERNEL_MINOR']='10' ['KCONFIG']='generic' "
 	["hook-default-amd64"]="['METHOD']='default' ['ARCH']='x86_64' ['KERNEL_MAJOR']='5' ['KERNEL_MINOR']='10' ['KCONFIG']='generic' "
 
-	# Armbian kernels, check https://github.com/orgs/armbian/packages?tab=packages&q=kernel- for possibilities
+	# Armbian mainline kernels, check https://github.com/orgs/armbian/packages?tab=packages&q=kernel- for possibilities
 	# nb: when no ARMBIAN_KERNEL_VERSION, will use the first tag returned, high traffic, low cache rate.
 	#     One might set eg ['ARMBIAN_KERNEL_VERSION']='6.7.10-S9865-D7cc9-P277e-C9b73H61a9-HK01ba-Ve377-Bf200-R448a' to use a fixed version.
 	["armbian-meson64-edge"]="['METHOD']='armbian' ['ARCH']='aarch64' ['ARMBIAN_KERNEL_ARTIFACT']='kernel-meson64-edge' "
 	["armbian-bcm2711-current"]="['METHOD']='armbian' ['ARCH']='aarch64' ['ARMBIAN_KERNEL_ARTIFACT']='kernel-bcm2711-current' "
 	["armbian-rockchip64-edge"]="['METHOD']='armbian' ['ARCH']='aarch64' ['ARMBIAN_KERNEL_ARTIFACT']='kernel-rockchip64-edge' "
+	["armbian-rk3588-edge"]="['METHOD']='armbian' ['ARCH']='aarch64' ['ARMBIAN_KERNEL_ARTIFACT']='kernel-rockchip-rk3588-edge' "
 
-	# Armbian Generic UEFI kernels
+	# Armbian mainline Generic UEFI kernels
 	["armbian-uefi-arm64-edge"]="['METHOD']='armbian' ['ARCH']='aarch64' ['ARMBIAN_KERNEL_ARTIFACT']='kernel-arm64-edge' "
 	["armbian-uefi-x86-edge"]="['METHOD']='armbian' ['ARCH']='x86_64' ['ARMBIAN_KERNEL_ARTIFACT']='kernel-x86-edge' "
+
+	# Armbian Rockchip vendor kernel. For rk3566, rk3568, rk3588, rk3588s
+	# Use with edk2 (v0.9.1+) or mainline u-boot + EFI
+	# vendor - matches the DT included in https://github.com/edk2-porting/edk2-rk3588 _after_ v0.9.1
+	# mainline u-boot also should work via pxelinux -> snp.efi + dtb
+	["armbian-rk35xx-vendor"]="['METHOD']='armbian' ['ARCH']='aarch64' ['ARMBIAN_KERNEL_ARTIFACT']='kernel-rk35xx-vendor' "
+
 )
 
 #declare -g HOOK_KERNEL_OCI_BASE="${HOOK_KERNEL_OCI_BASE:-"ghcr.io/rpardini/tinkerbell/kernel-"}"

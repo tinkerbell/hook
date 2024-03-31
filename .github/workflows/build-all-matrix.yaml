@@ -111,6 +111,10 @@ jobs:
       - name: Set up Docker Buildx # nb: no need for qemu here, kernels are cross-compiled, instead of the compilation being emulated
         uses: docker/setup-buildx-action@v3
 
+      - name: Docker Login to DockerHub # read-only token, required to be able to pull all the linuxkit pkgs without getting rate limited.
+        uses: docker/login-action@v3
+        with: { registry: "docker.io", username: "${{ secrets.DOCKER_USERNAME }}", password: "${{ secrets.DOCKER_PASSWORD }}" }
+
       - name: Docker Login to quay.io
         if: ${{ env.REGISTRY == 'quay.io' }}
         uses: docker/login-action@v3

@@ -27,6 +27,8 @@ onboot:
 
   - name: vlan
     image: linuxkit/ip:6cc44dd4e18ddb02de01bc4b34b5799971b6a7bf
+    capabilities:
+      - all
     binds.add:
       - /etc/ip/vlan.sh:/etc/ip/vlan.sh
     command: [ "/etc/ip/vlan.sh" ]
@@ -34,8 +36,10 @@ onboot:
   - name: dhcpcd
     image: linuxkit/dhcpcd:52d2c4df0311b182e99241cdc382ff726755c450
     command: [ "/etc/ip/dhcp.sh", "true" ] # 2nd paramter is one-shot true/false: true for onboot, false for services
-    capabilities.add:
-      - CAP_SYS_TIME # for ntp one-shot no-max-offset after ntpd, for hardware missing RTC's that boot in 1970
+    #capabilities.add:
+    #  - CAP_SYS_TIME # for ntp one-shot no-max-offset after ntpd, for hardware missing RTC's that boot in 1970
+    capabilities:
+      - all
     binds.add:
       - /var/lib/dhcpcd:/var/lib/dhcpcd
       - /run:/run
@@ -68,10 +72,13 @@ services:
 
   - name: getty
     image: linuxkit/getty:76951a596aa5e0867a38e28f0b94d620e948e3e8
+    capabilities:
+      - all
     binds.add:
       - /etc/profile.d/local.sh:/etc/profile.d/local.sh
       - /etc/motd:/etc/motd
       - /etc/os-release:/etc/os-release
+      - /:/host_root
     env:
       - INSECURE=true
 

@@ -16,6 +16,7 @@ init:
   - linuxkit/runc:v0.8
   - linuxkit/containerd:d445de33c7f08470187b068d247b1c0dea240f0a
   - linuxkit/ca-certificates:c1c73ef590dffb6a0138cf758fe4a4305c9864f4
+  - linuxkit/firmware:8def159583422181ddee3704f7024ecb9c02d348 # "Some" firmware from Linuxkit pkg; see https://github.com/linuxkit/linuxkit/blob/master/pkg/firmware/Dockerfile
 
 onboot:
   - name: sysctl

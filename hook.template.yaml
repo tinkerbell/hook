@@ -29,6 +29,10 @@ onboot:
   - name: sysfs
     image: linuxkit/sysfs:5fd982d39ff7bec8e480c67a110acb2d3794c291
 
+  - name: modprobe
+    image: linuxkit/modprobe:ab5ac4d5e7e7a5f2d103764850f7846b69230676
+    command: ["modprobe", "cdc_ncm"] # for usb ethernet dongles
+    
   - name: vlan
     image: linuxkit/ip:6cc44dd4e18ddb02de01bc4b34b5799971b6a7bf
     capabilities:

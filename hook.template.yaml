@@ -19,6 +19,10 @@ init:
   - linuxkit/firmware:8def159583422181ddee3704f7024ecb9c02d348 # "Some" firmware from Linuxkit pkg; see https://github.com/linuxkit/linuxkit/blob/master/pkg/firmware/Dockerfile
 
 onboot:
+  - name: rngd1
+    image: linuxkit/rngd:cdb919e4aee49fed0bf6075f0a104037cba83c39
+    command: [ "/sbin/rngd", "-1" ]
+
   - name: sysctl
     image: linuxkit/sysctl:a88a50c104d538b58da5e1441f6f0b4b738f76a6
 

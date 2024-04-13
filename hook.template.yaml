@@ -84,6 +84,7 @@ services:
       - all
     binds.add:
       - /etc/profile.d/local.sh:/etc/profile.d/local.sh
+      - /etc/securetty:/etc/securetty
       - /etc/motd:/etc/motd
       - /etc/os-release:/etc/os-release
       - /:/host_root
@@ -180,6 +181,30 @@ files:
     source: "files/dhcpcd.conf"
     mode: "0644"
 
+  - path: etc/securetty
+    contents: |
+      console
+      tty0
+      tty1
+      tty2
+      tty3
+      tty4
+      tty5
+      tty6
+      tty7
+      tty8
+      tty9
+      tty10
+      tty11
+      hvc0
+      ttyS0
+      ttyS1
+      ttyAMA0
+      ttyAMA1
+      ttyUSB0
+      ttyUSB1
+      ttyUSB2
+    
 #dbg  - path: root/.ssh/authorized_keys
 #dbg    source: ~/.ssh/id_rsa.pub
 #dbg    mode: "0600"

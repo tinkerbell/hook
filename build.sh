@@ -8,6 +8,7 @@ source bash/common.sh
 source bash/docker.sh
 source bash/linuxkit.sh
 source bash/hook-lk-containers.sh
+source bash/shellcheck.sh
 source bash/kernel.sh
 source bash/kernel/kernel_default.sh
 source bash/kernel/kernel_armbian.sh
@@ -81,6 +82,11 @@ check_docker_daemon_for_sanity
 
 # These commands take no paramters and are handled first, and exit
 case "${1:-"build"}" in
+	shellcheck)
+		download_prepare_shellcheck_bin
+		run_shellcheck && exit 0
+		;;
+
 	gha-matrix)
 		output_gha_matrixes && exit 0
 		;;

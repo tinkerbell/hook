@@ -108,10 +108,15 @@ function calculate_kernel_version_armbian() {
 }
 
 function build_kernel_armbian() {
-	# smth else
 	log info "Building armbian kernel from deb-tar at ${ARMBIAN_KERNEL_FULL_ORAS_REF_DEB_TAR}"
 	log info "Will build Dockerfile ${ARMBIAN_KERNEL_DOCKERFILE}"
 
 	# Build the Dockerfile; don't specify platform, our Dockerfile is multiarch, thus you can get build x86 kernels in arm64 hosts and vice-versa
 	docker buildx build --load --progress=plain -t "${kernel_oci_image}" -f "${ARMBIAN_KERNEL_DOCKERFILE}" kernel
+}
+
+function configure_kernel_armbian() {
+	log error "Can't configure Armbian kernel from Hook, since they're prebuilt externally."
+	log warn "Armbian kernel's configs are at https://github.com/armbian/build/tree/main/config/kernel"
+	exit 3
 }

@@ -9,6 +9,7 @@ source bash/docker.sh
 source bash/linuxkit.sh
 source bash/hook-lk-containers.sh
 source bash/shellcheck.sh
+source bash/json-matrix.sh
 source bash/kernel.sh
 source bash/kernel/kernel_default.sh
 source bash/kernel/kernel_armbian.sh

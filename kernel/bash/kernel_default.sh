@@ -49,7 +49,14 @@ function calculate_kernel_version_default() {
 	input_hash="$(cat "kernel/configs/${INPUT_DEFCONFIG}" "kernel/Dockerfile" | sha256sum - | cut -d ' ' -f 1)"
 	short_input_hash="${input_hash:0:8}"
 	kernel_oci_version="${KERNEL_MAJOR}.${KERNEL_MINOR}.${KERNEL_POINT_RELEASE}-${short_input_hash}"
-	kernel_oci_image="${HOOK_KERNEL_OCI_BASE}${kernel_id}:${kernel_oci_version}"
+
+	kernel_id_to_use="${kernel_id}"
+	if [[ -n "${USE_KERNEL_ID}" ]]; then
+		log warn "USE_KERNEL_ID is set to '${USE_KERNEL_ID}'; using it instead of the default kernel_id '${kernel_id}'."
+		kernel_id_to_use="${USE_KERNEL_ID}"
+	fi
+
+	kernel_oci_image="${HOOK_KERNEL_OCI_BASE}${kernel_id_to_use}:${kernel_oci_version}"
 
 	# Log the obtained version & images to stderr
 	log info "Kernel arch: ${KERNEL_ARCH} (for ARCH ${ARCH})"

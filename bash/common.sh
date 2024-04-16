@@ -8,6 +8,7 @@ function log() {
 	shift
 	declare color="${log_colors[${level}]}"
 	declare emoji="${log_emoji[${level}]}"
+	level=$(printf "%-5s" "${level}") # pad to 5 characters before printing
 	echo -e "${emoji} \033[${color}m${SECONDS}: [${level}] $*\033[0m" >&2
 }
 

@@ -1,13 +1,26 @@
 #!/usr/bin/env bash
 
-function kernel_build() {
-	declare -A kernel_info
-	declare kernel_oci_version="" kernel_oci_image=""
-	get_kernel_info_dict "${kernel_id}"
-	set_kernel_vars_from_info_dict
+function obtain_kernel_data_from_id() {
+	declare -g -A kernel_info=()
+	declare -g kernel_oci_version="" kernel_oci_image=""
 
-	log info "Kernel calculate version method: ${kernel_info[VERSION_FUNC]}"
+	log debug "Obtaining kernel data for kernel ID: '${1}'"
+
+	get_kernel_info_dict "${1}"
+	set_kernel_vars_from_info_dict
+	kernel_calculate_version
+
+	return 0
+}
+
+function kernel_calculate_version() {
+	log debug "Running calculate version method: ${kernel_info[VERSION_FUNC]}"
 	"${kernel_info[VERSION_FUNC]}"
+
+	return 0
+}
+
+function kernel_build() {
 
 	# determine if it is already available in the OCI registry; if so, just pull and skip building/pushing
 	if docker pull "${kernel_oci_image}"; then
@@ -32,14 +45,6 @@ function kernel_configure_interactive() {
 	[[ ! -t 0 ]] && log error "not interactive, can't configure" && exit 1
 
 	log info "Configuring a kernel..."
-
-	declare -A kernel_info
-	declare kernel_oci_version="" kernel_oci_image=""
-	get_kernel_info_dict "${kernel_id}"
-	set_kernel_vars_from_info_dict
-
-	log debug "Kernel calculate version method: ${kernel_info[VERSION_FUNC]}"
-	"${kernel_info[VERSION_FUNC]}"
 
 	log debug "Kernel config method: ${kernel_info[CONFIG_FUNC]}"
 	"${kernel_info[CONFIG_FUNC]}"

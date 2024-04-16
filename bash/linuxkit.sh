@@ -27,14 +27,6 @@ function obtain_linuxkit_binary_cached() {
 }
 
 function linuxkit_build() {
-	declare -A kernel_info
-	declare kernel_oci_version="" kernel_oci_image=""
-	get_kernel_info_dict "${kernel_id}"
-	set_kernel_vars_from_info_dict
-
-	log debug "Kernel calculate version method: ${kernel_info[VERSION_FUNC]}"
-	"${kernel_info[VERSION_FUNC]}"
-
 	# Ensure OUTPUT_ID is set
 	if [[ "${OUTPUT_ID}" == "" ]]; then
 		log error "\${OUTPUT_ID} is not set after ${kernel_info[VERSION_FUNC]}"
@@ -141,12 +133,6 @@ function linuxkit_build() {
 
 function linuxkit_run_qemu() {
 	declare lk_output_dir="out/linuxkit-${kernel_id}"
-	# Todo this is common everywhere, just do it in build.sh
-	declare -A kernel_info
-	declare kernel_oci_version="" kernel_oci_image=""
-	get_kernel_info_dict "${kernel_id}"
-	set_kernel_vars_from_info_dict
-
 	declare -g linuxkit_bin=""
 	obtain_linuxkit_binary_cached # sets "${linuxkit_bin}"
 

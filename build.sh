@@ -103,7 +103,7 @@ declare -r -g kernel_id="${2:-"hook-default-${host_docker_arch}"}"
 
 # Gather the information about it now.
 log info "Selected kernel: '${kernel_id}'"
-# @TODO
+obtain_kernel_data_from_id "${kernel_id}"
 
 case "${1:-"build"}" in
 	kernel-config | config-kernel)

@@ -5,6 +5,7 @@ set -e
 function calculate_kernel_version_default() {
 	# Make sure kernel_id is defined or exit with an error; using a one liner
 	: "${kernel_id:?"ERROR: kernel_id is not defined"}"
+	log debug "Starting calculate_kernel_version_default for kernel_id='${kernel_id}'"
 
 	# Calculate the input DEFCONFIG
 	declare -g INPUT_DEFCONFIG="${KCONFIG}-${KERNEL_MAJOR}.${KERNEL_MINOR}.y-${ARCH}"

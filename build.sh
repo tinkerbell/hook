@@ -8,9 +8,9 @@ source bash/common.sh
 source bash/docker.sh
 source bash/linuxkit.sh
 source bash/hook-lk-containers.sh
-source kernel/bash/common.sh
-source kernel/bash/kernel_default.sh
-source kernel/bash/kernel_armbian.sh
+source bash/kernel.sh
+source bash/kernel/kernel_default.sh
+source bash/kernel/kernel_armbian.sh
 
 # each entry in this array needs a corresponding one in the kernel_data dictionary-of-stringified-dictionaries below
 declare -a kernels=(

@@ -21,11 +21,13 @@ function kernel_calculate_version() {
 }
 
 function kernel_build() {
-
-	# determine if it is already available in the OCI registry; if so, just pull and skip building/pushing
-	if docker pull "${kernel_oci_image}"; then
-		log info "Kernel image ${kernel_oci_image} already in registry; skipping build"
-		exit 0
+	if [[ "${FORCE_BUILD_KERNEL:-"no"}" == "no" ]]; then
+		# determine if it is already available in the OCI registry; if so, just pull and skip building/pushing
+		if docker pull "${kernel_oci_image}"; then
+			log info "Kernel image ${kernel_oci_image} already in registry; skipping build."
+			log info "Set FORCE_BUILD_KERNEL=yes to force a build; use DO_PUSH=yes to also push after build."
+			exit 0
+		fi
 	fi
 
 	log debug "Kernel build method: ${kernel_info[BUILD_FUNC]}"

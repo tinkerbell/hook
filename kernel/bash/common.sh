@@ -75,6 +75,10 @@ function get_kernel_info_dict() {
 	kernel_info['VERSION_FUNC']="calculate_kernel_version_${kernel_info['METHOD']}"
 	kernel_info['CONFIG_FUNC']="configure_kernel_${kernel_info['METHOD']}"
 
+	# Defaults for optional settings
+	kernel_info['TEMPLATE']="${kernel_info['TEMPLATE']:-"hook"}"
+	kernel_info['LINUXKIT_VERSION']="${kernel_info['LINUXKIT_VERSION']:-"${LINUXKIT_VERSION_DEFAULT}"}"
+
 	# convert ARCH (x86_64, aarch64) to docker-ARCH (amd64, arm64)
 	case "${kernel_info['ARCH']}" in
 		"x86_64") kernel_info['DOCKER_ARCH']="amd64" ;;

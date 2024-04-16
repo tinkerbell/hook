@@ -61,8 +61,10 @@ function linuxkit_build() {
 	# - envsubst doesn't offer a good way to escape $ in the input, so we pass the exact list of vars to consider, so escaping is not needed
 
 	# shellcheck disable=SC2016 # I'm using single quotes to avoid shell expansion, envsubst wants the dollar signs.
+	log info "Using Linuxkit template '${kernel_info['TEMPLATE']}'..."
+
 	# shellcheck disable=SC2002 # Again, no, I love my cat, leave me alone
-	cat "hook.template.yaml" |
+	cat "linuxkit-templates/${kernel_info['TEMPLATE']}.template.yaml" |
 		HOOK_KERNEL_IMAGE="${kernel_oci_image}" HOOK_KERNEL_ID="${kernel_id} from ${kernel_oci_image}" \
 			HOOK_CONTAINER_BOOTKIT_IMAGE="${HOOK_CONTAINER_BOOTKIT_IMAGE}" \
 			HOOK_CONTAINER_DOCKER_IMAGE="${HOOK_CONTAINER_DOCKER_IMAGE}" \

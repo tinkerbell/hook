@@ -13,10 +13,12 @@ function calculate_kernel_version_default() {
 		exit 1
 	fi
 
-	# The default kernel output id is just the arch, unless KCONFIG is not generic
+	# The default kernel output id is just the arch, unless KCONFIG is not generic, or USE_KERNEL_ID is set
 	declare -g OUTPUT_ID="${ARCH}"
 	if [[ "${KCONFIG}" != "generic" ]]; then
 		OUTPUT_ID="${KCONFIG}-${KERNEL_MAJOR}.${KERNEL_MINOR}.y-${ARCH}"
+	elif [[ -n "${USE_KERNEL_ID}" ]]; then
+		OUTPUT_ID="${kernel_id}"
 	fi
 
 	# Calculate the KERNEL_ARCH from ARCH; also what is the cross-compiler package needed for the arch

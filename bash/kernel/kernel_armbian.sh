@@ -20,7 +20,7 @@ function calculate_kernel_version_armbian() {
 				log info "Pulled skopeo image ${SKOPEO_IMAGE} OK"
 				skopeo_pulled=1
 			else
-				skopeo_pull_tries+=1
+				((skopeo_pull_tries += 1))
 				log info "Failed to pull ${SKOPEO_IMAGE}, retrying ${skopeo_pull_tries}/${skopeo_max_pull_tries}"
 				sleep $((3 + RANDOM % 12)) # sleep a random amount of seconds
 			fi
@@ -39,7 +39,8 @@ function calculate_kernel_version_armbian() {
 	declare -g OUTPUT_ID="${kernel_id}"
 
 	declare -g ARMBIAN_KERNEL_FULL_ORAS_REF_DEB_TAR="${ARMBIAN_KERNEL_BASE_ORAS_REF}:${ARMBIAN_KERNEL_VERSION}"
-	declare -g ARMBIAN_KERNEL_MAJOR_MINOR_POINT="$(echo -n "${ARMBIAN_KERNEL_VERSION}" | cut -d "-" -f 1)"
+	declare -g ARMBIAN_KERNEL_MAJOR_MINOR_POINT="unknown"
+	ARMBIAN_KERNEL_MAJOR_MINOR_POINT="$(echo -n "${ARMBIAN_KERNEL_VERSION}" | cut -d "-" -f 1)"
 	log info "ARMBIAN_KERNEL_MAJOR_MINOR_POINT: ${ARMBIAN_KERNEL_MAJOR_MINOR_POINT}"
 
 	declare -g ARMBIAN_KERNEL_DOCKERFILE="kernel/Dockerfile.autogen.armbian.${kernel_id}"
@@ -97,6 +98,7 @@ function calculate_kernel_version_armbian() {
 	ARMBIAN_ORAS_DOCKERFILE
 
 	declare input_hash="" short_input_hash=""
+	# shellcheck disable=SC2002 # keep cat & hash stdin so we can easily add more factors to the hash one day
 	input_hash="$(cat "${ARMBIAN_KERNEL_DOCKERFILE}" | sha256sum - | cut -d ' ' -f 1)"
 	short_input_hash="${input_hash:0:8}"
 	kernel_oci_version="${ARMBIAN_KERNEL_MAJOR_MINOR_POINT}-${short_input_hash}"

@@ -106,11 +106,15 @@ log info "Selected kernel: '${kernel_id}'"
 obtain_kernel_data_from_id "${kernel_id}"
 
 case "${1:-"build"}" in
-	kernel-config | config-kernel)
-		kernel_configure_interactive
+	kernel-config-shell | config-shell-kernel)
+		kernel_configure_interactive "shell" # runs a shell in the kernel build environment
 		;;
 
-	kernel-build | build-kernel)
+	config | kernel-config | config-kernel)
+		kernel_configure_interactive "one-shot" # directly calls menuconfig & extracts a defconfig to build host
+		;;
+
+	kernel | kernel-build | build-kernel)
 		kernel_build
 		;;
 

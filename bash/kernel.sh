@@ -46,10 +46,10 @@ function kernel_configure_interactive() {
 	# bail if not interactive (stdin is a terminal)
 	[[ ! -t 0 ]] && log error "not interactive, can't configure" && exit 1
 
-	log info "Configuring a kernel..."
+	log debug "Configuring a kernel with $*"
 
 	log debug "Kernel config method: ${kernel_info[CONFIG_FUNC]}"
-	"${kernel_info[CONFIG_FUNC]}"
+	"${kernel_info[CONFIG_FUNC]}" "$@"
 }
 
 function resolve_latest_kernel_version_lts() { # Produces KERNEL_POINT_RELEASE

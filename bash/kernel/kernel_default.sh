@@ -84,28 +84,47 @@ function common_build_args_kernel_default() {
 }
 
 function configure_kernel_default() {
-	log info "Configuring default kernel"
+	log info "Configuring default kernel: $*"
 
 	declare -a build_args=()
 	common_build_args_kernel_default
 	log info "Will configure with: ${build_args[*]}"
 
 	declare configurator_image="hook-kernel-configurator:latest"
+
+	# Build the config stage
+	log info "Building kernel-configurator Dockerfile stage..."
 	(
 		cd kernel
 		# Build the "kernel-configurator" target from the Dockerfile, tag it as "hook-kernel-configurator:latest"
 		docker buildx build --load --progress=plain "${build_args[@]}" -t "${kernel_oci_image}" --target kernel-configurator -t "${configurator_image}" .
-		# Run the built container; mount kernel/configs as /host
-		cat <<- INSTRUCTIONS
-			*** Starting a shell in the Docker kernel-configurator stage.
-			*** The config ${INPUT_DEFCONFIG} is already in place in .config (and already expanded).
-			*** You can run "make menuconfig" to interactively configure the kernel.
-			*** After configuration, you should run "make savedefconfig" to obtain a "defconfig" file.
-			*** You can then run "cp -v defconfig /host/${INPUT_DEFCONFIG}" to copy it to the build host for commiting.
-		INSTRUCTIONS
-
-		docker run -it --rm -v "$(pwd)/configs:/host" "${configurator_image}"
 	)
+	log info "Built kernel-configurator Dockerfile stage..."
+
+	if [[ "$1" == "one-shot" ]]; then
+		log info "Running one-shot configuration, modifying ${INPUT_DEFCONFIG} ..."
+		(
+			cd kernel
+			# Run the built container; mount kernel/configs as /host; run config directly and extract from container
+			docker run -it --rm -v "$(pwd)/configs:/host" "${configurator_image}" bash "-c" "make menuconfig && make savedefconfig && cp -v defconfig /host/${INPUT_DEFCONFIG}"
+		)
+		log info "Kernel config finished. File ${INPUT_DEFCONFIG} is modified in your local copy."
+	else
+		log info "Starting an interactive shell in Dockerfile kernel-configurator stage..."
+		(
+			cd kernel
+			# Run the built container; mount kernel/configs as /host
+			cat <<- INSTRUCTIONS
+				*** Starting a shell in the Docker kernel-configurator stage.
+				*** The config ${INPUT_DEFCONFIG} is already in place in .config (and already expanded).
+				*** You can run "make menuconfig" to interactively configure the kernel.
+				*** After configuration, you should run "make savedefconfig" to obtain a "defconfig" file.
+				*** You can then run "cp -v defconfig /host/${INPUT_DEFCONFIG}" to copy it to the build host for commiting.
+			INSTRUCTIONS
+			docker run -it --rm -v "$(pwd)/configs:/host" "${configurator_image}" bash
+		)
+	fi
+	return 0
 }
 
 function build_kernel_default() {

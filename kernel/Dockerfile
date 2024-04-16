@@ -56,7 +56,6 @@ RUN set -x && make "ARCH=${KERNEL_ARCH}" olddefconfig
 # Otherwise, since this stage is not referenced anywhere during normal build, it is completely skipped
 FROM kernel-with-config as kernel-configurator
 VOLUME /host
-ENTRYPOINT ["/bin/bash"]
 
 
 FROM kernel-with-config AS kernel-build

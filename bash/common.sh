@@ -23,8 +23,8 @@ function install_dependencies() {
 		# If more than zero entries in the array, install
 		if [[ ${#debian_pkgs[@]} -gt 0 ]]; then
 			log warn "Installing dependencies: ${debian_pkgs[*]}"
-			sudo apt -y update
-			sudo apt -y install "${debian_pkgs[@]}"
+			sudo DEBIAN_FRONTEND=noninteractive apt -o "Dpkg::Use-Pty=0" -y update
+			sudo DEBIAN_FRONTEND=noninteractive apt -o "Dpkg::Use-Pty=0" -y install "${debian_pkgs[@]}"
 		fi
 	else
 		log error "Don't know how to install the equivalent of Debian packages: ${debian_pkgs[*]} -- teach me!"

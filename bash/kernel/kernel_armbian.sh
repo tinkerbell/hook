@@ -53,7 +53,8 @@ function calculate_kernel_version_armbian() {
 	cat <<- ARMBIAN_ORAS_DOCKERFILE > "${ARMBIAN_KERNEL_DOCKERFILE}"
 		FROM debian:stable as downloader
 		# Install ORAS binary tool from GitHub releases
-		RUN apt update && apt install -y curl dpkg-dev && \
+		ENV DEBIAN_FRONTEND=noninteractive
+		RUN apt -o "Dpkg::Use-Pty=0" update && apt install -o "Dpkg::Use-Pty=0" -y curl dpkg-dev && \
 		      curl -sL -o /oras.tar.gz ${oras_down_url} && \
 		      tar -xvf /oras.tar.gz -C /usr/local/bin/ oras && \
 		      chmod +x /usr/local/bin/oras && \

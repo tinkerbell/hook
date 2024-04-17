@@ -131,7 +131,18 @@ jobs:
         uses: docker/login-action@v3
         with: { registry: "ghcr.io", username: "${{ github.repository_owner }}", password: "${{ secrets.GITHUB_TOKEN }}" }
 
-      - name: Build Hook with Kernel ${{matrix.kernel}} (${{ matrix.arch }})
+      - name: GitHub Actions Cache for 'cache' dir
+        uses: actions/cache@v4
+        if: ${{ matrix.gha_cache == 'yes' }} # only set to yes for GH-hosted runners; see gha-matrix bash impl
+        with:
+          path: cache
+          key: "lk-cache-${{ matrix.docker_arch }}-${{ matrix.kernel }}-${{ hashFiles('linuxkit-templates/*') }}-${{ hashFiles('bash/**/*.sh') }}"
+          restore-keys: |
+            lk-cache-${{ matrix.docker_arch }}-${{ matrix.kernel }}
+            lk-cache-${{ matrix.docker_arch }}
+          save-always: true # always save the cache, even if build fails
+
+      - name: "Build Hook with Kernel ${{matrix.kernel}} (${{ matrix.arch }}) - cache: ${{matrix.gha_cache}}"
         env:
           DO_BUILD_KERNEL: "no" # we already built the kernel; this is only for hook/linuxkit.
           DO_BUILD_LK_CONTAINERS: "no" # already built them; this is only for hook/linuxkit.

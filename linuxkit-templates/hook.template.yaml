@@ -1,4 +1,5 @@
 # Attention, this is a template that is run through envsubst, but with a specific list of variables to replace. Thus:
+# - HOOK_VERSION: ${HOOK_VERSION} (a simple 1.2.3 string, no 'v')
 # - HOOK_KERNEL_IMAGE: ${HOOK_KERNEL_IMAGE}
 # - HOOK_KERNEL_ID: ${HOOK_KERNEL_ID}
 # - HOOK_CONTAINER_BOOTKIT_IMAGE: ${HOOK_CONTAINER_BOOTKIT_IMAGE}
@@ -162,10 +163,10 @@ files:
     mode: "0444"
     contents: |
       NAME="HookOS"
-      VERSION=0.8.1
+      VERSION=${HOOK_VERSION}
       ID=hookos
-      VERSION_ID=0.8.1
-      PRETTY_NAME="HookOS 0.8.1"
+      VERSION_ID=${HOOK_VERSION}
+      PRETTY_NAME="HookOS ${HOOK_VERSION} with Kernel ${HOOK_KERNEL_ID}"
       ANSI_COLOR="1;34"
       HOME_URL="https://github.com/tinkerbell/hook"
 

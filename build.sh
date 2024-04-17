@@ -75,6 +75,10 @@ declare -g SKOPEO_IMAGE="${SKOPEO_IMAGE:-"quay.io/skopeo/stable:latest"}"
 # See https://github.com/linuxkit/linuxkit/releases
 declare -g -r LINUXKIT_VERSION_DEFAULT="1.0.1" # LinuxKit version to use by default; each flavor can set its own too
 
+# Set the default HOOK_VERSION; override with env var; -x exports it for envsubst later
+declare -g -r -x HOOK_VERSION="${HOOK_VERSION:-"0.9.0-alpha1"}"
+log info "Using Hook version (HOOK_VERSION): ${HOOK_VERSION}"
+
 # Install OS dependencies
 install_dependencies
 

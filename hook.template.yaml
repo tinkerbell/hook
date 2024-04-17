@@ -31,8 +31,8 @@ onboot:
 
   - name: modprobe
     image: linuxkit/modprobe:ab5ac4d5e7e7a5f2d103764850f7846b69230676
-    command: ["modprobe", "cdc_ncm"] # for usb ethernet dongles
-    
+    command: [ "modprobe", "cdc_ncm" ] # for usb ethernet dongles
+
   - name: vlan
     image: linuxkit/ip:6cc44dd4e18ddb02de01bc4b34b5799971b6a7bf
     capabilities:
@@ -138,8 +138,8 @@ files:
       alias docker-shell='ctr -n services.linuxkit tasks exec --tty --exec-id shell hook-docker sh'
       name_version=$(grep PRETTY_NAME= /etc/os-release | cut -d'=' -f2 | tr -d '"')
       export PS1='${name_version}:\w\$ '
-      # Disable kernel messages on console
-      # rpardini: why? # echo 4 > /proc/sys/kernel/printk
+      # only print WARNING or higher kernel messages to console
+      echo 4 > /proc/sys/kernel/printk
     mode: "0644"
 
   - path: etc/motd
@@ -204,7 +204,7 @@ files:
       ttyUSB0
       ttyUSB1
       ttyUSB2
-    
+
 #dbg  - path: root/.ssh/authorized_keys
 #dbg    source: ~/.ssh/id_rsa.pub
 #dbg    mode: "0600"

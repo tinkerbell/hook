@@ -86,6 +86,12 @@ function get_kernel_info_dict() {
 	kernel_info['TEMPLATE']="${kernel_info['TEMPLATE']:-"hook"}"
 	kernel_info['LINUXKIT_VERSION']="${kernel_info['LINUXKIT_VERSION']:-"${LINUXKIT_VERSION_DEFAULT}"}"
 
+	# Ensure kernel_info a valid TAG
+	if [[ -z "${kernel_info['TAG']}" ]]; then
+		log error "No TAG found for kernel '${kernel}'"
+		exit 1
+	fi
+
 	# convert ARCH (x86_64, aarch64) to docker-ARCH (amd64, arm64)
 	case "${kernel_info['ARCH']}" in
 		"x86_64") kernel_info['DOCKER_ARCH']="amd64" ;;

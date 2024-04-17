@@ -19,16 +19,25 @@ function build_hook_linuxkit_container() {
 	declare container_files_hash_short="${container_files_hash:0:8}"
 
 	declare container_oci_ref="${HOOK_LK_CONTAINERS_OCI_BASE}${container_dir}:${container_files_hash_short}-${DOCKER_ARCH}"
-	log info "Going to build container ${container_oci_ref} from ${container_dir} for platform ${DOCKER_ARCH}"
+	log info "Consider building LK container ${container_oci_ref} from ${container_dir} for platform ${DOCKER_ARCH}"
 	output_var="${container_oci_ref}" # the the name reference
 	echo "${output_var}" > /dev/null  # no-op; just to avoid shellcheck SC2034 (unused var; but it is actually a bash nameref)
 
-	# Check if we can pull the image from registry; if so, skip the build.
-	if docker pull "${container_oci_ref}"; then
-		log info "Image ${container_oci_ref} already exists in registry, skipping build"
+	# If the image is in the local docker cache, skip building
+	log debug "Checking if image ${container_oci_ref} exists in local registry"
+	if [[ -n "$(docker images -q "${container_oci_ref}")" ]]; then
+		log info "Image ${container_oci_ref} exists in local registry, skipping build"
 		return 0
 	fi
 
+	# Check if we can pull the image from registry; if so, skip the build.
+	log debug "Checking if image ${container_oci_ref} can be pulled from remote registry"
+	if docker pull "${container_oci_ref}"; then
+		log info "Image ${container_oci_ref} pulled from remote registry, skipping build"
+		return 0
+	fi
+
+	log info "Building ${container_oci_ref} from ${container_dir} for platform ${DOCKER_ARCH}"
 	(
 		cd "${container_dir}" || exit 1
 		docker buildx build -t "${container_oci_ref}" --load --platform "linux/${DOCKER_ARCH}" .

@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 
-# less insane bash error control
+# bash error control
 set -o pipefail
 set -e
 
 source bash/common.sh
+source bash/cli.sh
 source bash/docker.sh
 source bash/linuxkit.sh
 source bash/hook-lk-containers.sh
@@ -14,6 +15,13 @@ source bash/kernel.sh
 source bash/kernel/kernel_default.sh
 source bash/kernel/kernel_armbian.sh
 
+### Initialize the command-line handling. This should behave similar to `make`; PARAM=value pairs are accepted in any order mixed with non-param arguments.
+declare -A -g CLI_PARSED_CMDLINE_PARAMS=()
+declare -a -g CLI_NON_PARAM_ARGS=()
+parse_command_line_arguments "${@}" # which fills the above vars & exports the key=value pairs from cmdline into environment
+# From here on, no more $1 ${1} or similar. We've parsed it all into CLI_PARSED_CMDLINE_PARAMS (already exported in environment) or CLI_NON_PARAM_ARGS
+
+### Configuration
 # each entry in this array needs a corresponding one in the kernel_data dictionary-of-stringified-dictionaries below
 declare -a kernels=(
 	# Hook's own kernel, in kernel/ directory
@@ -75,18 +83,21 @@ declare -g SKOPEO_IMAGE="${SKOPEO_IMAGE:-"quay.io/skopeo/stable:latest"}"
 # See https://github.com/linuxkit/linuxkit/releases
 declare -g -r LINUXKIT_VERSION_DEFAULT="1.0.1" # LinuxKit version to use by default; each flavor can set its own too
 
+# Directory to use for storing downloaded artifacts: LinuxKit binary, shellcheck binary, etc.
+declare -g -r CACHE_DIR="${CACHE_DIR:-"cache"}"
+
 # Set the default HOOK_VERSION; override with env var; -x exports it for envsubst later
 declare -g -r -x HOOK_VERSION="${HOOK_VERSION:-"0.9.0-alpha1"}"
 log info "Using Hook version (HOOK_VERSION): ${HOOK_VERSION}"
 
+### Start processing
 # Find the directory of this script and change to it so it behaves the same if called from another directory
 declare -g SRC_ROOT=""
 SRC_ROOT="$(cd "$(dirname "$0")" && pwd -P)"
 declare -g -r SRC_ROOT="${SRC_ROOT}"
 cd "${SRC_ROOT}" || exit 1
 
-# Directory to use for storing downloaded artifacts: LinuxKit binary, shellcheck binary, etc.
-declare -g -r CACHE_DIR="${CACHE_DIR:-"cache"}"
+### Initialize cache
 mkdir -p "${CACHE_DIR}" # ensure the directory exists
 
 # Install OS dependencies
@@ -95,8 +106,17 @@ install_dependencies
 # check the host's docker daemon
 check_docker_daemon_for_sanity
 
-# These commands take no paramters and are handled first, and exit
-case "${1:-"build"}" in
+# These commands take no paramters and are handled first, and exit early.
+declare first_param="${CLI_NON_PARAM_ARGS[0]}"
+if [[ -z "${first_param}" ]]; then # default it to "build" if not set, but warn users to be explicit.
+	log warn "No command (first argument) specified; defaulting to 'build'; be explicit to avoid this warning."
+	first_param="build"
+else
+	log info "Command (first argument): explicitely set to '${first_param}'"
+fi
+declare -g -r first_param="${first_param}" # make it a read-only variable
+
+case "${first_param}" in
 	shellcheck)
 		download_prepare_shellcheck_bin
 		run_shellcheck
@@ -114,16 +134,21 @@ case "${1:-"build"}" in
 		;;
 esac
 
-# All other commands take the kernel/flavor ID as 2nd parameter.
-# The default depends on host architecture.
-get_host_docker_arch # sets host_docker_arch
-declare -r -g kernel_id="${2:-"hook-default-${host_docker_arch}"}"
+# All other commands take the kernel/flavor ID as 2nd parameter; the default depends on host architecture.
+get_host_docker_arch                                         # sets host_docker_arch
+declare default_kernel_id="hook-default-${host_docker_arch}" # nb: if you get a shellsheck error here, it is being run out of context. see bash/shellcheck.sh
 
-# Gather the information about it now.
-log info "Selected kernel: '${kernel_id}'"
-obtain_kernel_data_from_id "${kernel_id}"
+declare second_param="${CLI_NON_PARAM_ARGS[1]}"
+if [[ -z "${second_param}" ]]; then # default it to "build" if not set, but warn users to be explicit.
+	log warn "No kernel/flavor ID (second argument) specified; defaulting to '${default_kernel_id}'; be explicit to avoid this warning."
+	second_param="${default_kernel_id}"
+else
+	log info "Kernel/flavor ID (second argument): explicitely set to '${second_param}'"
+fi
+declare -r -g kernel_id="${second_param}" # kernel_id is now read-only
+obtain_kernel_data_from_id "${kernel_id}" # Gather the information about the kernel_id now; this will exit if the kernel_id is not found
 
-case "${1:-"build"}" in
+case "${first_param}" in
 	kernel-config-shell | config-shell-kernel)
 		kernel_configure_interactive "shell" # runs a shell in the kernel build environment
 		;;
@@ -146,7 +171,7 @@ case "${1:-"build"}" in
 		;;
 
 	*)
-		log error "Unknown command: ${1}; try build / run / kernel-build / kernel-config / linuxkit-containers / gha-matrix"
+		log error "Unknown command: '${first_param}'; try build / run / kernel-build / kernel-config / linuxkit-containers / gha-matrix"
 		exit 1
 		;;
 esac

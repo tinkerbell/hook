@@ -2,6 +2,7 @@
 # - HOOK_VERSION: ${HOOK_VERSION} (a simple 1.2.3 string, no 'v')
 # - HOOK_KERNEL_IMAGE: ${HOOK_KERNEL_IMAGE}
 # - HOOK_KERNEL_ID: ${HOOK_KERNEL_ID}
+# - HOOK_KERNEL_VERSION: ${HOOK_KERNEL_VERSION}
 # - HOOK_CONTAINER_BOOTKIT_IMAGE: ${HOOK_CONTAINER_BOOTKIT_IMAGE}
 # - HOOK_CONTAINER_DOCKER_IMAGE: ${HOOK_CONTAINER_DOCKER_IMAGE}
 # - HOOK_CONTAINER_MDEV_IMAGE: ${HOOK_CONTAINER_MDEV_IMAGE}
@@ -155,9 +156,10 @@ files:
       ██   ██ ██    ██ ██    ██ ██  ██  ██    ██      ██
       ██   ██  ██████   ██████  ██   ██  ██████  ███████
 
-      - This Hook is using kernel ${HOOK_KERNEL_ID}
+      - Hook flavor ${HOOK_KERNEL_ID} version ${HOOK_VERSION} / Kernel version ${HOOK_KERNEL_VERSION}
       - Use `docker` commands to access the tink worker/agent container and workflow action containers.
       - Logs are located in the `/var/log/` directory.
+      - Use `docker logs tink-worker --follow` to watch the worker logs.
 
   - path: etc/os-release
     mode: "0444"
@@ -166,7 +168,7 @@ files:
       VERSION=${HOOK_VERSION}
       ID=hookos
       VERSION_ID=${HOOK_VERSION}
-      PRETTY_NAME="HookOS ${HOOK_VERSION} with Kernel ${HOOK_KERNEL_ID}"
+      PRETTY_NAME="HookOS ${HOOK_KERNEL_ID} v${HOOK_VERSION}/k${HOOK_KERNEL_VERSION}"
       ANSI_COLOR="1;34"
       HOME_URL="https://github.com/tinkerbell/hook"
 

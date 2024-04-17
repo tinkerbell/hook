@@ -25,9 +25,11 @@ parse_command_line_arguments "${@}" # which fills the above vars & exports the k
 # each entry in this array needs a corresponding one in the kernel_data dictionary-of-stringified-dictionaries below
 declare -a kernels=(
 	# Hook's own kernel, in kernel/ directory
-	"hook-default-arm64" # Hook default kernel, source code stored in `kernel` dir in this repo -- currently v5.10.213
-	"hook-default-amd64" # Hook default kernel, source code stored in `kernel` dir in this repo -- currently v5.10.213
-	"peg-default-amd64"  # A 'peg' is not really a 'hook': used for development only; Hook default kernel, minimal firmware; LinuxKit 1.2.0
+	"hook-default-arm64"    # Hook default kernel, source code stored in `kernel` dir in this repo -- currently v5.10.213
+	"hook-default-amd64"    # Hook default kernel, source code stored in `kernel` dir in this repo -- currently v5.10.213
+	"peg-default-amd64"     # A 'peg' is not really a 'hook': used for development only; Hook default kernel, minimal firmware; LinuxKit 1.2.0
+	"hook-latest-lts-amd64" # Experimental 6.6.y ("latest lts") kernel for amd64
+	"hook-latest-lts-arm64" # Experimental 6.6.y ("latest lts") kernel for arm64
 
 	# External kernels, taken from Armbian's OCI repos. Those are "exotic" kernels for certain SoC's.
 	# edge = (release candidates or stable but rarely LTS, more aggressive patching)
@@ -52,6 +54,9 @@ declare -A kernel_data=(
 
 	# for development purposes; testing new LK version and simpler LK configurations, using the default kernel
 	["peg-default-amd64"]="['METHOD']='default' ['ARCH']='x86_64' ['TAG']='dev' ['USE_KERNEL_ID']='hook-default-amd64' ['TEMPLATE']='peg' ['LINUXKIT_VERSION']='1.2.0' ['KERNEL_MAJOR']='5' ['KERNEL_MINOR']='10' ['KCONFIG']='generic'"
+	# development purposes: trying out kernel 6.6.y
+	["hook-latest-lts-amd64"]="['METHOD']='default' ['ARCH']='x86_64' ['TAG']='lts' ['KERNEL_MAJOR']='6' ['KERNEL_MINOR']='6' ['KCONFIG']='generic' "
+	["hook-latest-lts-arm64"]="['METHOD']='default' ['ARCH']='aarch64' ['TAG']='lts' ['KERNEL_MAJOR']='6' ['KERNEL_MINOR']='6' ['KCONFIG']='generic' "
 
 	# Armbian mainline kernels, check https://github.com/orgs/armbian/packages?tab=packages&q=kernel- for possibilities
 	# nb: when no ARMBIAN_KERNEL_VERSION, will use the first tag returned, high traffic, low cache rate.

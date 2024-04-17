@@ -77,7 +77,7 @@ RUN set -x && \
     make -s -j"$(getconf _NPROCESSORS_ONLN)" INSTALL_MOD_PATH=/tmp/kernel-modules modules_install && \
     ( DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdepth 1)) && \
       cd /tmp/kernel-modules/lib/modules/$DVER && \
-      rm build source ) && \
+      rm -f build source ) && \
     ( cd /tmp/kernel-modules && tar cf /out/kernel.tar . )
 
 # For arches that have DTB's, eg arm64; they go separately into dtbs.tar; for arches that don't (x86), an empty dtbs.tar is created

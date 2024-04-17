@@ -10,6 +10,8 @@ env: # Global environment, passed to all jobs & all steps
   REGISTRY: "quay.io" # or quay.io, determines which will be logged-in to
   #HOOK_KERNEL_OCI_BASE: "ghcr.io/${{ github.repository_owner }}/tinkerbell/kernel-"
   #HOOK_LK_CONTAINERS_OCI_BASE: "ghcr.io/${{ github.repository_owner }}/tinkerbell/linuxkit-"
+  
+  HOOK_VERSION: "0.9.0-alpha1-build-${{github.run_number}}" # Use a forced Hook version
 
 jobs:
   
@@ -19,26 +21,27 @@ jobs:
     outputs:
       created: ${{ steps.date_prep.outputs.created }} # refer to as ${{needs.prepare.outputs.created}}
       kernels_json: ${{ steps.prepare-matrix.outputs.kernels_json }}
-      arches_json: ${{ steps.prepare-matrix.outputs.arches_json }}
+      lkcontainers_json: ${{ steps.prepare-matrix.outputs.lkcontainers_json }}
+      lk_hooks_json: ${{ steps.prepare-matrix.outputs.lk_hooks_json }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Prepare release ID (current date) # @TODO maybe move this inside, and make it a hash of everything
+      - name: Prepare release ID (current date) # This only used for the GitHub Release; not included in any way in the build process.
         id: date_prep
         run: echo "created=$(date -u +'%Y%m%d-%H%M')" >> "${GITHUB_OUTPUT}"
 
       - name: Run the matrix JSON preparation bash script
         id: prepare-matrix
-        run: bash build.sh gha-matrix # This sets the output "kernels_json" & "arches_json" internally
+        run: bash build.sh gha-matrix # This sets the output "kernels_json" & "lkcontainers_json" & "lk_hooks_json" internally
   
   build-linuxkit-containers:
     needs: [ matrix_prep ]
-    runs-on: "ubuntu-latest" # @TODO: one day we might implement ${{ matrix.runner }} when we have arm64 runners. For now use amd64 GH runners & qemu; notice: qemu is only used to build hook-bootkit, hook-mdev, and hook-docker
+    runs-on: "${{ matrix.runner }}" # the runner to use is determined by the 'gha-matrix' code
     strategy:
       fail-fast: true
       matrix:
-        include: ${{ fromJSON(needs.matrix_prep.outputs.arches_json) }}
+        include: ${{ fromJSON(needs.matrix_prep.outputs.lkcontainers_json) }}
     name: "LinuxKit containers for ${{ matrix.docker_arch }}"
     steps:
       - name: Checkout build repo
@@ -68,7 +71,7 @@ jobs:
   
   build-kernels:
     needs: [ matrix_prep ] # depend on the previous job...
-    runs-on: "ubuntu-latest" # @TODO: one day we might implement ${{ matrix.runner }} when we have arm64 runners. For now use amd64 GH runners & qemu; notice: qemu is only used to build hook-bootkit, hook-mdev, and hook-docker
+    runs-on: "${{ matrix.runner }}" # the runner to use is determined by the 'gha-matrix' code
     strategy:
       fail-fast: false # let other jobs try to complete if one fails, kernels might take long, and they'd be skipped on the next run
       matrix:
@@ -98,11 +101,11 @@ jobs:
 
   build-hook-ensemble:
     needs: [ matrix_prep, build-linuxkit-containers, build-kernels ] # depend on the previous job...
-    runs-on: "ubuntu-latest" # @TODO: one day we might implement ${{ matrix.runner }} when we have arm64 runners. For now use amd64 GH runners & qemu; notice: qemu is only used to build hook-bootkit, hook-mdev, and hook-docker
+    runs-on: "${{ matrix.runner }}" # the runner to use is determined by the 'gha-matrix' code
     strategy:
       fail-fast: false # let other jobs try to complete if one fails
       matrix:
-        include: ${{ fromJSON(needs.matrix_prep.outputs.kernels_json) }}
+        include: ${{ fromJSON(needs.matrix_prep.outputs.lk_hooks_json) }}
     name: "Hook ${{ matrix.kernel }}"
     steps:
       - name: Checkout build repo
@@ -150,7 +153,7 @@ jobs:
           merge-multiple: true
           path: out
 
-      # Release the artifacts into GitHub Releases. @TODO this GHA Action is not ideal, but I can't find a better one.
+      # Release the artifacts into GitHub Releases. @TODO this GHA Action is not ideal, uses old nodejs, but I can't find a better one.
       - name: "GH Release"
         uses: "marvinpinto/action-automatic-releases@latest"
         with:

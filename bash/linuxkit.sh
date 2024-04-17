@@ -36,12 +36,17 @@ function linuxkit_build() {
 	# If the image is in the local docker cache, skip building
 	if [[ -n "$(docker images -q "${kernel_oci_image}")" ]]; then
 		log info "Kernel image ${kernel_oci_image} already in local cache; trying a pull to update, but tolerate failures..."
-		docker pull "${kernel_oci_image}" || log warn "Pull failed, using local image ${kernel_oci_image}"
+		docker pull "${kernel_oci_image}" || log warn "Pull failed, fallback to local image ${kernel_oci_image} - results might be inconsistent."
 	else
 		# Pull the kernel from the OCI registry
 		log info "Pulling kernel from ${kernel_oci_image}"
-		docker pull "${kernel_oci_image}"
-		# @TODO: if pull fails, build like build-kernel would.
+		if docker pull "${kernel_oci_image}"; then
+			log info "Successfully pulled kernel ${kernel_oci_image} from registry."
+		else
+			log error "Failed to pull kernel ${kernel_oci_image} from registry."
+			log error "You might want to build the kernel locally, by running './build.sh kernel ${kernel_id}'"
+			exit 7
+		fi
 	fi
 
 	# Build the containers in this repo used in the LinuxKit YAML;

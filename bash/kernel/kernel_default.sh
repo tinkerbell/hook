@@ -90,14 +90,14 @@ function configure_kernel_default() {
 	common_build_args_kernel_default
 	log info "Will configure with: ${build_args[*]}"
 
-	declare configurator_image="hook-kernel-configurator:latest"
+	declare configurator_image="${kernel_oci_image}-configurator"
 
 	# Build the config stage
 	log info "Building kernel-configurator Dockerfile stage..."
 	(
 		cd kernel
-		# Build the "kernel-configurator" target from the Dockerfile, tag it as "hook-kernel-configurator:latest"
-		docker buildx build --load --progress=plain "${build_args[@]}" -t "${kernel_oci_image}" --target kernel-configurator -t "${configurator_image}" .
+		# Build the "kernel-configurator" target from the Dockerfile; tag it separately
+		docker buildx build --load --progress=plain "${build_args[@]}" --target kernel-configurator -t "${configurator_image}" .
 	)
 	log info "Built kernel-configurator Dockerfile stage..."
 

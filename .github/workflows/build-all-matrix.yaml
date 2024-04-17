@@ -12,6 +12,9 @@ env: # Global environment, passed to all jobs & all steps
   #HOOK_LK_CONTAINERS_OCI_BASE: "ghcr.io/${{ github.repository_owner }}/tinkerbell/linuxkit-"
   
   HOOK_VERSION: "0.9.0-alpha1-build-${{github.run_number}}" # Use a forced Hook version
+  
+  # Which flavors to build? space separated list, must match one of the TAG='s in flavors (this is used by matrix_prep job in gha-matrix command)
+  CI_TAGS: "standard dev armbian-sbc armbian-uefi lts"
 
 jobs:
   

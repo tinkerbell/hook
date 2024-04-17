@@ -85,15 +85,18 @@ check_docker_daemon_for_sanity
 case "${1:-"build"}" in
 	shellcheck)
 		download_prepare_shellcheck_bin
-		run_shellcheck && exit 0
+		run_shellcheck
+		exit 0
 		;;
 
 	gha-matrix)
-		output_gha_matrixes && exit 0
+		output_gha_matrixes
+		exit 0
 		;;
 
 	linuxkit-containers)
-		build_all_hook_linuxkit_containers && exit 0
+		build_all_hook_linuxkit_containers
+		exit 0
 		;;
 esac
 

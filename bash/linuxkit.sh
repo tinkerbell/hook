@@ -76,11 +76,15 @@ function linuxkit_build() {
 	declare lk_output_dir="out/linuxkit-${kernel_id}"
 	mkdir -p "${lk_output_dir}"
 
+	declare lk_cache_dir="${CACHE_DIR}/linuxkit"
+	mkdir -p "${lk_cache_dir}"
+
 	declare -a lk_args=(
 		"--docker"
 		"--arch" "${kernel_info['DOCKER_ARCH']}"
 		"--format" "kernel+initrd"
 		"--name" "hook"
+		"--cache" "${lk_cache_dir}"
 		"--dir" "${lk_output_dir}"
 		"hook.${kernel_id}.yaml" # the linuxkit configuration file
 	)

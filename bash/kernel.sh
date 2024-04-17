@@ -53,15 +53,27 @@ function kernel_configure_interactive() {
 }
 
 function resolve_latest_kernel_version_lts() { # Produces KERNEL_POINT_RELEASE
-	if [[ ! -f kernel-releases.json ]]; then
-		log info "Getting kernel-releases.json from kernel.org"
-		curl "https://www.kernel.org/releases.json" > kernel-releases.json
-	else
-		log info "Using disk cached kernel-releases.json"
+	declare -i cache_valid=0
+
+	if [[ -f "${CACHE_DIR}/kernel-releases.json" ]]; then
+		log debug "Found disk cached kernel-releases.json"
+		# if the cache is older than 2 hours, refresh it
+		if [[ "$(find "${CACHE_DIR}/kernel-releases.json" -mmin +120)" ]]; then
+			log warn "Cached kernel-releases.json is older than 2 hours, will refresh..."
+		else
+			log info "Using cached kernel-releases.json"
+			cache_valid=1
+		fi
+	fi
+
+	# if no valid cache found, grab for kernel.org
+	if [[ ${cache_valid} -eq 0 ]]; then
+		log info "Fetching kernel releases JSON info from kernel.org..."
+		curl -sL "https://www.kernel.org/releases.json" -o "${CACHE_DIR}/kernel-releases.json"
 	fi
 
 	# shellcheck disable=SC2002 # cat is not useless. my cat's stylistic
-	POINT_RELEASE_TRI="$(cat kernel-releases.json | jq -r ".releases[].version" | grep -v -e "^next\-" -e "\-rc" | grep -e "^${KERNEL_MAJOR}\.${KERNEL_MINOR}\.")"
+	POINT_RELEASE_TRI="$(cat "${CACHE_DIR}/kernel-releases.json" | jq -r ".releases[].version" | grep -v -e "^next\-" -e "\-rc" | grep -e "^${KERNEL_MAJOR}\.${KERNEL_MINOR}\.")"
 	POINT_RELEASE="$(echo "${POINT_RELEASE_TRI}" | cut -d '.' -f 3)"
 	log debug "POINT_RELEASE_TRI: ${POINT_RELEASE_TRI}"
 	log debug "POINT_RELEASE: ${POINT_RELEASE}"

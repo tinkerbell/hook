@@ -24,12 +24,10 @@ function download_prepare_shellcheck_bin() {
 			;;
 	esac
 
-	declare dir_shellcheck="bin_cache"
 	declare shellcheck_fn="shellcheck-v${SHELLCHECK_VERSION}.${shellcheck_os}.${shellcheck_arch}"
 	declare shellcheck_fn_tarxz="${shellcheck_fn}.tar.xz"
 	declare DOWN_URL="https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/${shellcheck_fn_tarxz}"
-	declare -g -r SHELLCHECK_BIN="${dir_shellcheck}/${shellcheck_fn}"
-	mkdir -p "${dir_shellcheck}" # ensure the directory exists
+	declare -g -r SHELLCHECK_BIN="${CACHE_DIR}/${shellcheck_fn}"
 
 	if [[ ! -f "${SHELLCHECK_BIN}" ]]; then
 		log info "Cache miss for shellcheck binary, downloading..."
@@ -37,9 +35,9 @@ function download_prepare_shellcheck_bin() {
 		log debug "Down URL: ${DOWN_URL}"
 		log debug "SHELLCHECK_BIN: ${SHELLCHECK_BIN}"
 		curl -sL "${DOWN_URL}" -o "${SHELLCHECK_BIN}.tar.xz"
-		tar -xf "${SHELLCHECK_BIN}.tar.xz" -C "${dir_shellcheck}" "shellcheck-v${SHELLCHECK_VERSION}/shellcheck"
-		mv "${dir_shellcheck}/shellcheck-v${SHELLCHECK_VERSION}/shellcheck" "${SHELLCHECK_BIN}"
-		rm -rf "${dir_shellcheck}/shellcheck-v${SHELLCHECK_VERSION}" "${SHELLCHECK_BIN}.tar.xz"
+		tar -xf "${SHELLCHECK_BIN}.tar.xz" -C "${CACHE_DIR}" "shellcheck-v${SHELLCHECK_VERSION}/shellcheck"
+		mv "${CACHE_DIR}/shellcheck-v${SHELLCHECK_VERSION}/shellcheck" "${SHELLCHECK_BIN}"
+		rm -rf "${CACHE_DIR}/shellcheck-v${SHELLCHECK_VERSION}" "${SHELLCHECK_BIN}.tar.xz"
 		chmod +x "${SHELLCHECK_BIN}"
 	fi
 

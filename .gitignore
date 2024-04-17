@@ -6,9 +6,9 @@ dist/
 !/hook-docker/
 !/hook-mdev/
 hook*.*.yaml
-!hook.template.yaml
+!linuxkit-templates
 out/
+cache/
 *.swp
 .idea
 kernel/Dockerfile.autogen.*
-linuxkit-*-*-*

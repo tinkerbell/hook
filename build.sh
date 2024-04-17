@@ -79,6 +79,16 @@ declare -g -r LINUXKIT_VERSION_DEFAULT="1.0.1" # LinuxKit version to use by defa
 declare -g -r -x HOOK_VERSION="${HOOK_VERSION:-"0.9.0-alpha1"}"
 log info "Using Hook version (HOOK_VERSION): ${HOOK_VERSION}"
 
+# Find the directory of this script and change to it so it behaves the same if called from another directory
+declare -g SRC_ROOT=""
+SRC_ROOT="$(cd "$(dirname "$0")" && pwd -P)"
+declare -g -r SRC_ROOT="${SRC_ROOT}"
+cd "${SRC_ROOT}" || exit 1
+
+# Directory to use for storing downloaded artifacts: LinuxKit binary, shellcheck binary, etc.
+declare -g -r CACHE_DIR="${CACHE_DIR:-"cache"}"
+mkdir -p "${CACHE_DIR}" # ensure the directory exists
+
 # Install OS dependencies
 install_dependencies
 

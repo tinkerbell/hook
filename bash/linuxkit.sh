@@ -12,7 +12,7 @@ function obtain_linuxkit_binary_cached() {
 	esac
 
 	declare linuxkit_down_url="https://github.com/linuxkit/linuxkit/releases/download/v${LINUXKIT_VERSION}/linuxkit-linux-${linuxkit_arch}"
-	declare -g linuxkit_bin="./linuxkit-linux-${linuxkit_arch}-${LINUXKIT_VERSION}"
+	declare -g linuxkit_bin="${CACHE_DIR}/linuxkit-linux-${linuxkit_arch}-${LINUXKIT_VERSION}"
 
 	# Download using curl if not already present
 	if [[ ! -f "${linuxkit_bin}" ]]; then

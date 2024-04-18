@@ -15,6 +15,10 @@ env: # Global environment, passed to all jobs & all steps
   
   # Which flavors to build? space separated list, must match one of the TAG='s in flavors (this is used by matrix_prep job in gha-matrix command)
   CI_TAGS: "standard dev armbian-sbc armbian-uefi lts"
+  
+  # GHA runner configuration. See bash/json-matrix.sh for more details.
+  # Here we use a GHA conditional on the organization name to only use those self-hosted runners on a specific organization
+  CI_RUNNER_LK_CONTAINERS_ARM64: "${{ github.repository_owner == 'armsurvivors' && 'ARM64' || '' }}" # Use a self-hosted runner with the "ARM64" tag for the ARM64 builds of LK containers  
 
 jobs:
   

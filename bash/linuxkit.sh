@@ -135,7 +135,7 @@ function linuxkit_build() {
 	rm -rf "${dtbs_tmp_dir}"
 	rm "${lk_output_dir}/dtbs-${OUTPUT_ID}.tar.gz"
 
-	rmdir "${lk_output_dir}"
+	rm -rf "${lk_output_dir}"
 
 	# tar the files into out/hook.tar in such a way that vmlinuz and initramfs are at the root of the tar; pigz it
 	# Those are the artifacts published to the GitHub release

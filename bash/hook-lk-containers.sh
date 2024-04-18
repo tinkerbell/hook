@@ -46,7 +46,7 @@ function build_hook_linuxkit_container() {
 	log info "Building ${container_oci_ref} from ${container_dir} for platform ${DOCKER_ARCH}"
 	(
 		cd "${container_dir}" || exit 1
-		docker buildx build -t "${container_oci_ref}" --load --platform "linux/${DOCKER_ARCH}" .
+		docker buildx build --load "--progress=${DOCKER_BUILDX_PROGRESS_TYPE}" -t "${container_oci_ref}" --platform "linux/${DOCKER_ARCH}" .
 	)
 
 	log info "Built ${container_oci_ref} from ${container_dir} for platform ${DOCKER_ARCH}"

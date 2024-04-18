@@ -97,7 +97,7 @@ function configure_kernel_default() {
 	(
 		cd kernel
 		# Build the "kernel-configurator" target from the Dockerfile; tag it separately
-		docker buildx build --load --progress=plain "${build_args[@]}" --target kernel-configurator -t "${configurator_image}" .
+		docker buildx build --load "--progress=${DOCKER_BUILDX_PROGRESS_TYPE}" "${build_args[@]}" --target kernel-configurator -t "${configurator_image}" .
 	)
 	log info "Built kernel-configurator Dockerfile stage..."
 
@@ -135,7 +135,7 @@ function build_kernel_default() {
 
 	(
 		cd kernel
-		docker buildx build --load --progress=plain "${build_args[@]}" -t "${kernel_oci_image}" .
+		docker buildx build --load "--progress=${DOCKER_BUILDX_PROGRESS_TYPE}" "${build_args[@]}" -t "${kernel_oci_image}" .
 	)
 
 }

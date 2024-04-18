@@ -113,7 +113,7 @@ function build_kernel_armbian() {
 	log info "Will build Dockerfile ${ARMBIAN_KERNEL_DOCKERFILE}"
 
 	# Build the Dockerfile; don't specify platform, our Dockerfile is multiarch, thus you can get build x86 kernels in arm64 hosts and vice-versa
-	docker buildx build --load --progress=plain -t "${kernel_oci_image}" -f "${ARMBIAN_KERNEL_DOCKERFILE}" kernel
+	docker buildx build --load "--progress=${DOCKER_BUILDX_PROGRESS_TYPE}" -t "${kernel_oci_image}" -f "${ARMBIAN_KERNEL_DOCKERFILE}" kernel
 }
 
 function configure_kernel_armbian() {

@@ -91,6 +91,14 @@ declare -g -r LINUXKIT_VERSION_DEFAULT="1.0.1" # LinuxKit version to use by defa
 # Directory to use for storing downloaded artifacts: LinuxKit binary, shellcheck binary, etc.
 declare -g -r CACHE_DIR="${CACHE_DIR:-"cache"}"
 
+# Type of --progress passed to invocations of `docker buildx build`; 'plain' includes all container output; 'tty' is more concise
+# If debugging, or under GitHub Actions, always use plain progress so all output is shown
+if [[ -n "${GITHUB_ACTIONS}" || "${DEBUG}" == "yes" ]]; then
+	declare -g DOCKER_BUILDX_PROGRESS_TYPE="plain"
+else # otherwise default to tty, but allow override
+	declare -g DOCKER_BUILDX_PROGRESS_TYPE="${DOCKER_BUILDX_PROGRESS_TYPE:-"tty"}"
+fi
+
 # Set the default HOOK_VERSION; override with env var; -x exports it for envsubst later
 declare -g -r -x HOOK_VERSION="${HOOK_VERSION:-"0.9.0-alpha1"}"
 log info "Using Hook version (HOOK_VERSION): ${HOOK_VERSION}"

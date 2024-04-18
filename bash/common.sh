@@ -6,6 +6,7 @@ declare -A log_emoji=(["debug"]="🐛" ["info"]="📗" ["warn"]="🚧" ["error"]
 function log() {
 	declare level="${1}"
 	shift
+	[[ "${level}" == "debug" && "${DEBUG}" != "yes" ]] && return # Skip debugs unless DEBUG=yes is set in the environment
 	declare color="${log_colors[${level}]}"
 	declare emoji="${log_emoji[${level}]}"
 	level=$(printf "%-5s" "${level}") # pad to 5 characters before printing

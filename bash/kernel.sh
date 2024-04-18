@@ -82,9 +82,9 @@ function resolve_latest_kernel_version_lts() { # Produces KERNEL_POINT_RELEASE
 
 function get_kernel_info_dict() {
 	declare kernel="${1}"
-	declare kernel_data_str="${kernel_data[${kernel}]}"
+	declare kernel_data_str="${inventory_dict[${kernel}]}"
 	if [[ -z "${kernel_data_str}" ]]; then
-		log error "No kernel data found for '${kernel}'; valid ones are: ${kernels[*]} "
+		log error "No kernel data found for '${kernel}'; valid ones are: ${inventory_ids[*]} "
 		exit 1
 	fi
 	log debug "Kernel data for '${kernel}': ${kernel_data_str}"

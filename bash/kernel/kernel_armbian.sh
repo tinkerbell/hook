@@ -3,7 +3,7 @@
 declare -g ARMBIAN_BASE_ORAS_REF="${ARMBIAN_BASE_ORAS_REF:-"ghcr.io/armbian/os"}"
 
 function calculate_kernel_version_armbian() {
-	: "${kernel_id:?"ERROR: kernel_id is not defined"}"
+	: "${inventory_id:?"ERROR: inventory_id is not defined"}"
 	log info "Calculating version of Armbian kernel..."
 
 	declare -g ARMBIAN_KERNEL_BASE_ORAS_REF="${ARMBIAN_BASE_ORAS_REF}/${ARMBIAN_KERNEL_ARTIFACT}"
@@ -35,15 +35,15 @@ function calculate_kernel_version_armbian() {
 		log info "Using most recent tag: ${ARMBIAN_KERNEL_VERSION}"
 	fi
 
-	# output ID is just the kernel_id
-	declare -g OUTPUT_ID="${kernel_id}"
+	# output ID is just the inventory_id
+	declare -g OUTPUT_ID="${inventory_id}"
 
 	declare -g ARMBIAN_KERNEL_FULL_ORAS_REF_DEB_TAR="${ARMBIAN_KERNEL_BASE_ORAS_REF}:${ARMBIAN_KERNEL_VERSION}"
 	declare -g ARMBIAN_KERNEL_MAJOR_MINOR_POINT="unknown"
 	ARMBIAN_KERNEL_MAJOR_MINOR_POINT="$(echo -n "${ARMBIAN_KERNEL_VERSION}" | cut -d "-" -f 1)"
 	log info "ARMBIAN_KERNEL_MAJOR_MINOR_POINT: ${ARMBIAN_KERNEL_MAJOR_MINOR_POINT}"
 
-	declare -g ARMBIAN_KERNEL_DOCKERFILE="kernel/Dockerfile.autogen.armbian.${kernel_id}"
+	declare -g ARMBIAN_KERNEL_DOCKERFILE="kernel/Dockerfile.autogen.armbian.${inventory_id}"
 
 	declare oras_version="1.2.0-beta.1" # @TODO bump this once it's released; yes it's much better than 1.1.x's
 	declare oras_down_url="https://github.com/oras-project/oras/releases/download/v${oras_version}/oras_${oras_version}_linux_amd64.tar.gz"
@@ -103,7 +103,7 @@ function calculate_kernel_version_armbian() {
 	input_hash="$(cat "${ARMBIAN_KERNEL_DOCKERFILE}" | sha256sum - | cut -d ' ' -f 1)"
 	short_input_hash="${input_hash:0:8}"
 	kernel_oci_version="${ARMBIAN_KERNEL_MAJOR_MINOR_POINT}-${short_input_hash}"
-	kernel_oci_image="${HOOK_KERNEL_OCI_BASE}hook-${kernel_id}:${kernel_oci_version}"
+	kernel_oci_image="${HOOK_KERNEL_OCI_BASE}hook-${inventory_id}:${kernel_oci_version}"
 	log info "kernel_oci_version: ${kernel_oci_version}"
 	log info "kernel_oci_image: ${kernel_oci_image}"
 }

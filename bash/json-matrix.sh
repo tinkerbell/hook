@@ -67,7 +67,7 @@ function prepare_json_matrix() {
 
 	declare -a json_items=()
 	declare kernel
-	for kernel in "${kernels[@]}"; do
+	for kernel in "${inventory_ids[@]}"; do
 		declare -A kernel_info
 		get_kernel_info_dict "${kernel}"
 

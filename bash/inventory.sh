@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 function produce_kernels_flavours_inventory() {
-	declare -g -A kernel_data=()
+	declare -g -A inventory_dict=()
 
 	##### METHOD=default; Hook's own kernel, in kernel/ directory
 	## Hook default kernel, source code stored in `kernel` dir in this repo -- currently 5.10.y
@@ -54,8 +54,8 @@ function produce_kernels_flavours_inventory() {
 	define_id "armbian-uefi-x86-edge" METHOD='armbian' ARCH='x86_64' TAG='standard armbian-uefi' ARMBIAN_KERNEL_ARTIFACT='kernel-x86-edge'
 
 	#### END; extract keys & make readonly
-	declare -g -a -r kernels=("${!kernel_data[@]}") # extract the _keys_ from the kernels dict
-	declare -g -A -r kernel_data                    # make kernels_data dict readonly
+	declare -g -a -r inventory_ids=("${!inventory_dict[@]}") # extract the _keys_ from the inventory_ids dict
+	declare -g -A -r inventory_dict                          # make kernels_data dict readonly
 
 	return 0
 }

@@ -49,7 +49,7 @@ declare -g -r -x HOOK_VERSION="${HOOK_VERSION:-"0.9.0-alpha1"}"
 log info "Using Hook version (HOOK_VERSION): ${HOOK_VERSION}"
 
 ### Inventory
-produce_kernels_flavours_inventory # sets kernels array and kernel_data associative array
+produce_kernels_flavours_inventory # sets inventory_ids array and inventory_dict associative array
 
 ### Start processing
 # Find the directory of this script and change to it so it behaves the same if called from another directory
@@ -106,8 +106,8 @@ if [[ -z "${second_param}" ]]; then # default it to "build" if not set, but warn
 else
 	log info "Kernel/flavor ID (second argument): explicitely set to '${second_param}'"
 fi
-declare -r -g kernel_id="${second_param}" # kernel_id is now read-only
-obtain_kernel_data_from_id "${kernel_id}" # Gather the information about the kernel_id now; this will exit if the kernel_id is not found
+declare -r -g inventory_id="${second_param}" # inventory_id is now read-only
+obtain_kernel_data_from_id "${inventory_id}" # Gather the information about the inventory_id now; this will exit if the inventory_id is not found
 
 case "${first_param}" in
 	kernel-config-shell | config-shell-kernel)

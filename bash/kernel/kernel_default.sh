@@ -3,9 +3,9 @@
 set -e
 
 function calculate_kernel_version_default() {
-	# Make sure kernel_id is defined or exit with an error; using a one liner
-	: "${kernel_id:?"ERROR: kernel_id is not defined"}"
-	log debug "Starting calculate_kernel_version_default for kernel_id='${kernel_id}'"
+	# Make sure inventory_id is defined or exit with an error; using a one liner
+	: "${inventory_id:?"ERROR: inventory_id is not defined"}"
+	log debug "Starting calculate_kernel_version_default for inventory_id='${inventory_id}'"
 
 	# Calculate the input DEFCONFIG
 	declare -g INPUT_DEFCONFIG="${KCONFIG}-${KERNEL_MAJOR}.${KERNEL_MINOR}.y-${ARCH}"
@@ -19,7 +19,7 @@ function calculate_kernel_version_default() {
 	if [[ "${KCONFIG}" != "generic" ]]; then
 		OUTPUT_ID="${KCONFIG}-${KERNEL_MAJOR}.${KERNEL_MINOR}.y-${ARCH}"
 	elif [[ -n "${USE_KERNEL_ID}" ]]; then
-		OUTPUT_ID="${kernel_id}"
+		OUTPUT_ID="${inventory_id}"
 	fi
 
 	# Calculate the KERNEL_ARCH from ARCH; also what is the cross-compiler package needed for the arch
@@ -51,9 +51,9 @@ function calculate_kernel_version_default() {
 	short_input_hash="${input_hash:0:8}"
 	kernel_oci_version="${KERNEL_MAJOR}.${KERNEL_MINOR}.${KERNEL_POINT_RELEASE}-${short_input_hash}"
 
-	kernel_id_to_use="${kernel_id}"
+	kernel_id_to_use="${inventory_id}"
 	if [[ -n "${USE_KERNEL_ID}" ]]; then
-		log warn "USE_KERNEL_ID is set to '${USE_KERNEL_ID}'; using it instead of the default kernel_id '${kernel_id}'."
+		log warn "USE_KERNEL_ID is set to '${USE_KERNEL_ID}'; using it instead of the default inventory_id '${inventory_id}'."
 		kernel_id_to_use="${USE_KERNEL_ID}"
 	fi
 

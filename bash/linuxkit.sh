@@ -44,7 +44,7 @@ function linuxkit_build() {
 			log info "Successfully pulled kernel ${kernel_oci_image} from registry."
 		else
 			log error "Failed to pull kernel ${kernel_oci_image} from registry."
-			log error "You might want to build the kernel locally, by running './build.sh kernel ${kernel_id}'"
+			log error "You might want to build the kernel locally, by running './build.sh kernel ${inventory_id}'"
 			exit 7
 		fi
 	fi
@@ -63,17 +63,17 @@ function linuxkit_build() {
 	# shellcheck disable=SC2002 # Again, no, I love my cat, leave me alone
 	# shellcheck disable=SC2016 # I'm using single quotes to avoid shell expansion, envsubst wants the dollar signs.
 	cat "linuxkit-templates/${kernel_info['TEMPLATE']}.template.yaml" |
-		HOOK_KERNEL_IMAGE="${kernel_oci_image}" HOOK_KERNEL_ID="${kernel_id}" HOOK_KERNEL_VERSION="${kernel_oci_version}" \
+		HOOK_KERNEL_IMAGE="${kernel_oci_image}" HOOK_KERNEL_ID="${inventory_id}" HOOK_KERNEL_VERSION="${kernel_oci_version}" \
 			HOOK_CONTAINER_BOOTKIT_IMAGE="${HOOK_CONTAINER_BOOTKIT_IMAGE}" \
 			HOOK_CONTAINER_DOCKER_IMAGE="${HOOK_CONTAINER_DOCKER_IMAGE}" \
 			HOOK_CONTAINER_MDEV_IMAGE="${HOOK_CONTAINER_MDEV_IMAGE}" \
 			envsubst '$HOOK_VERSION $HOOK_KERNEL_IMAGE $HOOK_KERNEL_ID $HOOK_KERNEL_VERSION $HOOK_CONTAINER_BOOTKIT_IMAGE $HOOK_CONTAINER_DOCKER_IMAGE $HOOK_CONTAINER_MDEV_IMAGE' \
-			> "hook.${kernel_id}.yaml"
+			> "hook.${inventory_id}.yaml"
 
 	declare -g linuxkit_bin=""
 	obtain_linuxkit_binary_cached # sets "${linuxkit_bin}"
 
-	declare lk_output_dir="out/linuxkit-${kernel_id}"
+	declare lk_output_dir="out/linuxkit-${inventory_id}"
 	mkdir -p "${lk_output_dir}"
 
 	declare lk_cache_dir="${CACHE_DIR}/linuxkit"
@@ -86,10 +86,10 @@ function linuxkit_build() {
 		"--name" "hook"
 		"--cache" "${lk_cache_dir}"
 		"--dir" "${lk_output_dir}"
-		"hook.${kernel_id}.yaml" # the linuxkit configuration file
+		"hook.${inventory_id}.yaml" # the linuxkit configuration file
 	)
 
-	log info "Building Hook with kernel ${kernel_id} using linuxkit: ${lk_args[*]}"
+	log info "Building Hook with kernel ${inventory_id} using linuxkit: ${lk_args[*]}"
 	"${linuxkit_bin}" build "${lk_args[@]}"
 
 	if [[ "${LK_RUN}" == "qemu" ]]; then
@@ -143,7 +143,7 @@ function linuxkit_build() {
 }
 
 function linuxkit_run_qemu() {
-	declare lk_output_dir="out/linuxkit-${kernel_id}"
+	declare lk_output_dir="out/linuxkit-${inventory_id}"
 	declare -g linuxkit_bin=""
 	obtain_linuxkit_binary_cached # sets "${linuxkit_bin}"
 

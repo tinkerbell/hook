@@ -65,8 +65,8 @@ function define_id() {
 	str_dict="${str_dict%?}"                       # remove the last character, which is a ")"
 	log debug "str dict for id=${id}: ${str_dict}" # this _will_ go wrong, so add a debug
 
-	# eval it into the kernel_data dict
-	eval "kernel_data[${id}]='${str_dict}'"
+	# eval it into the inventory_dict dict
+	eval "inventory_dict[${id}]='${str_dict}'"
 
 	return 0
 }

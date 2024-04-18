@@ -11,6 +11,11 @@ env: # Global environment, passed to all jobs & all steps
   #HOOK_KERNEL_OCI_BASE: "ghcr.io/${{ github.repository_owner }}/tinkerbell/kernel-"
   #HOOK_LK_CONTAINERS_OCI_BASE: "ghcr.io/${{ github.repository_owner }}/tinkerbell/linuxkit-"
   
+  # Apart from the quay/ghcr coordinates above (used for both pulling & pushing), we might also want to
+  # log in to DockerHub (with a read-only token) so we aren't hit by rate limits when pulling the linuxkit pkgs.
+  # To do so, set the secret DOCKER_USERNAME and DOCKER_PASSWORD in the repo secrets, and set the below to yes.
+  LOGIN_TO_DOCKERHUB: "${{ github.repository_owner == 'rpardini' && 'yes' || 'no' }}"
+  
   HOOK_VERSION: "0.9.0-alpha1-build-${{github.run_number}}" # Use a forced Hook version
   
   # Which flavors to build? space separated list, must match one of the TAG='s in flavors (this is used by matrix_prep job in gha-matrix command)
@@ -122,6 +127,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Docker Login to DockerHub # read-only token, required to be able to pull all the linuxkit pkgs without getting rate limited.
+        if: ${{ env.LOGIN_TO_DOCKERHUB == 'yes' }}
         uses: docker/login-action@v3
         with: { registry: "docker.io", username: "${{ secrets.DOCKER_USERNAME }}", password: "${{ secrets.DOCKER_PASSWORD }}" }
 
@@ -148,7 +154,6 @@ jobs:
 
       - name: "Build Hook with Kernel ${{matrix.kernel}} (${{ matrix.arch }}) - cache: ${{matrix.gha_cache}}"
         env:
-          DO_BUILD_KERNEL: "no" # we already built the kernel; this is only for hook/linuxkit.
           DO_BUILD_LK_CONTAINERS: "no" # already built them; this is only for hook/linuxkit.
         run: bash build.sh build "${{ matrix.kernel }}"
 

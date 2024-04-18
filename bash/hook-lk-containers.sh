@@ -37,6 +37,12 @@ function build_hook_linuxkit_container() {
 		return 0
 	fi
 
+	# If environment DO_BUILD_LK_CONTAINERS=no, we're being asked NOT to build this. Exit with an error.
+	if [[ "${DO_BUILD_LK_CONTAINERS}" == "no" ]]; then
+		log error "DO_BUILD_LK_CONTAINERS is set to 'no'; not building ${container_oci_ref}"
+		exit 9
+	fi
+
 	log info "Building ${container_oci_ref} from ${container_dir} for platform ${DOCKER_ARCH}"
 	(
 		cd "${container_dir}" || exit 1

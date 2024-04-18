@@ -33,3 +33,40 @@ function install_dependencies() {
 
 	return 0 # there's a shortcircuit above
 }
+
+# utility used by inventory.sh to define a kernel/flavour with less-terrible syntax.
+function define_id() {
+	declare id="${1}"
+	shift
+
+	declare -A dict=()
+	declare arg
+	for arg in "$@"; do
+		if [[ "${arg}" == *=* ]]; then # contains an equal sign. it's a param.
+			local param_name param_value
+			param_name=${arg%%=*}
+			param_value=${arg##*=}
+			dict["${param_name}"]="${param_value}" # For current run.
+		else
+			log error "Unknown argument to define, id=${id}: '${arg}'"
+			exit 10
+		fi
+	done
+
+	# Sanity checking: METHOD, ARCH and TAG are required.
+	if [[ -z "${dict['METHOD']}" || -z "${dict['ARCH']}" || -z "${dict['TAG']}" ]]; then
+		log error "Flavour definition for id=${id} is missing METHOD, ARCH or TAG"
+		exit 11
+	fi
+
+	declare str_dict
+	str_dict="$(declare -p dict)"                  # bash high sorcery; get a string representation of the dict
+	str_dict="${str_dict#*"dict=("}"               # remove 'declare -A dict=(' from the string
+	str_dict="${str_dict%?}"                       # remove the last character, which is a ")"
+	log debug "str dict for id=${id}: ${str_dict}" # this _will_ go wrong, so add a debug
+
+	# eval it into the kernel_data dict
+	eval "kernel_data[${id}]='${str_dict}'"
+
+	return 0
+}

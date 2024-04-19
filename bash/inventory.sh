@@ -17,9 +17,9 @@ function produce_kernels_flavours_inventory() {
 
 	## development purposes: trying out kernel 6.6.y
 	define_id "hook-latest-lts-amd64" METHOD='default' ARCH='x86_64' TAG='lts' \
-		KERNEL_MAJOR='6' KERNEL_MINOR='6' KCONFIG='generic'
+		KERNEL_MAJOR='6' KERNEL_MINOR='6' KCONFIG='generic' FORCE_OUTPUT_ID='latest-lts'
 	define_id "hook-latest-lts-arm64" METHOD='default' ARCH='aarch64' TAG='lts' \
-		KERNEL_MAJOR='6' KERNEL_MINOR='6' KCONFIG='generic'
+		KERNEL_MAJOR='6' KERNEL_MINOR='6' KCONFIG='generic' FORCE_OUTPUT_ID='latest-lts'
 
 	##### METHOD=armbian; Foreign kernels, taken from Armbian's OCI repos. Those are "exotic" kernels for certain SoC's.
 	#                    edge = (release candidates or stable but rarely LTS, more aggressive patching)

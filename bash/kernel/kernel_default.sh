@@ -14,9 +14,14 @@ function calculate_kernel_version_default() {
 		exit 1
 	fi
 
-	# The default kernel output id is just the arch, unless KCONFIG is not generic, or USE_KERNEL_ID is set
+	# The default kernel output id is just the arch (for compatibility with the old hook)
+	# One can override with FORCE_OUTPUT_ID, which will be prepended to ARCH.
+	# If that is not set, and KCONFIG != generic, an output will be generated with KCONFIG, MAJOR, MINOR, ARCH.
+	# Lastly if using USE_KERNEL_ID, that will be used instead of the default inventory_id.
 	declare -g OUTPUT_ID="${ARCH}"
-	if [[ "${KCONFIG}" != "generic" ]]; then
+	if [[ "x${FORCE_OUTPUT_ID}x" != "xx" ]]; then
+		declare -g OUTPUT_ID="${FORCE_OUTPUT_ID}-${ARCH}"
+	elif [[ "${KCONFIG}" != "generic" ]]; then
 		OUTPUT_ID="${KCONFIG}-${KERNEL_MAJOR}.${KERNEL_MINOR}.y-${ARCH}"
 	elif [[ -n "${USE_KERNEL_ID}" ]]; then
 		OUTPUT_ID="${inventory_id}"

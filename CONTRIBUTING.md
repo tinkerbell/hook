@@ -17,20 +17,7 @@ Please read and understand the DCO found [here](docs/DCO.md).
 
 ### Environment Details
 
-Building is handled by `make`, please see the [Makefile](Makefile) for available targets.
-
-#### Nix
-
-This repo's build environment can be reproduced using `nix`.
-
-##### Install Nix
-
-Follow the [Nix installation](https://nixos.org/download.html) guide to setup Nix on your box.
-
-##### Load Dependencies
-
-Loading build dependencies is as simple as running `nix-shell` or using [lorri](https://github.com/nix-community/lorri).
-If you have `direnv` installed the included `.envrc` will make that step automatic.
+Building is handled by a bash script, please see the [build.sh](build.sh) for details.
 
 ### How to Submit Change Requests
 

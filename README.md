@@ -18,11 +18,11 @@ We started this project for the following reasons:
 - The [OSIE] build process was not standardised, which is critical for an open-source project because it causes friction for contributors.
   This project, as highlighted later in this page, uses [LinuxKit].
   It gives us:
-  - Documentation about how the building phase works
-  - A clear and defined CLI and [specification] (YAML)
-  - A shared community that is supportive
-  - LinuxKit cross-compiles in many architectures
-  - Different output formats: ISO, init ramdisk, aws, docker, rpi3... see [formats].
+    - Documentation about how the building phase works
+    - A clear and defined CLI and [specification] (YAML)
+    - A shared community that is supportive
+    - LinuxKit cross-compiles in many architectures
+    - Different output formats: ISO, init ramdisk, aws, docker, rpi3... see [formats].
 - It was not easy to explain to the Tinkerbell community how [OSIE] works and the components it is made for.
   A lot of the components were Equinix Metal specific and are not strictly needed in Tinkerbell.
 
@@ -60,106 +60,120 @@ The `hook-bootkit` container will parse the `/proc/cmdline` and the metadata ser
 It will then speak with the `hook-docker` engine API through the shared `/var/run/docker.sock`, where it will ask the engine to run the `tink-worker:latest` container.
 `tink-worker:latest` will in turn begin to execute the workflow/actions associated with that machine.
 
-## How to use hook with Sandbox
+## Developer/builder guide
 
-[sandbox] is a project that helps you to create and run the Tinkerbell stack.
-You can use it to run the stack locally with Vagrant, on Equinix Metal with Terraform or just plain docker-compose.
-It acts as a guide to deploying Tinkerbell wherever you like.
-Hook has become the default OSIE in sandbox, thus no extra action is needed to use hook.
+### Introduction / recently changed
 
-## How to build and use hook with Sandbox
+> This refers to the 0.9.0-alpha version, compared to 0.8.1.
 
-### Using a published build
+- Replaces the emulated Alpine kernel build with a Debian based cross-compiling build
+    - Much faster building. Emulating x86_64 on arm64 is very slow and vice-versa.
+- Replaces kernel .config's with the `defconfig` versions, via Kbuild's `make savedefconfig`
+- Replaces Git-SHA1-based image versioning ("current revision") with content-based hashing.
+    - This way, there's much higher cache reuse, and new versions are pushed only when components actually changed (caveat emptor)
+    - Should allow people to develop Hook without having to build a kernel, depending on CI frequency and luck.
+- Introduces multiple "flavors" of hook. Instead of restricted to 2 hardcoded flavors (x86_64 and aarch64, built from source), we can now define multiple flavors, each with an ID and version/configure/build methods.
+    - the `hook-default-amd64` and `hook-default-arm64` kernels are equivalent to the two original.
+    - the `armbian-` prefixed kernels are actually Armbian kernels for more exotic arm64 SBCs, or Armbian's generic UEFI kernels for both arches. Those are very fast to "build" since Armbian publishes their .deb packages in OCI images, and here we
+      just download and massage them into the format required by Linuxkit.
+- `hook.yaml` is replaced with `hook.template.yaml` which is templated via a limited-var invocation of `envsubst`; only the kernel image and the arch is actually different per-flavor.
+- Auto-updating of the kernel via kernel.org's JSON endpoint (ofc only works for LTS or recent-enough stable kernels). Could opt-out/use a fixed version.
+- Auto updating of Armbian kernels via OCI tag listing via `skopeo`. Can opt-out/use a fixed version.
+- DTB-producing Kernel builds (aarch64) produce a `dtbs.tar.gz` artifact together with the initrd and vmlinuz. DTBs are not used by Hook or Tinkerbell right now, but will be necessary for some SBCs.
 
-### Using a local/unpublished build
+### Flavor / `id`
 
-When you start sandbox in vagrant, for example as part of the provisioning step for the provisioner machine the `setup.sh` script gets executed.
-The script does a bunch of things the one we care about here is the `setup_osie` function.
-In practice it creates the folder: `sandbox/deploy/state/webroot/misc/osie/current`.
-If you ran sandbox you already have that directory.
-`current` is the location that serves the operating system installation environment that runs inside a worker machine.
-You can even move or delete that directory because we have to replace it with the release package containing the new operating system.
-After you have removed the directory, it is time to re-create it:
+The Hook build system is designed to handle multiple flavors.
+A flavor mostly equates with a specific Linux Kernel, a LinuxKit version, and a LinuxKit YAML configuration template.
+The "default" flavor ids are `hook-default-amd64` and `hook-default-arm64`, which use a kernel that is built and configured from source by the Hook build system.
+Other flavors use Foreign kernels from other distributions to cater for special needs.
 
-```ShellSession
-# check out this repo
-$ git clone https://github.com/tinkerbell/hook.git
+There is an inventory of all available flavors in the [bash/inventory.sh](bash/inventory.sh) file.
 
-# build it - this produces a hook-<commit SHA>.tar.gz
-$ make dist
+### Command line interface (`build.sh`)
 
-# copy the output to current (the filename will be different)
-$ tar -xf hook-bc3e58a-dirty.tar.gz -C ../sandbox/deploy/state/webroot/misc/osie/current/
-```
+The `build.sh` script is the main entry point for building a Hook flavor.
+The general syntax of the cli is:
 
-Now you are ready to boot the worker, it will pick up the new operating system installation environment.
+`./build.sh <command> [<id>] [<key1>=<value1>] [<key2>=<value2>...]`
 
-### The automation way
+Where:
 
-Sandbox has a file called [current_versions.sh].
-If you change `OSIE_DOWNLOAD_LINK` with the hook link the setup.sh script will download the OS again and it will uncompress it in the right location (only if ./deploy/state/webroot/misc/osie/current does not exist)
+- `<command>`, if not specified, defaults to `build`
+- `<id>`, if not specified, defaults to `hook-default-amd64` (or the arm64 variant, if running on an arm64 host); the full list is defined in the [bash/inventory.sh](bash/inventory.sh)
+- `[<key>=<value>]` is useful to set environment variables (similar to `make`) and can come in any position in the command line.
 
-## Package a release
+So, just running `./build.sh` will build the default flavor for the host architecture.
 
-```ShellSession
-$ make dist
-```
+Other commands are:
 
-The `dist` make target will do a couple of things:
+- `kernel <id>`: builds the kernel for the specified flavor
+    - for `default` ids, this will build the kernel from source
+    - for other methods, usually this will download & massage the kernels from a distro's packages
+- `config <id>`: runs kernel configuration for the specified flavor.
+    - this only works for the default flavors; Foreign kernels are configured elsewhere;
+    - it will open an interactive menuconfig session where you can change kernel config options; after exiting, `savedefconfig` will be run and the resulting file copied back to the host, ready for commit.
+- `build <id>`: builds the Hook flavor. The kernel must be either available for pulling, or have been built locally beforehand.
+- `qemu <id>`: builds the Hook flavor and runs it in QEMU.
+    - this accepts `MAC=<mac>` and `TINK_SERVER=<ip>` env vars, see below
 
-1. Build the required docker images using `docker buildx`.
-2. It will use `linuxkit build` to prepare the init ramdisk and the kernel.
-3. It will create a `tar.gz` archive containing all the files in the proper format, ready to be served via boots.
+Other, less common commands are:
 
-## Build for local testing (only the local architecture)
+- `kernel-config-shell <id>`: prepares an interactive Docker shell for advanced kernel .config operations.
+- `shellcheck`: runs shellcheck on all bash scripts in the project and exits with an error if any issues are found.
+- `linuxkit-containers`: builds the LinuxKit containers for the specified architecture.
 
-```ShellSession
-$ make dev
-```
+#### Environment variables for building/testing
 
-## Troubleshooting
+Using the `<key>=<value>` syntax, you can set environment variables that will be used by the build system.
+Of course, you may also set them in the environment before running the script (that is heavily used by the GitHub Actions build workflow).
 
-It is possible to build a debug version of hook, that will have an `sshd` server running with any public keys you have.
-This is achieved through the command `make debug`
+The most important environment variables are:
 
-## Nix for CI/CD
+- general, applies to most commands:
+    - `DEBUG=yes`: set this to get lots of debugging messages which can make understanding the build and finding problems easier.
+    - `HOOK_VERSION`: The Hook version, ends up in `/etc/os-release` and on the screen at boot.
+    - `HOOK_KERNEL_OCI_BASE`: OCI base coordinates for the kernel images.
+    - `HOOK_LK_CONTAINERS_OCI_BASE`: OCI base coordinates for the LinuxKit containers.
+    - `CACHE_DIR`: directory where the build system will cache downloaded files. Relative to the project root.
+- exclusively for the `qemu` command:
+    - `TINK_SERVER=<ip>`: the IP address of the Tinkerbell GRPC server. No default.
+    - `MAC=<mac>`: the MAC address of the machine that will be provisioned. No default.
+    - and also
+        - `TINK_WORKER_IMAGE`, defaults to `"quay.io/tinkerbell/tink-worker:latest"`
+        - `TINK_TLS` defaults to `false`
+        - `TINK_GRPC_PORT` defaults to `42113`
 
-This project uses Nix for a couple of reasons.
-We want to use it more intensively to see if it can help us quickly iterate over CI/CD.
-If you are not into Nix and don't like it, here are a few tips.
+### CI (GitHub Actions)
 
-Don't want to install?
-Just use Docker:
+- There's a distributed GitHub Actions build workflow `"matrix"`.
+    - The bash build system produces JSON objects that drive the matrix stages:
+        - One matrix is per-arch, and builds all the containers whose source is hosted in this repo (bootkit, docker, mdev)
+        - Second matrix is per-flavor(/kernel), and builds the kernel
+        - Third matrix, depending on the other two, is per-flavor(/kernel), and builds Hook itself (via LinuxKit) and prepares a .tar.gz into GH artifacts
 
-```ShellSession
-$ docker run -it -v "$PWD:$PWD" -w "$PWD" -v /var/run/docker.sock:/var/run/docker.sock nixos/nix bash
+The `gha-matrix` CLI command prepares a set of JSON outputs for GitHub Actions matrix workflow, based on the inventory and certain environment variables:
 
-# now you are inside the container and you can use nix-shell to reproduce the environment
-$ nix-shell
-$ make dev
+- `CI_RUNNER_<criteria>` are used to determine the GH Action runners (self-hosted or GH-hosted) that are used for each step. See [bash/json-matrix.sh](bash/json-matrix.sh) for details.
+- `CI_TAGS`, a space separated list of tags that will be used to filter the inventory.
+- `DOCKER_ARCH` is used by the `linuxkit-containers` command to build the containers for the specified architecture.
+- `DO_PUSH`: `yes` or `no`, will push the built containers to the OCI registry; defaults to `no`.
 
-# or you can use make to build LinuxKit image
-$ make images
-```
+### Build system TO-DO list
 
-This will take a moment or so to download and build packages.
-You can pay this price only once by building a "dev" image.
-
-```ShellSession
-$ docker buildx build --load -t hook-nix-dev -f hack/Dockerfile .
-
-# just use the built image/tag instead of nixos/nix in the previous snipped
-$ docker run -it -v "$PWD:$PWD" -w "$PWD" -v /var/run/docker.sock:/var/run/docker.sock hook-nix-dev bash
-```
-
-Alternatively, don't use nix at all.
-We use nix-shell just for binaries/$PATH management, so if you have the binaries available you don't need nix at all.
-Of course be prepared for CI to complain about formatting/linting due to possible version differences.
+- [ ] Update to Linuxkit 1.2.0 and new linuxkit pkgs; this might lead into the containerd vs dind;
+- [ ] `make debug` functionality (sshd enabled) was lost in the Makefile -> bash transition;
 
 [current_versions.sh]: https://github.com/tinkerbell/sandbox/blob/main/current_versions.sh
+
 [formats]: https://github.com/linuxkit/linuxkit/blob/master/README.md#booting-and-testing
+
 [linuxkit]: https://github.com/linuxkit/linuxkit
+
 [osie]: https://github.com/tinkerbell/osie
+
 [sandbox]: https://github.com/tinkerbell/sandbox
+
 [specification]: https://github.com/linuxkit/linuxkit/blob/master/docs/yaml.md
+
 [tinkerbell]: https://tinkerbell.org

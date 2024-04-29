@@ -247,7 +247,7 @@ func removeTinkWorkerContainer(ctx context.Context, cli *client.Client) error {
 // https://github.com/tinkerbell/boots/blob/main/ipxe/hook.go
 func parseCmdLine(cmdLines []string) (cfg tinkWorkerConfig) {
 	for i := range cmdLines {
-		cmdLine := strings.Split(cmdLines[i], "=")
+		cmdLine := strings.SplitN(cmdLines[i], "=", 2)
 		if len(cmdLine) == 0 {
 			continue
 		}

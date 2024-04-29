@@ -159,7 +159,7 @@ Of course be prepared for CI to complain about formatting/linting due to possibl
 [current_versions.sh]: https://github.com/tinkerbell/sandbox/blob/main/current_versions.sh
 [formats]: https://github.com/linuxkit/linuxkit/blob/master/README.md#booting-and-testing
 [linuxkit]: https://github.com/linuxkit/linuxkit
-[osie]: https://github.com/tinkebell/osie
+[osie]: https://github.com/tinkerbell/osie
 [sandbox]: https://github.com/tinkerbell/sandbox
 [specification]: https://github.com/linuxkit/linuxkit/blob/master/docs/yaml.md
 [tinkerbell]: https://tinkerbell.org

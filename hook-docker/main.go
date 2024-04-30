@@ -100,7 +100,7 @@ func (d dockerConfig) writeToDisk(loc string) error {
 // parseCmdLine will parse the command line.
 func parseCmdLine(cmdLines []string) (cfg tinkConfig) {
 	for i := range cmdLines {
-		cmdLine := strings.Split(cmdLines[i], "=")
+		cmdLine := strings.SplitN(cmdLines[i], "=", 2)
 		if len(cmdLine) == 0 {
 			continue
 		}

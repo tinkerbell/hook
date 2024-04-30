@@ -36,7 +36,7 @@ function kernel_build() {
 	# Push it to the OCI registry
 	if [[ "${DO_PUSH:-"no"}" == "yes" ]]; then
 		log info "Kernel built; pushing to ${kernel_oci_image}"
-		docker push "${kernel_oci_image}" || true
+		docker push "${kernel_oci_image}"
 	else
 		log info "DO_PUSH not 'yes', not pushing."
 	fi

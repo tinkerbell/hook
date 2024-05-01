@@ -26,6 +26,8 @@ env: # Global environment, passed to all jobs & all steps
   
   # GHA runner configuration. See bash/json-matrix.sh for more details.
   CI_RUNNER_LK_CONTAINERS_ARM64: "ARM64" # Use a self-hosted runner with the "ARM64" tag for the ARM64 builds of LK containers
+  CI_RUNNER_LK_ARM64: "ARM64" # Use a self-hosted runner with the "ARM64" tag for the ARM64 linuxkit builds
+  CI_RUNNER_LK_AMD64: "X64" # Use a self-hosted runner with the "X86" tag for the AMD64 linuxkit builds
   CI_RUNNER_KERNEL_AMD64: "X64" # Use a self-hosted runner with the "X86" tag for the AMD64 kernel builds
   CI_RUNNER_KERNEL_ARM64: "ARM64" # Use a self-hosted runner with the "ARM64" tag for the ARM64 kernel builds
 

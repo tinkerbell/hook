@@ -62,7 +62,7 @@ function calculate_kernel_version_default() {
 		kernel_id_to_use="${USE_KERNEL_ID}"
 	fi
 
-	kernel_oci_image="${HOOK_KERNEL_OCI_BASE}${kernel_id_to_use}:${kernel_oci_version}"
+	kernel_oci_image="${HOOK_KERNEL_OCI_BASE}:${kernel_oci_version}"
 
 	# Log the obtained version & images to stderr
 	log info "Kernel arch: ${KERNEL_ARCH} (for ARCH ${ARCH})"

@@ -4,9 +4,13 @@ function build_all_hook_linuxkit_containers() {
 	log info "Building all LinuxKit containers..."
 	: "${DOCKER_ARCH:?"ERROR: DOCKER_ARCH is not defined"}"
 
-	build_hook_linuxkit_container hook-bootkit HOOK_CONTAINER_BOOTKIT_IMAGE
-	build_hook_linuxkit_container hook-docker HOOK_CONTAINER_DOCKER_IMAGE
-	build_hook_linuxkit_container hook-mdev HOOK_CONTAINER_MDEV_IMAGE
+	# when adding new container builds here you'll also want to add them to the
+	# `linuxkit_build` function in the linuxkit.sh file.
+	build_hook_linuxkit_container images/hook-bootkit HOOK_CONTAINER_BOOTKIT_IMAGE
+	build_hook_linuxkit_container images/hook-docker HOOK_CONTAINER_DOCKER_IMAGE
+	build_hook_linuxkit_container images/hook-mdev HOOK_CONTAINER_MDEV_IMAGE
+	build_hook_linuxkit_container images/containerd HOOK_CONTAINER_CONTAINERD_IMAGE
+	build_hook_linuxkit_container images/runc HOOK_CONTAINER_RUNC_IMAGE
 }
 
 function build_hook_linuxkit_container() {

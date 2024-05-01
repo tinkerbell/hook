@@ -47,12 +47,12 @@ function output_gha_matrixes() {
 	prepare_json_matrix_lkcontainers "LK_CONTAINERS" # reads all_arches's keys and sets full_json
 	declare lkcontainers_json="${full_json}"
 
-	# If under GHA, set a GHA output variable, otherwise just log them
-	if [[ -z "${GITHUB_OUTPUT}" ]]; then
-		log info "Would have set GHA output kernels_json to: ${kernels_json}"
-		log info "Would have set GHA output lk_hooks_json to: ${lk_hooks_json}"
-		log info "Would have set GHA output lkcontainers_json to: ${lkcontainers_json}"
-	else
+	log info "kernels_json to: ${kernels_json}"
+	log info "lk_hooks_json to: ${lk_hooks_json}"
+	log info "lkcontainers_json to: ${lkcontainers_json}"
+
+	# If under GHA, set a GHA output variable.
+	if [[ -n "${GITHUB_OUTPUT}" ]]; then
 		# shellcheck disable=SC2129 # no, thanks, shellcheck.
 		echo "kernels_json=${kernels_json}" >> "${GITHUB_OUTPUT}"
 		echo "lk_hooks_json=${lk_hooks_json}" >> "${GITHUB_OUTPUT}"

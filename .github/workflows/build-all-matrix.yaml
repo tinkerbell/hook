@@ -176,13 +176,27 @@ jobs:
           merge-multiple: true
           path: out
 
-      # Release the artifacts into GitHub Releases. @TODO this GHA Action is not ideal, uses old nodejs, but I can't find a better one.
-      - name: "GH Release"
-        uses: "marvinpinto/action-automatic-releases@latest"
+      - name: Generate Release Notes
+        run: |
+          generated_release_notes=$(gh api 'repos/{owner}/{repo}/releases/generate-notes' -F tag_name=${{github.ref}} --jq .body)
+          cat >>"$GITHUB_ENV" <<-EOF
+          	RELEASE_NOTES<<RELEASE_NOTES_EOF
+          	$generated_release_notes
+          	RELEASE_NOTES_EOF
+          EOF
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Generate checksum
+        uses: jmgilman/actions-generate-checksum@v1
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "${{needs.matrix_prep.outputs.created}}"
-          prerelease: false
-          title: "${{needs.matrix_prep.outputs.created}}"
+          method: sha512
+          patterns: out/hook_*.tar.gz
+
+      - name: Update latest release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: ${{env.RELEASE_NOTES}}
           files: |
-            out/*.tar.gz
+            out/hook_*.tar.gz
+            checksum.txt

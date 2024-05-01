@@ -4,6 +4,8 @@ on:
   #  # every day at 5am UTC
   #  - cron: '0 5 * * *'
   workflow_dispatch:
+  pull_request:
+  push:
 
 env: # Global environment, passed to all jobs & all steps
   # Default to quay.io, which is also the default for the CLI. 

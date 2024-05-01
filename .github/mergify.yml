@@ -3,7 +3,8 @@ queue_rules:
     conditions:
       # Conditions to get out of the queue (= merged)
       - check-success=DCO
-      - check-success~=build
+      - check-success~="^Hook .*"
+      - check-success~="^Kernel .*"
 
 pull_request_rules:
   - name: Automatic merge on approval
@@ -13,7 +14,8 @@ pull_request_rules:
       - "#changes-requested-reviews-by=0"
       - "#review-requested=0"
       - check-success=DCO
-      - check-success~=build
+      - check-success~="^Hook .*"
+      - check-success~="^Kernel .*"
       - label!=do-not-merge
       - label=ready-to-merge
     actions:

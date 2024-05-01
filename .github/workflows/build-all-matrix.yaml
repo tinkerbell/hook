@@ -14,7 +14,7 @@ env: # Global environment, passed to all jobs & all steps
   
   # Apart from the quay/ghcr coordinates above (used for both pulling & pushing), we might also want to
   # log in to DockerHub (with a read-only token) so we aren't hit by rate limits when pulling the linuxkit pkgs.
-  # To do so, set the secret DOCKER_USERNAME and DOCKER_PASSWORD in the repo secrets, and set the below to yes.
+  # To do so, set the secret DOCKERHUB_USERNAME and DOCKERHUB_PASSWORD in the repo secrets, and set the below to yes.
   LOGIN_TO_DOCKERHUB: "yes"
   
   HOOK_VERSION: "0.9.0-alpha1-build-${{github.run_number}}" # Use a forced Hook version
@@ -129,7 +129,7 @@ jobs:
       - name: Docker Login to DockerHub # read-only token, required to be able to pull all the linuxkit pkgs without getting rate limited.
         if: ${{ env.LOGIN_TO_DOCKERHUB == 'yes' }}
         uses: docker/login-action@v3
-        with: { registry: "docker.io", username: "${{ secrets.DOCKER_USERNAME }}", password: "${{ secrets.DOCKER_PASSWORD }}" }
+        with: { registry: "docker.io", username: "${{ secrets.DOCKERHUB_USERNAME }}", password: "${{ secrets.DOCKERHUB_PASSWORD }}" }
 
       - name: Docker Login to quay.io
         if: ${{ env.REGISTRY == 'quay.io' }}

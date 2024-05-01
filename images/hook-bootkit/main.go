@@ -199,7 +199,7 @@ func run(ctx context.Context, log logr.Logger) error {
 	}
 
 	log.Info("Starting tink-worker container")
-	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+	if err := cli.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
 		return fmt.Errorf("starting tink-worker container failed: %w", err)
 	}
 
@@ -226,14 +226,14 @@ func checkContainerRunning(ctx context.Context, cli *client.Client, containerID 
 
 // removeTinkWorkerContainer removes the tink-worker container if it exists.
 func removeTinkWorkerContainer(ctx context.Context, cli *client.Client) error {
-	cs, err := cli.ContainerList(ctx, types.ContainerListOptions{All: true})
+	cs, err := cli.ContainerList(ctx, container.ListOptions{All: true})
 	if err != nil {
 		return fmt.Errorf("listing containers, in order to find an existing tink-worker container, failed: %w", err)
 	}
 	for _, c := range cs {
 		for _, n := range c.Names {
 			if n == "/tink-worker" {
-				if err := cli.ContainerRemove(ctx, c.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
+				if err := cli.ContainerRemove(ctx, c.ID, container.RemoveOptions{Force: true}); err != nil {
 					return fmt.Errorf("removing existing tink-worker container failed: %w", err)
 				}
 			}

@@ -167,7 +167,11 @@ jobs:
     name: Publish all Hooks to GitHub Releases
     needs: [ matrix_prep, build-hook-ensemble ]
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Download built Hook artifacts
         uses: actions/download-artifact@v4
@@ -176,16 +180,35 @@ jobs:
           merge-multiple: true
           path: out
 
+      - name: Delete Tag
+        run: |
+          git tag -d latest || echo "no local tag to delete"
+          git push origin :latest -f || echo "no remote tag to delete"
+
       - name: Generate Release Notes
         run: |
-          generated_release_notes=$(gh api 'repos/{owner}/{repo}/releases/generate-notes' -F tag_name=${{github.ref}} --jq .body)
+          generated_release_notes=$(gh api 'repos/{owner}/{repo}/releases/generate-notes' -F tag_name=latest --jq .body)
           cat >>"$GITHUB_ENV" <<-EOF
           	RELEASE_NOTES<<RELEASE_NOTES_EOF
+          	# :warning: :rotating_light: :boom: Note!!! :boom: :rotating_light: :warning:
+
+          	The uploaded files will be updated on the next merge to main, as such download them before use to avoid surprises.
+
+          	---
+          	Commit: ${{needs.validation.outputs.commitid}}
+          	---
+
           	$generated_release_notes
           	RELEASE_NOTES_EOF
           EOF
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Update Tag
+        uses: rickstaa/action-create-tag@v1
+        with:
+          tag: latest
+          message: "Latest development build"
 
       - name: Generate checksum
         uses: jmgilman/actions-generate-checksum@v1
@@ -196,7 +219,10 @@ jobs:
       - name: Update latest release
         uses: softprops/action-gh-release@v2
         with:
+          name: Hook Latest Development Build
           body: ${{env.RELEASE_NOTES}}
           files: |
             out/hook_*.tar.gz
             checksum.txt
+          prerelease: true
+          tag_name: latest

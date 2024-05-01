@@ -214,7 +214,7 @@ jobs:
         uses: jmgilman/actions-generate-checksum@v1
         with:
           method: sha512
-          patterns: out/hook_*.tar.gz
+          patterns: hook_*.tar.gz
 
       - name: Update latest release
         uses: softprops/action-gh-release@v2
@@ -222,7 +222,7 @@ jobs:
           name: Hook Latest Development Build
           body: ${{env.RELEASE_NOTES}}
           files: |
-            out/hook_*.tar.gz
+            hook_*.tar.gz
             checksum.txt
           prerelease: true
           tag_name: latest

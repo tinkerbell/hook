@@ -180,6 +180,11 @@ jobs:
           merge-multiple: true
           path: out
 
+      - name: Figure Out Commit Short ID
+        id: commitid
+        run: |
+          echo ::set-output name=short::$(git rev-parse --short HEAD)
+
       - name: Delete Tag
         run: |
           git tag -d latest || echo "no local tag to delete"
@@ -195,7 +200,7 @@ jobs:
           	The uploaded files will be updated on the next merge to main, as such download them before use to avoid surprises.
 
           	---
-          	Commit: ${{needs.validation.outputs.commitid}}
+          	Commit: ${{steps.commitid.outputs.short}}
           	---
 
           	$generated_release_notes
@@ -214,7 +219,7 @@ jobs:
         uses: jmgilman/actions-generate-checksum@v1
         with:
           method: sha512
-          patterns: hook_*.tar.gz
+          patterns: hook-*.tar.gz
 
       - name: Update latest release
         uses: softprops/action-gh-release@v2
@@ -222,7 +227,7 @@ jobs:
           name: Hook Latest Development Build
           body: ${{env.RELEASE_NOTES}}
           files: |
-            hook_*.tar.gz
+            hook-*.tar.gz
             checksum.txt
           prerelease: true
           tag_name: latest

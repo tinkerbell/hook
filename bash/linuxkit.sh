@@ -141,7 +141,7 @@ function linuxkit_build() {
 
 	# tar the files into out/hook.tar in such a way that vmlinuz and initramfs are at the root of the tar; pigz it
 	# Those are the artifacts published to the GitHub release
-	tar -cvf- -C "out/hook" "${output_files[@]}" | pigz > "out/hook-${OUTPUT_ID}.tar.gz"
+	tar -cvf- -C "out/hook" "${output_files[@]}" | pigz > "out/hook_${OUTPUT_ID}.tar.gz"
 }
 
 function linuxkit_run_qemu() {

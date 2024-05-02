@@ -186,7 +186,6 @@ jobs:
         with:
           pattern: "hook-tarball-*"
           merge-multiple: true
-          path: out
 
       - name: Figure Out Commit Short ID
         id: commitid
@@ -227,7 +226,7 @@ jobs:
         uses: jmgilman/actions-generate-checksum@v1
         with:
           method: sha512
-          patterns: out/*.tar.gz
+          patterns: *.tar.gz
 
       - name: Update latest release
         uses: softprops/action-gh-release@v2
@@ -235,7 +234,7 @@ jobs:
           name: Hook Latest Development Build
           body: ${{env.RELEASE_NOTES}}
           files: |
-            out/*.tar.gz
+            *.tar.gz
             checksum.txt
           prerelease: true
           tag_name: latest

@@ -6,6 +6,8 @@
 # - HOOK_CONTAINER_BOOTKIT_IMAGE: ${HOOK_CONTAINER_BOOTKIT_IMAGE}
 # - HOOK_CONTAINER_DOCKER_IMAGE: ${HOOK_CONTAINER_DOCKER_IMAGE}
 # - HOOK_CONTAINER_MDEV_IMAGE: ${HOOK_CONTAINER_MDEV_IMAGE}
+# - HOOK_CONTAINER_CONTAINERD_IMAGE: ${HOOK_CONTAINER_CONTAINERD_IMAGE}
+# - HOOK_CONTAINER_RUNC_IMAGE: ${HOOK_CONTAINER_RUNC_IMAGE}
 # - Other variables are not replaced: for example this is a literal dollarsign-SOMETHING: $SOMETHING and with braces: ${SOMETHING}
 
 kernel:
@@ -13,38 +15,38 @@ kernel:
   cmdline: "this_is_not_used=at_at_all_in_hook command_line_is_determined_by=ipxe"
 
 init:
-  - linuxkit/init:144c9cee8aed9e30a16940f2bf1d3813883aceda
-  # can't use the latest version of runc because it has a bug that prevents docker from starting containers properly.
-  - linuxkit/runc:v0.8
-  - linuxkit/containerd:d445de33c7f08470187b068d247b1c0dea240f0a
-  - linuxkit/ca-certificates:c1c73ef590dffb6a0138cf758fe4a4305c9864f4
-  - linuxkit/firmware:8def159583422181ddee3704f7024ecb9c02d348 # "Some" firmware from Linuxkit pkg; see https://github.com/linuxkit/linuxkit/blob/master/pkg/firmware/Dockerfile
+  # this sha is the first with cgroups v2 as the default
+  - linuxkit/init:8a7b6cdb89197dc94eb6db69ef9dc90b750db598
+  - "${HOOK_CONTAINER_RUNC_IMAGE}"
+  - "${HOOK_CONTAINER_CONTAINERD_IMAGE}"
+  - linuxkit/ca-certificates:v1.0.0
+  - linuxkit/firmware:24402a25359c7bc290f7fc3cd23b6b5f0feb32a5 # "Some" firmware from Linuxkit pkg; see https://github.com/linuxkit/linuxkit/blob/master/pkg/firmware/Dockerfile
 
 onboot:
   - name: rngd1
-    image: linuxkit/rngd:cdb919e4aee49fed0bf6075f0a104037cba83c39
+    image: linuxkit/rngd:v1.0.0
     command: [ "/sbin/rngd", "-1" ]
 
   - name: sysctl
-    image: linuxkit/sysctl:a88a50c104d538b58da5e1441f6f0b4b738f76a6
+    image: linuxkit/sysctl:v1.0.0
 
   - name: sysfs
-    image: linuxkit/sysfs:5fd982d39ff7bec8e480c67a110acb2d3794c291
+    image: linuxkit/sysfs:v1.0.0
 
   - name: modprobe
-    image: linuxkit/modprobe:ab5ac4d5e7e7a5f2d103764850f7846b69230676
+    image: linuxkit/modprobe:v1.0.0
     command: [ "modprobe", "cdc_ncm" ] # for usb ethernet dongles
 
   - name: vlan
-    image: linuxkit/ip:6cc44dd4e18ddb02de01bc4b34b5799971b6a7bf
+    image: linuxkit/ip:v1.0.0
     capabilities:
       - all
     binds.add:
       - /etc/ip/vlan.sh:/etc/ip/vlan.sh
     command: [ "/etc/ip/vlan.sh" ]
 
-  - name: dhcpcd
-    image: linuxkit/dhcpcd:52d2c4df0311b182e99241cdc382ff726755c450
+  - name: dhcpcd-once
+    image: linuxkit/dhcpcd:v1.0.0
     command: [ "/etc/ip/dhcp.sh", "true" ] # 2nd paramter is one-shot true/false: true for onboot, false for services
     #capabilities.add:
     #  - CAP_SYS_TIME # for ntp one-shot no-max-offset after ntpd, for hardware missing RTC's that boot in 1970
@@ -60,12 +62,11 @@ onboot:
         - /var/lib/dhcpcd
 
 services:
-
   - name: rngd
-    image: linuxkit/rngd:310c16ec5315bd07d4b8f5332cfa7dc5cbc7d368
+    image: linuxkit/rngd:v1.0.0
 
   - name: ntpd
-    image: linuxkit/openntpd:c90c6dd90f5dfb0ca71a73aac2dad69c8d956af3
+    image: linuxkit/openntpd:v1.0.0
 
   - name: mdev
     image: "${HOOK_CONTAINER_MDEV_IMAGE}"
@@ -81,7 +82,7 @@ services:
         type: b
 
   - name: getty
-    image: linuxkit/getty:76951a596aa5e0867a38e28f0b94d620e948e3e8
+    image: linuxkit/getty:v1.0.0
     capabilities:
       - all
     binds.add:
@@ -100,10 +101,11 @@ services:
     net: host
     pid: host
     mounts:
-      - type: cgroup
+      - type: cgroup2
         options: [ "rw", "nosuid", "noexec", "nodev", "relatime" ]
-    binds:
-      - /dev/console:/dev/console
+        destination: /sys/fs/cgroup
+    binds.add:
+      #- /dev/console:/dev/console
       - /dev:/dev
       - /etc/resolv.conf:/etc/resolv.conf
       - /lib/modules:/lib/modules
@@ -122,26 +124,43 @@ services:
       - all
     net: host
     mounts:
-      - type: cgroup
+      - type: cgroup2
         options: [ "rw", "nosuid", "noexec", "nodev", "relatime" ]
+        destination: /sys/fs/cgroup
     binds:
       - /var/run/docker:/var/run
     runtime:
       mkdir:
         - /var/run/docker
+  
+  - name: dhcpcd-daemon
+    image: linuxkit/dhcpcd:v1.0.0
+    command: [ "/etc/ip/dhcp.sh", "false" ] # 2nd paramter is one-shot true/false: true for onboot, false for services
+    #capabilities.add:
+    #  - CAP_SYS_TIME # for ntp one-shot no-max-offset after ntpd, for hardware missing RTC's that boot in 1970
+    capabilities:
+      - all
+    binds.add:
+      - /var/lib/dhcpcd:/var/lib/dhcpcd
+      - /run:/run
+      - /etc/ip/dhcp.sh:/etc/ip/dhcp.sh
+      - /dhcpcd.conf:/dhcpcd.conf
+    runtime:
+      mkdir:
+        - /var/lib/dhcpcd
 
 #dbg  - name: sshd
-#dbg    image: linuxkit/sshd:666b4a1a323140aa1f332826164afba506abf597
+#dbg    image: linuxkit/sshd:v1.0.0
 
 files:
   - path: etc/profile.d/local.sh
     contents: |
       alias       docker='ctr -n services.linuxkit tasks exec --tty --exec-id cmd hook-docker docker'
       alias docker-shell='ctr -n services.linuxkit tasks exec --tty --exec-id shell hook-docker sh'
-      name_version=$(grep PRETTY_NAME= /etc/os-release | cut -d'=' -f2 | tr -d '"')
-      export PS1='${name_version}:\w\$ '
+      export PS1='HookOS ${HOOK_VERSION}:\w\$ '
       # only print WARNING or higher kernel messages to console
       echo 4 > /proc/sys/kernel/printk
+      resize
     mode: "0644"
 
   - path: etc/motd

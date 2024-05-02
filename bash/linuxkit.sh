@@ -50,7 +50,7 @@ function linuxkit_build() {
 	fi
 
 	# Build the containers in this repo used in the LinuxKit YAML;
-	build_all_hook_linuxkit_containers # sets HOOK_CONTAINER_BOOTKIT_IMAGE, HOOK_CONTAINER_DOCKER_IMAGE, HOOK_CONTAINER_MDEV_IMAGE
+	build_all_hook_linuxkit_containers # sets HOOK_CONTAINER_BOOTKIT_IMAGE, HOOK_CONTAINER_DOCKER_IMAGE, HOOK_CONTAINER_MDEV_IMAGE, HOOK_CONTAINER_CONTAINERD_IMAGE
 
 	# Template the linuxkit configuration file.
 	# - You'd think linuxkit would take --build-args or something by now, but no.
@@ -67,7 +67,9 @@ function linuxkit_build() {
 			HOOK_CONTAINER_BOOTKIT_IMAGE="${HOOK_CONTAINER_BOOTKIT_IMAGE}" \
 			HOOK_CONTAINER_DOCKER_IMAGE="${HOOK_CONTAINER_DOCKER_IMAGE}" \
 			HOOK_CONTAINER_MDEV_IMAGE="${HOOK_CONTAINER_MDEV_IMAGE}" \
-			envsubst '$HOOK_VERSION $HOOK_KERNEL_IMAGE $HOOK_KERNEL_ID $HOOK_KERNEL_VERSION $HOOK_CONTAINER_BOOTKIT_IMAGE $HOOK_CONTAINER_DOCKER_IMAGE $HOOK_CONTAINER_MDEV_IMAGE' \
+			HOOK_CONTAINER_CONTAINERD_IMAGE="${HOOK_CONTAINER_CONTAINERD_IMAGE}" \
+			HOOK_CONTAINER_RUNC_IMAGE="${HOOK_CONTAINER_RUNC_IMAGE}" \
+			envsubst '$HOOK_VERSION $HOOK_KERNEL_IMAGE $HOOK_KERNEL_ID $HOOK_KERNEL_VERSION $HOOK_CONTAINER_BOOTKIT_IMAGE $HOOK_CONTAINER_DOCKER_IMAGE $HOOK_CONTAINER_MDEV_IMAGE $HOOK_CONTAINER_CONTAINERD_IMAGE $HOOK_CONTAINER_RUNC_IMAGE' \
 			> "hook.${inventory_id}.yaml"
 
 	declare -g linuxkit_bin=""
@@ -139,7 +141,7 @@ function linuxkit_build() {
 
 	# tar the files into out/hook.tar in such a way that vmlinuz and initramfs are at the root of the tar; pigz it
 	# Those are the artifacts published to the GitHub release
-	tar -cvf- -C "out/hook" "${output_files[@]}" | pigz > "out/hook-${OUTPUT_ID}.tar.gz"
+	tar -cvf- -C "out/hook" "${output_files[@]}" | pigz > "out/hook_${OUTPUT_ID}.tar.gz"
 }
 
 function linuxkit_run_qemu() {

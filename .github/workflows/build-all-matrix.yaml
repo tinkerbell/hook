@@ -226,7 +226,7 @@ jobs:
         uses: jmgilman/actions-generate-checksum@v1
         with:
           method: sha512
-          patterns: *.tar.gz
+          patterns: "*.tar.gz"
 
       - name: Update latest release
         uses: softprops/action-gh-release@v2

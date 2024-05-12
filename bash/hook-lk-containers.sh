@@ -22,7 +22,7 @@ function build_hook_linuxkit_container() {
 	container_files_hash="$(find "${container_dir}" -type f -print | LC_ALL=C sort | xargs sha256sum | sha256sum | cut -d' ' -f1)"
 	declare container_files_hash_short="${container_files_hash:0:8}"
 
-	declare container_oci_ref="${HOOK_LK_CONTAINERS_OCI_BASE}${container_dir}:${container_files_hash_short}"
+	declare container_oci_ref="${HOOK_LK_CONTAINERS_OCI_BASE}${container_dir}:${container_files_hash_short}-${DOCKER_ARCH}"
 	log info "Consider building LK container ${container_oci_ref} from ${container_dir} for platform ${DOCKER_ARCH}"
 	output_var="${container_oci_ref}" # the the name reference
 	echo "${output_var}" > /dev/null  # no-op; just to avoid shellcheck SC2034 (unused var; but it is actually a bash nameref)

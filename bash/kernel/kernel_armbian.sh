@@ -90,8 +90,11 @@ function calculate_kernel_version_armbian() {
 		# Get the kernel image...
 		RUN cp -v boot/vmlinuz* /armbian/output/kernel
 
-		# Create a tarball with the modules in lib
-		RUN tar -cvf /armbian/output/kernel.tar lib
+		# Create a tarball with the modules in lib.
+		# Important: this tarball needs to have permissions for the root directory included! Otherwise linuxkit rootfs will have the wrong permissions on / (root)
+		WORKDIR /armbian/modules_only
+		RUN mv /armbian/image/lib /armbian/modules_only/
+		RUN tar -cvf /armbian/output/kernel.tar .
 
 		# Create a tarball with the dtbs in usr/lib/linux-image-*
 		RUN { cd usr/lib/linux-image-* || { echo "No DTBS for this arch, empty tar..." && mkdir -p usr/lib/linux-image-no-dtbs && cd usr/lib/linux-image-* ; } ; }  && pwd && du -h -d 1 . && tar -czvf /armbian/output/dtbs.tar.gz . && ls -lah /armbian/output/dtbs.tar.gz

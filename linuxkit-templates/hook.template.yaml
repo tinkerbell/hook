@@ -91,8 +91,49 @@ services:
       - /etc/motd:/etc/motd
       - /etc/os-release:/etc/os-release
       - /:/host_root
+      - /dev:/dev
+      - /dev/console:/dev/console
+      - /usr/bin/nerdctl:/usr/bin/nerdctl
     env:
       - INSECURE=true
+    devices:
+    - path: all
+      type: b
+    - path: "/dev/console"
+      type: c
+      major: 5
+      minor: 1
+      mode: "0666"
+    - path: "/dev/tty0"
+      type: c
+      major: 4
+      minor: 0
+      mode: "0666"
+    - path: "/dev/tty1"
+      type: c
+      major: 4
+      minor: 1
+      mode: "0666"
+    - path: "/dev/ttyS0"
+      type: c
+      major: 4
+      minor: 64
+      mode: "0666"
+    - path: "/dev/ttyS1"
+      type: c
+      major: 4
+      minor: 65
+      mode: "0666"
+    - path: "/dev/ttyAMA0"
+      type: c
+      major: 204
+      minor: 64
+      mode: "0666"
+    - path: "/dev/ttyAMA1"
+      type: c
+      major: 204
+      minor: 65
+      mode: "0666"
 
   - name: hook-docker
     image: "${HOOK_CONTAINER_DOCKER_IMAGE}"
@@ -105,7 +146,7 @@ services:
         options: [ "rw", "nosuid", "noexec", "nodev", "relatime" ]
         destination: /sys/fs/cgroup
     binds.add:
-      #- /dev/console:/dev/console
+      - /dev/console:/dev/console
       - /dev:/dev
       - /etc/resolv.conf:/etc/resolv.conf
       - /lib/modules:/lib/modules
@@ -117,6 +158,9 @@ services:
         - /var/run/images
         - /var/run/docker
         - /var/run/worker
+    devices:
+    - path: all
+      type: b
 
   - name: hook-bootkit
     image: "${HOOK_CONTAINER_BOOTKIT_IMAGE}"
@@ -155,12 +199,11 @@ services:
 files:
   - path: etc/profile.d/local.sh
     contents: |
-      alias       docker='ctr -n services.linuxkit tasks exec --tty --exec-id cmd hook-docker docker'
-      alias docker-shell='ctr -n services.linuxkit tasks exec --tty --exec-id shell hook-docker sh'
+      alias       docker='nerdctl -n services.linuxkit exec -it hook-docker docker'
+      alias docker-shell='nerdctl -n services.linuxkit exec -it hook-docker sh'
       export PS1='HookOS ${HOOK_VERSION}:\w\$ '
       # only print WARNING or higher kernel messages to console
       echo 4 > /proc/sys/kernel/printk
-      resize
     mode: "0644"
 
   - path: etc/motd

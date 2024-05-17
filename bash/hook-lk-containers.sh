@@ -31,6 +31,9 @@ function build_hook_linuxkit_container() {
 	log debug "Checking if image ${container_oci_ref} exists in local registry"
 	if [[ -n "$(docker images -q "${container_oci_ref}")" ]]; then
 		log info "Image ${container_oci_ref} exists in local registry, skipping build"
+		# we try to push here because a previous build may have created the image
+		# this is the case for GitHub Actions CI because we build PRs on the same self-hosted runner
+		push_hook_linuxkit_container "${container_oci_ref}"
 		return 0
 	fi
 
@@ -55,6 +58,15 @@ function build_hook_linuxkit_container() {
 
 	log info "Built ${container_oci_ref} from ${container_dir} for platform ${DOCKER_ARCH}"
 
+	push_hook_linuxkit_container "${container_oci_ref}"
+
+	return 0
+}
+
+
+function push_hook_linuxkit_container() {
+	declare container_oci_ref="${1}"
+
 	# Push the image to the registry, if DO_PUSH is set to yes
 	if [[ "${DO_PUSH}" == "yes" ]]; then
 		docker push "${container_oci_ref}" || {
@@ -64,6 +76,4 @@ function build_hook_linuxkit_container() {
 	else
 		log info "Skipping push of ${container_oci_ref} to registry; set DO_PUSH=yes to push."
 	fi
-
-	return 0
 }

@@ -45,8 +45,15 @@ function calculate_kernel_version_armbian() {
 
 	declare -g ARMBIAN_KERNEL_DOCKERFILE="kernel/Dockerfile.autogen.armbian.${inventory_id}"
 
-	declare oras_version="1.2.0-beta.1" # @TODO bump this once it's released; yes it's much better than 1.1.x's
-	declare oras_down_url="https://github.com/oras-project/oras/releases/download/v${oras_version}/oras_${oras_version}_linux_amd64.tar.gz"
+	declare oras_version="1.2.0-rc.1" # @TODO bump this once it's released; yes it's much better than 1.1.x's
+	# determine the arch to download from current arch
+	declare oras_arch="unknown"
+	case "$(uname -m)" in
+		"x86_64") oras_arch="amd64" ;;
+		"aarch64") oras_arch="arm64" ;;
+		*) log error "ERROR: ARCH $(uname -m) not supported by ORAS? check https://github.com/oras-project/oras/releases" && exit 1 ;;
+	esac
+	declare oras_down_url="https://github.com/oras-project/oras/releases/download/v${oras_version}/oras_${oras_version}_linux_${oras_arch}.tar.gz"
 
 	# Lets create a Dockerfile that will be used to obtain the artifacts needed, using ORAS binary
 	echo "Creating Dockerfile '${ARMBIAN_KERNEL_DOCKERFILE}'... "

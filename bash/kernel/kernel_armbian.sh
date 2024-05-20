@@ -94,6 +94,11 @@ function calculate_kernel_version_armbian() {
 		# Important: this tarball needs to have permissions for the root directory included! Otherwise linuxkit rootfs will have the wrong permissions on / (root)
 		WORKDIR /armbian/modules_only
 		RUN mv /armbian/image/lib /armbian/modules_only/
+		RUN echo "Before cleaning: " && du -h -d 10 -x . | sort -h | tail -n 20
+		# Trim the kernel modules to save space; hopefully your required hardware is not included here
+		RUN rm -rfv ./lib/modules/*/kernel/drivers/net/wireless ./lib/modules/*/kernel/sound ./lib/modules/*/kernel/drivers/media
+		RUN rm -rfv ./lib/modules/*/kernel/drivers/infiniband
+		RUN echo "After cleaning: " &&  du -h -d 10 -x . | sort -h | tail -n 20
 		RUN tar -cf /armbian/output/kernel.tar .
 
 		# Create a tarball with the dtbs in usr/lib/linux-image-*

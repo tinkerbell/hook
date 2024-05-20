@@ -98,6 +98,18 @@ function linuxkit_build() {
 	log info "Building Hook with kernel ${inventory_id} using linuxkit: ${lk_args[*]}"
 	"${linuxkit_bin}" build "--format" "kernel+initrd" "${lk_args[@]}"
 
+	declare initramfs_path="${lk_output_dir}/hook-initrd.img"
+	# initramfs_path is a gzipped file. obtain the uncompressed byte size, without decompressing it
+	declare -i initramfs_size_bytes=0
+	initramfs_size_bytes=$(gzip -l "${initramfs_path}" | tail -n 1 | awk '{print $2}')
+	log info "Uncompressed initramfs size in bytes: ${initramfs_size_bytes}"
+	# If the size is larger than 900mb, it is unlikely to boot on a 2gb RAM machine. Warn.
+	if [[ "${initramfs_size_bytes}" -gt 943718400 ]]; then
+		log warn "${inventory_id}: Uncompressed initramfs size (${initramfs_size_bytes} bytes) is larger than 900mb; it may not boot on a 2gb RAM machine."
+	else
+		log notice "${inventory_id}: Uncompressed initramfs size (${initramfs_size_bytes} bytes) is smaller than 900mb."
+	fi
+
 	if [[ "${LK_RUN}" == "qemu" ]]; then
 		linuxkit_run_qemu
 		return 0

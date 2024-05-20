@@ -18,7 +18,7 @@ RUN mkdir -p $GOPATH/src/github.com/containerd && \
   git checkout $CONTAINERD_COMMIT
 RUN apk add --no-cache btrfs-progs-dev gcc libc-dev linux-headers make libseccomp-dev
 WORKDIR $GOPATH/src/github.com/containerd/containerd
-RUN make binaries EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS='-extldflags "-fno-PIC -static"' BUILDTAGS="static_build no_devmapper"
+RUN make binaries EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS='-w -s -extldflags "-fno-PIC -static"' BUILDTAGS="static_build no_devmapper"
 
 # install nerdctl
 RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then ARCHITECTURE=amd64; elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then ARCHITECTURE=arm64; else ARCHITECTURE=amd64; fi \

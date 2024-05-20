@@ -45,8 +45,15 @@ function calculate_kernel_version_armbian() {
 
 	declare -g ARMBIAN_KERNEL_DOCKERFILE="kernel/Dockerfile.autogen.armbian.${inventory_id}"
 
-	declare oras_version="1.2.0-beta.1" # @TODO bump this once it's released; yes it's much better than 1.1.x's
-	declare oras_down_url="https://github.com/oras-project/oras/releases/download/v${oras_version}/oras_${oras_version}_linux_amd64.tar.gz"
+	declare oras_version="1.2.0-rc.1" # @TODO bump this once it's released; yes it's much better than 1.1.x's
+	# determine the arch to download from current arch
+	declare oras_arch="unknown"
+	case "$(uname -m)" in
+		"x86_64") oras_arch="amd64" ;;
+		"aarch64") oras_arch="arm64" ;;
+		*) log error "ERROR: ARCH $(uname -m) not supported by ORAS? check https://github.com/oras-project/oras/releases" && exit 1 ;;
+	esac
+	declare oras_down_url="https://github.com/oras-project/oras/releases/download/v${oras_version}/oras_${oras_version}_linux_${oras_arch}.tar.gz"
 
 	# Lets create a Dockerfile that will be used to obtain the artifacts needed, using ORAS binary
 	echo "Creating Dockerfile '${ARMBIAN_KERNEL_DOCKERFILE}'... "
@@ -83,8 +90,16 @@ function calculate_kernel_version_armbian() {
 		# Get the kernel image...
 		RUN cp -v boot/vmlinuz* /armbian/output/kernel
 
-		# Create a tarball with the modules in lib
-		RUN tar -cvf /armbian/output/kernel.tar lib
+		# Create a tarball with the modules in lib.
+		# Important: this tarball needs to have permissions for the root directory included! Otherwise linuxkit rootfs will have the wrong permissions on / (root)
+		WORKDIR /armbian/modules_only
+		RUN mv /armbian/image/lib /armbian/modules_only/
+		RUN echo "Before cleaning: " && du -h -d 10 -x . | sort -h | tail -n 20
+		# Trim the kernel modules to save space; hopefully your required hardware is not included here
+		RUN rm -rfv ./lib/modules/*/kernel/drivers/net/wireless ./lib/modules/*/kernel/sound ./lib/modules/*/kernel/drivers/media
+		RUN rm -rfv ./lib/modules/*/kernel/drivers/infiniband
+		RUN echo "After cleaning: " &&  du -h -d 10 -x . | sort -h | tail -n 20
+		RUN tar -cf /armbian/output/kernel.tar .
 
 		# Create a tarball with the dtbs in usr/lib/linux-image-*
 		RUN { cd usr/lib/linux-image-* || { echo "No DTBS for this arch, empty tar..." && mkdir -p usr/lib/linux-image-no-dtbs && cd usr/lib/linux-image-* ; } ; }  && pwd && du -h -d 1 . && tar -czvf /armbian/output/dtbs.tar.gz . && ls -lah /armbian/output/dtbs.tar.gz

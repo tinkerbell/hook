@@ -19,7 +19,7 @@ RUN mkdir -p $GOPATH/src/github.com/opencontainers && \
   git clone https://github.com/opencontainers/runc.git
 WORKDIR $GOPATH/src/github.com/opencontainers/runc
 RUN git checkout $RUNC_COMMIT
-RUN make static BUILDTAGS="seccomp" EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS="-extldflags \\\"-fno-PIC -static\\\""
+RUN make static BUILDTAGS="seccomp" EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS="-s -w -extldflags \\\"-fno-PIC -static\\\""
 RUN cp runc /usr/bin/
 
 RUN mkdir -p /etc/init.d && ln -s /usr/bin/service /etc/init.d/010-onboot

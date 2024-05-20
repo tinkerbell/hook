@@ -134,6 +134,16 @@ services:
       major: 204
       minor: 65
       mode: "0666"
+    - path: "/dev/ttyAML0"
+      type: c
+      major: 243
+      minor: 0
+      mode: "0666"
+    - path: "/dev/ttyAML1"
+      type: c
+      major: 243
+      minor: 1
+      mode: "0666"
 
   - name: hook-docker
     image: "${HOOK_CONTAINER_DOCKER_IMAGE}"
@@ -266,6 +276,8 @@ files:
       ttyS1
       ttyAMA0
       ttyAMA1
+      ttyAML0
+      ttyAML1
       ttyUSB0
       ttyUSB1
       ttyUSB2

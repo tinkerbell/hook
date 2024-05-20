@@ -73,7 +73,7 @@ function prepare_json_matrix() {
 
 		if [[ "${matrix_type}" == "KERNEL" ]]; then # special case for kernel builds, if USE_KERNEL_ID is set, skip this kernel
 			if [[ -n "${kernel_info[USE_KERNEL_ID]}" ]]; then
-				log warn "Skipping build of kernel '${kernel}' due to it having USE_KERNEL_ID set to '${kernel_info[USE_KERNEL_ID]}'"
+				log info "Skipping build of kernel '${kernel}' due to it having USE_KERNEL_ID set to '${kernel_info[USE_KERNEL_ID]}'"
 				continue
 			fi
 		fi

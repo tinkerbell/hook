@@ -144,6 +144,16 @@ services:
       major: 243
       minor: 1
       mode: "0666"
+    - path: "/dev/ttyUSB0"
+      type: c
+      major: 188
+      minor: 0
+      mode: "0666"
+    - path: "/dev/ttyUSB1"
+      type: c
+      major: 188
+      minor: 1
+      mode: "0666"
 
   - name: hook-docker
     image: "${HOOK_CONTAINER_DOCKER_IMAGE}"

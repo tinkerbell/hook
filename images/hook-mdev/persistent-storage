@@ -1,0 +1,148 @@
+#!/bin/sh
+
+symlink_action() {
+	case "$ACTION" in
+		add) ln -sf "$1" "$2";;
+		remove) rm -f "$2";;
+	esac
+}
+
+sanitise_file() {
+	sed -E -e 's/^\s+//' -e 's/\s+$//' -e 's/ /_/g' "$@" 2>/dev/null
+}
+
+sanitise_string() {
+	echo "$@" | sanitise_file
+}
+
+blkid_encode_string() {
+	# Rewrites string similar to libblk's blkid_encode_string
+	# function which is used by udev/eudev.
+	echo "$@" | sed -e 's| |\\x20|g'
+}
+
+: ${SYSFS:=/sys}
+
+# cdrom symlink
+case "$MDEV" in
+	sr*|xvd*)
+		caps="$(cat $SYSFS/block/$MDEV/capability 2>/dev/null)"
+		if [ $(( 0x${caps:-0} & 8 )) -gt 0 ] || [ "$(cat $SYSFS/block/$MDEV/removable 2>/dev/null)" = "1" ]; then
+			symlink_action $MDEV cdrom
+		fi
+esac
+
+
+# /dev/block symlinks
+mkdir -p block
+if [ -f "$SYSFS/class/block/$MDEV/dev" ]; then
+	maj_min=$(sanitise_file "$SYSFS/class/block/$MDEV/dev")
+	symlink_action ../$MDEV block/${maj_min}
+fi
+
+
+# by-id symlinks
+mkdir -p disk/by-id
+
+if [ -f "$SYSFS/class/block/$MDEV/partition" ]; then
+	# This is a partition of a device, find out its parent device
+	_parent_dev="$(basename $(${SBINDIR:-/usr/bin}/readlink -f "$SYSFS/class/block/$MDEV/.."))"
+
+	partition=$(cat $SYSFS/class/block/$MDEV/partition 2>/dev/null)
+	case "$partition" in
+		[0-9]*) partsuffix="-part$partition";;
+	esac
+	# Get name, model, serial, wwid from parent device of the partition
+	_check_dev="$_parent_dev"
+else
+	_check_dev="$MDEV"
+fi
+
+model=$(sanitise_file "$SYSFS/class/block/$_check_dev/device/model")
+name=$(sanitise_file "$SYSFS/class/block/$_check_dev/device/name")
+serial=$(sanitise_file "$SYSFS/class/block/$_check_dev/device/serial")
+# Special case where block devices have serials attached to the block itself, like virtio-blk
+: ${serial:=$(sanitise_file "$SYSFS/class/block/$_check_dev/serial")}
+wwid=$(sanitise_file "$SYSFS/class/block/$_check_dev/wwid")
+: ${wwid:=$(sanitise_file "$SYSFS/class/block/$_check_dev/device/wwid")}
+
+# Sets variables LABEL, PARTLABEL, PARTUUID, TYPE, UUID depending on
+# blkid output (busybox blkid will not provide PARTLABEL or PARTUUID)
+eval $(blkid /dev/$MDEV | cut -d: -f2-)
+
+if [ -n "$wwid" ]; then
+	case "$MDEV" in
+		nvme*) symlink_action ../../$MDEV disk/by-id/nvme-${wwid}${partsuffix};;
+	esac
+	case "$wwid" in
+		naa.*) symlink_action ../../$MDEV disk/by-id/wwn-0x${wwid#naa.}${partsuffix};;
+	esac
+fi
+
+if [ -n "$serial" ]; then
+	if [ -n "$model" ]; then
+		case "$MDEV" in
+			nvme*) symlink_action ../../$MDEV disk/by-id/nvme-${model}_${serial}${partsuffix};;
+			sd*) symlink_action ../../$MDEV disk/by-id/ata-${model}_${serial}${partsuffix};;
+		esac
+	fi
+	if [ -n "$name" ]; then
+		case "$MDEV" in
+			mmcblk*) symlink_action ../../$MDEV disk/by-id/mmc-${name}_${serial}${partsuffix};;
+		esac
+	fi
+
+	# virtio-blk
+	case "$MDEV" in
+		vd*) symlink_action ../../$MDEV disk/by-id/virtio-${serial}${partsuffix};;
+	esac
+fi
+
+# by-label, by-partlabel, by-partuuid, by-uuid symlinks
+if [ -n "$LABEL" ]; then
+	mkdir -p disk/by-label
+	symlink_action ../../$MDEV disk/by-label/"$(blkid_encode_string "$LABEL")"
+fi
+if [ -n "$PARTLABEL" ]; then
+	mkdir -p disk/by-partlabel
+	symlink_action ../../$MDEV disk/by-partlabel/"$(blkid_encode_string "$PARTLABEL")"
+fi
+if [ -n "$PARTUUID" ]; then
+	mkdir -p disk/by-partuuid
+	symlink_action ../../$MDEV disk/by-partuuid/"$PARTUUID"
+fi
+if [ -n "$UUID" ]; then
+	mkdir -p disk/by-uuid
+	symlink_action ../../$MDEV disk/by-uuid/"$UUID"
+fi
+
+# nvme EBS storage symlinks
+if [ "${MDEV#nvme}" != "$MDEV" ] && [ "$model" = "Amazon_Elastic_Block_Store" ] && command -v nvme >/dev/null; then
+	n=30
+	while [ $n -gt 0 ]; do
+		ebs_alias=$(nvme id-ctrl -b /dev/$_check_dev \
+			| dd bs=32 skip=96 count=1 2>/dev/null \
+			| sed -nre '/^(\/dev\/)?(s|xv)d[a-z]{1,2} /p' \
+			| tr -d ' ')
+		if [ -n "$ebs_alias" ]; then
+			symlink_action "$MDEV" ${ebs_alias#/dev/}$partition
+			break
+		fi
+		n=$((n - 1))
+		sleep 0.1
+	done
+fi
+
+# backwards compatibility with /dev/usbdisk for /dev/sd*
+if [ "${MDEV#sd}" != "$MDEV" ]; then
+	sysdev=$(readlink $SYSFS/class/block/$MDEV)
+	case "$sysdev" in
+		*usb[0-9]*)
+			# require vfat for devices without partition
+			if ! [ -e $SYSFS/block/$MDEV ] || [ TYPE="vfat" ]; then
+				symlink_action $MDEV usbdisk
+			fi
+			;;
+	esac
+fi
+

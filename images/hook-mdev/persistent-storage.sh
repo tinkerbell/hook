@@ -2,13 +2,13 @@
 
 symlink_action() {
 	case "$ACTION" in
-		add) ln -sf "$1" "$2";;
-		remove) rm -f "$2";;
+		add) ln -sf "$1" "$2" ;;
+		remove) rm -f "$2" ;;
 	esac
 }
 
 sanitise_file() {
-	sed -E -e 's/^\s+//' -e 's/\s+$//' -e 's/ /_/g' "$@" 2>/dev/null
+	sed -E -e 's/^\s+//' -e 's/\s+$//' -e 's/ /_/g' "$@" 2> /dev/null
 }
 
 sanitise_string() {
@@ -25,13 +25,13 @@ blkid_encode_string() {
 
 # cdrom symlink
 case "$MDEV" in
-	sr*|xvd*)
-		caps="$(cat $SYSFS/block/$MDEV/capability 2>/dev/null)"
-		if [ $(( 0x${caps:-0} & 8 )) -gt 0 ] || [ "$(cat $SYSFS/block/$MDEV/removable 2>/dev/null)" = "1" ]; then
+	sr* | xvd*)
+		caps="$(cat $SYSFS/block/$MDEV/capability 2> /dev/null)"
+		if [ $((0x${caps:-0} & 8)) -gt 0 ] || [ "$(cat $SYSFS/block/$MDEV/removable 2> /dev/null)" = "1" ]; then
 			symlink_action $MDEV cdrom
 		fi
+		;;
 esac
-
 
 # /dev/block symlinks
 mkdir -p block
@@ -40,7 +40,6 @@ if [ -f "$SYSFS/class/block/$MDEV/dev" ]; then
 	symlink_action ../$MDEV block/${maj_min}
 fi
 
-
 # by-id symlinks
 mkdir -p disk/by-id
 
@@ -48,9 +47,9 @@ if [ -f "$SYSFS/class/block/$MDEV/partition" ]; then
 	# This is a partition of a device, find out its parent device
 	_parent_dev="$(basename $(${SBINDIR:-/usr/bin}/readlink -f "$SYSFS/class/block/$MDEV/.."))"
 
-	partition=$(cat $SYSFS/class/block/$MDEV/partition 2>/dev/null)
+	partition=$(cat $SYSFS/class/block/$MDEV/partition 2> /dev/null)
 	case "$partition" in
-		[0-9]*) partsuffix="-part$partition";;
+		[0-9]*) partsuffix="-part$partition" ;;
 	esac
 	# Get name, model, serial, wwid from parent device of the partition
 	_check_dev="$_parent_dev"
@@ -72,29 +71,29 @@ eval $(blkid /dev/$MDEV | cut -d: -f2-)
 
 if [ -n "$wwid" ]; then
 	case "$MDEV" in
-		nvme*) symlink_action ../../$MDEV disk/by-id/nvme-${wwid}${partsuffix};;
+		nvme*) symlink_action ../../$MDEV disk/by-id/nvme-${wwid}${partsuffix} ;;
 	esac
 	case "$wwid" in
-		naa.*) symlink_action ../../$MDEV disk/by-id/wwn-0x${wwid#naa.}${partsuffix};;
+		naa.*) symlink_action ../../$MDEV disk/by-id/wwn-0x${wwid#naa.}${partsuffix} ;;
 	esac
 fi
 
 if [ -n "$serial" ]; then
 	if [ -n "$model" ]; then
 		case "$MDEV" in
-			nvme*) symlink_action ../../$MDEV disk/by-id/nvme-${model}_${serial}${partsuffix};;
-			sd*) symlink_action ../../$MDEV disk/by-id/ata-${model}_${serial}${partsuffix};;
+			nvme*) symlink_action ../../$MDEV disk/by-id/nvme-${model}_${serial}${partsuffix} ;;
+			sd*) symlink_action ../../$MDEV disk/by-id/ata-${model}_${serial}${partsuffix} ;;
 		esac
 	fi
 	if [ -n "$name" ]; then
 		case "$MDEV" in
-			mmcblk*) symlink_action ../../$MDEV disk/by-id/mmc-${name}_${serial}${partsuffix};;
+			mmcblk*) symlink_action ../../$MDEV disk/by-id/mmc-${name}_${serial}${partsuffix} ;;
 		esac
 	fi
 
 	# virtio-blk
 	case "$MDEV" in
-		vd*) symlink_action ../../$MDEV disk/by-id/virtio-${serial}${partsuffix};;
+		vd*) symlink_action ../../$MDEV disk/by-id/virtio-${serial}${partsuffix} ;;
 	esac
 fi
 
@@ -117,13 +116,13 @@ if [ -n "$UUID" ]; then
 fi
 
 # nvme EBS storage symlinks
-if [ "${MDEV#nvme}" != "$MDEV" ] && [ "$model" = "Amazon_Elastic_Block_Store" ] && command -v nvme >/dev/null; then
+if [ "${MDEV#nvme}" != "$MDEV" ] && [ "$model" = "Amazon_Elastic_Block_Store" ] && command -v nvme > /dev/null; then
 	n=30
 	while [ $n -gt 0 ]; do
-		ebs_alias=$(nvme id-ctrl -b /dev/$_check_dev \
-			| dd bs=32 skip=96 count=1 2>/dev/null \
-			| sed -nre '/^(\/dev\/)?(s|xv)d[a-z]{1,2} /p' \
-			| tr -d ' ')
+		ebs_alias=$(nvme id-ctrl -b /dev/$_check_dev |
+			dd bs=32 skip=96 count=1 2> /dev/null |
+			sed -nre '/^(\/dev\/)?(s|xv)d[a-z]{1,2} /p' |
+			tr -d ' ')
 		if [ -n "$ebs_alias" ]; then
 			symlink_action "$MDEV" ${ebs_alias#/dev/}$partition
 			break
@@ -145,4 +144,3 @@ if [ "${MDEV#sd}" != "$MDEV" ]; then
 			;;
 	esac
 fi
-

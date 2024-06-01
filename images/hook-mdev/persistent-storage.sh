@@ -1,8 +1,13 @@
 #!/bin/sh
 
+echo "--> STARTING persistent-storage script with MDEV='${MDEV}' ACTION='${ACTION}' all params: $*" >&2
+
 symlink_action() {
 	case "$ACTION" in
-		add) ln -sf "$1" "$2" ;;
+		add)
+			echo "SYMLINK ADD: ln -sf '$1' '$2'" >&2
+			ln -sf "$1" "$2"
+			;;
 		remove) rm -f "$2" ;;
 	esac
 }
@@ -58,12 +63,18 @@ else
 fi
 
 model=$(sanitise_file "$SYSFS/class/block/$_check_dev/device/model")
-name=$(sanitise_file "$SYSFS/class/block/$_check_dev/device/name")
+echo "INITIAL model: '${model}'" >&2
+name=$(sanitise_file "$SYSFS/class/block/$_check_dev/device/name") # only used for mmcblk case
+echo "INITIAL name: '${name}'" >&2
 serial=$(sanitise_file "$SYSFS/class/block/$_check_dev/device/serial")
+echo "INITIAL serial: '${serial}'" >&2
 # Special case where block devices have serials attached to the block itself, like virtio-blk
 : ${serial:=$(sanitise_file "$SYSFS/class/block/$_check_dev/serial")}
+echo "DEVICE serial (after block-serial): '${serial}'" >&2
 wwid=$(sanitise_file "$SYSFS/class/block/$_check_dev/wwid")
+echo "INITIAL wwid: '${wwid}'" >&2
 : ${wwid:=$(sanitise_file "$SYSFS/class/block/$_check_dev/device/wwid")}
+echo "DEVICE wwid (from device-wwid): '${wwid}'" >&2
 
 # Sets variables LABEL, PARTLABEL, PARTUUID, TYPE, UUID depending on
 # blkid output (busybox blkid will not provide PARTLABEL or PARTUUID)
@@ -72,17 +83,79 @@ eval $(blkid /dev/$MDEV | cut -d: -f2-)
 if [ -n "$wwid" ]; then
 	case "$MDEV" in
 		nvme*) symlink_action ../../$MDEV disk/by-id/nvme-${wwid}${partsuffix} ;;
+		sd*) symlink_action ../../$MDEV disk/by-id/scsi-${wwid}${partsuffix} ;;
+		sr*) symlink_action ../../$MDEV disk/by-id/scsi-ro-${wwid}${partsuffix} ;;
+		vd*) symlink_action ../../$MDEV disk/by-id/virtio-${wwid}${partsuffix} ;;
 	esac
 	case "$wwid" in
 		naa.*) symlink_action ../../$MDEV disk/by-id/wwn-0x${wwid#naa.}${partsuffix} ;;
 	esac
 fi
 
+# if no model or no serial is available, lets parse the wwid and try to use it
+if [ -n "${serial}" ] && [ -n "${model}" ]; then
+	echo "USING SYSFS model='${model}' serial='${serial}'" >&2
+else
+	echo "SYSFS model='${model}' serial='${serial}' insufficient, trying to parse from wwid" >&2
+	unset wwid_raw
+	if [ -f "$SYSFS/class/block/$_check_dev/wwid" ]; then
+		echo "FOUND WWID FILE: '$SYSFS/class/block/$_check_dev/wwid'" >&2
+		wwid_raw="$(cat "$SYSFS/class/block/$_check_dev/wwid")"
+	elif [ -f "$SYSFS/class/block/$_check_dev/device/wwid" ]; then
+		echo "FOUND WWID FILE: '$SYSFS/class/block/$_check_dev/device/wwid'" >&2
+		wwid_raw="$(cat "$SYSFS/class/block/$_check_dev/device/wwid")"
+	fi
+	echo "SYSFS parse model/serial from wwid_raw:'${wwid_raw}'" >&2
+	if [ -n "${wwid_raw}" ]; then
+		wwid_raw=$(echo "${wwid_raw}" | sed 's/^ *//;s/ *$//')   # Remove leading and trailing spaces
+		wwid_prefix=$(echo "${wwid_raw}" | awk '{print $1}')     # Extract the wwid_prefix (first field)
+		rest=$(echo "${wwid_raw}" | sed "s/^${wwid_prefix} *//") # Remove the wwid_prefix from the wwid string
+		wwid_serial=$(echo "${rest}" | awk '{print $NF}')        # Extract the serial (last field)
+		rest=$(echo "${rest}" | sed "s/ ${wwid_serial}$//")      # Remove the serial from the rest of the string
+		wwid_model=$(echo "${rest}" | tr ' ' '_')                # Replace any remaining spaces in the rest part with underscores
+		wwid_model=$(echo "${wwid_model}" | sed 's/__*/_/g')     # Remove consecutive underscores
+		wwid_model=$(echo "${wwid_model}" | sed 's/^_//;s/_$//') # Remove leading and trailing underscores
+		wwid_prefix=$(echo "${wwid_prefix}" | sed 's/\./-/g')    # Replace periods in the wwid_prefix with dashes
+		unset rest
+		echo "WWID parsing came up with wwid_prefix='${wwid_prefix}' wwid_model='${wwid_model}', wwid_serial='${wwid_serial}'" >&2
+	else
+		echo "WWID is empty or not found" >&2
+	fi
+
+	# if model is unset, replace it with the parsed wwid_model
+	if [ -z "${model}" ]; then
+		echo "USING WWID model='${wwid_model}' as model..." >&2
+		model="${wwid_model}"
+	fi
+
+	# if serial is unset, replace it with the parsed wwid_serial
+	if [ -z "${serial}" ]; then
+		echo "USING WWID wwid_serial='${wwid_serial}' as serial..." >&2
+		serial="${wwid_serial}"
+	fi
+
+	# if we still have no serial, just use the wwid as serial as fallback;
+	if [ -z "${serial}" ]; then
+		echo "FALLBACK: USING WWID as serial='${wwid}'" >&2
+		serial="${wwid}"
+	fi
+
+	# rescue: if _still_ no serial set, set to hardcoded string 'noserial'.
+	if [ -z "${serial}" ]; then
+		echo "FALLBACK: USING 'noserial' as serial..." >&2
+		serial="noserial"
+	fi
+fi
+
 if [ -n "$serial" ]; then
+	echo "GOT SERIAL: serial='${serial}' model='${model}'" >&2
 	if [ -n "$model" ]; then
+		echo "GOT MODEL: serial='${serial}' model='${model}'" >&2
 		case "$MDEV" in
 			nvme*) symlink_action ../../$MDEV disk/by-id/nvme-${model}_${serial}${partsuffix} ;;
+			sr*) symlink_action ../../$MDEV disk/by-id/ata-ro-${model}_${serial}${partsuffix} ;;
 			sd*) symlink_action ../../$MDEV disk/by-id/ata-${model}_${serial}${partsuffix} ;;
+			vd*) symlink_action ../../$MDEV disk/by-id/virtio-${model}_${serial}${partsuffix} ;;
 		esac
 	fi
 	if [ -n "$name" ]; then
@@ -138,9 +211,12 @@ if [ "${MDEV#sd}" != "$MDEV" ]; then
 	case "$sysdev" in
 		*usb[0-9]*)
 			# require vfat for devices without partition
-			if ! [ -e $SYSFS/block/$MDEV ] || [ TYPE="vfat" ]; then
+			if ! [ -e $SYSFS/block/$MDEV ] || [ TYPE="vfat" ]; then # @TODO: rpardini: upstream bug here? should be $TYPE
 				symlink_action $MDEV usbdisk
 			fi
 			;;
 	esac
 fi
+
+echo "--> FINISHED persistent-storage script with MDEV='${MDEV}' ACTION='${ACTION}' all params: $*" >&2
+echo "" >&2

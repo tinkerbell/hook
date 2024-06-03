@@ -107,17 +107,26 @@ else
 	fi
 	echo "SYSFS parse model/serial from wwid_raw:'${wwid_raw}'" >&2
 	if [ -n "${wwid_raw}" ]; then
-		wwid_raw=$(echo "${wwid_raw}" | sed 's/^ *//;s/ *$//')   # Remove leading and trailing spaces
-		wwid_prefix=$(echo "${wwid_raw}" | awk '{print $1}')     # Extract the wwid_prefix (first field)
-		rest=$(echo "${wwid_raw}" | sed "s/^${wwid_prefix} *//") # Remove the wwid_prefix from the wwid string
-		wwid_serial=$(echo "${rest}" | awk '{print $NF}')        # Extract the serial (last field)
-		rest=$(echo "${rest}" | sed "s/ ${wwid_serial}$//")      # Remove the serial from the rest of the string
-		wwid_model=$(echo "${rest}" | tr ' ' '_')                # Replace any remaining spaces in the rest part with underscores
-		wwid_model=$(echo "${wwid_model}" | sed 's/__*/_/g')     # Remove consecutive underscores
-		wwid_model=$(echo "${wwid_model}" | sed 's/^_//;s/_$//') # Remove leading and trailing underscores
-		wwid_prefix=$(echo "${wwid_prefix}" | sed 's/\./-/g')    # Replace periods in the wwid_prefix with dashes
-		unset rest
-		echo "WWID parsing came up with wwid_prefix='${wwid_prefix}' wwid_model='${wwid_model}', wwid_serial='${wwid_serial}'" >&2
+		wwid_raw=$(echo "${wwid_raw}" | sed 's/^ *//;s/ *$//')                      # Remove leading and trailing spaces
+		wwid_prefix=$(echo "${wwid_raw}" | awk '{print $1}')                        # Extract the wwid_prefix (first field)
+		rest=$(echo "${wwid_raw}" | sed "s/^${wwid_prefix} *//")                    # Remove the wwid_prefix from the wwid string
+		wwid_serial=$(echo "${rest}" | awk '{print $NF}')                           # Extract the serial (last field)
+		wwid_model=$(echo "${rest}" | sed "s/ ${wwid_serial}$//")                   # Remove the serial from the rest of the string
+		:                                                                           # sanitize model ----------------------------------------------------------------------
+		wwid_model=$(echo "${wwid_model}" | tr ' ' '_' | tr '.' '_' | tr '/' '_')   # Replace any remaining spaces, dots, slashes in the rest part with underscores
+		wwid_model=$(echo "${wwid_model}" | sed 's/\\0//g')                         # Remove all instances of literal backslash-zero "\0" (not really nulls)
+		wwid_model=$(echo "${wwid_model}" | sed 's/\\/_/g')                         # replace any remaining backslashes with underscores
+		wwid_model=$(echo "${wwid_model}" | sed 's/__*/_/g')                        # Remove consecutive underscores
+		wwid_model=$(echo "${wwid_model}" | sed 's/^_//;s/_$//')                    # Remove leading and trailing underscores
+		:                                                                           # sanitize serial ---------------------------------------------------------------------
+		wwid_serial=$(echo "${wwid_serial}" | tr ' ' '_' | tr '.' '_' | tr '/' '_') # Replace any remaining spaces, dots, slashes in the rest part with underscores
+		wwid_serial=$(echo "${wwid_serial}" | sed 's/\\0//g')                       # Remove all instances of literal backslash-zero "\0" (not really nulls)
+		wwid_serial=$(echo "${wwid_serial}" | sed 's/\\/_/g')                       # replace any remaining backslashes with underscores
+		wwid_serial=$(echo "${wwid_serial}" | sed 's/__*/_/g')                      # Remove consecutive underscores
+		wwid_serial=$(echo "${wwid_serial}" | sed 's/^_//;s/_$//')                  # Remove leading and trailing underscores
+
+		unset rest wwid_prefix
+		echo "WWID parsing came up with wwid_model='${wwid_model}', wwid_serial='${wwid_serial}'" >&2
 	else
 		echo "WWID is empty or not found" >&2
 	fi

@@ -46,7 +46,7 @@ function calculate_kernel_version_default() {
 	esac
 
 	# Grab the latest version from kernel.org
-	declare -g KERNEL_POINT_RELEASE=""
+	declare -g KERNEL_POINT_RELEASE="${KERNEL_POINT_RELEASE:-""}"
 	resolve_latest_kernel_version_lts
 
 	# Calculate a version and hash for the OCI image

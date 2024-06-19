@@ -18,11 +18,11 @@ We started this project for the following reasons:
 - The [OSIE] build process was not standardised, which is critical for an open-source project because it causes friction for contributors.
   This project, as highlighted later in this page, uses [LinuxKit].
   It gives us:
-    - Documentation about how the building phase works
-    - A clear and defined CLI and [specification] (YAML)
-    - A shared community that is supportive
-    - LinuxKit cross-compiles in many architectures
-    - Different output formats: ISO, init ramdisk, aws, docker, rpi3... see [formats].
+  - Documentation about how the building phase works
+  - A clear and defined CLI and [specification] (YAML)
+  - A shared community that is supportive
+  - LinuxKit cross-compiles in many architectures
+  - Different output formats: ISO, init ramdisk, aws, docker, rpi3... see [formats].
 - It was not easy to explain to the Tinkerbell community how [OSIE] works and the components it is made for.
   A lot of the components were Equinix Metal specific and are not strictly needed in Tinkerbell.
 
@@ -67,14 +67,14 @@ It will then speak with the `hook-docker` engine API through the shared `/var/ru
 > This refers to the 0.9.0-alpha version, compared to 0.8.1.
 
 - Replaces the emulated Alpine kernel build with a Debian based cross-compiling build
-    - Much faster building. Emulating x86_64 on arm64 is very slow and vice-versa.
+  - Much faster building. Emulating x86_64 on arm64 is very slow and vice-versa.
 - Replaces kernel .config's with the `defconfig` versions, via Kbuild's `make savedefconfig`
 - Replaces Git-SHA1-based image versioning ("current revision") with content-based hashing.
-    - This way, there's much higher cache reuse, and new versions are pushed only when components actually changed (caveat emptor)
+  - This way, there's much higher cache reuse, and new versions are pushed only when components actually changed (caveat emptor)
     - Should allow people to develop Hook without having to build a kernel, depending on CI frequency and luck.
 - Introduces multiple "flavors" of hook. Instead of restricted to 2 hardcoded flavors (x86_64 and aarch64, built from source), we can now define multiple flavors, each with an ID and version/configure/build methods.
-    - the `hook-default-amd64` and `hook-default-arm64` kernels are equivalent to the two original.
-    - the `armbian-` prefixed kernels are actually Armbian kernels for more exotic arm64 SBCs, or Armbian's generic UEFI kernels for both arches. Those are very fast to "build" since Armbian publishes their .deb packages in OCI images, and here we
+  - the `hook-default-amd64` and `hook-default-arm64` kernels are equivalent to the two original.
+  - the `armbian-` prefixed kernels are actually Armbian kernels for more exotic arm64 SBCs, or Armbian's generic UEFI kernels for both arches. Those are very fast to "build" since Armbian publishes their .deb packages in OCI images, and here we
       just download and massage them into the format required by Linuxkit.
 - `hook.yaml` is replaced with `hook.template.yaml` which is templated via a limited-var invocation of `envsubst`; only the kernel image and the arch is actually different per-flavor.
 - Auto-updating of the kernel via kernel.org's JSON endpoint (ofc only works for LTS or recent-enough stable kernels). Could opt-out/use a fixed version.
@@ -108,14 +108,14 @@ So, just running `./build.sh` will build the default flavor for the host archite
 Other commands are:
 
 - `kernel <id>`: builds the kernel for the specified flavor
-    - for `default` ids, this will build the kernel from source
-    - for other methods, usually this will download & massage the kernels from a distro's packages
+  - for `default` ids, this will build the kernel from source
+  - for other methods, usually this will download & massage the kernels from a distro's packages
 - `config <id>`: runs kernel configuration for the specified flavor.
-    - this only works for the default flavors; Foreign kernels are configured elsewhere;
-    - it will open an interactive menuconfig session where you can change kernel config options; after exiting, `savedefconfig` will be run and the resulting file copied back to the host, ready for commit.
+  - this only works for the default flavors; Foreign kernels are configured elsewhere;
+  - it will open an interactive menuconfig session where you can change kernel config options; after exiting, `savedefconfig` will be run and the resulting file copied back to the host, ready for commit.
 - `build <id>`: builds the Hook flavor. The kernel must be either available for pulling, or have been built locally beforehand.
 - `qemu <id>`: builds the Hook flavor and runs it in QEMU.
-    - this accepts `MAC=<mac>` and `TINK_SERVER=<ip>` env vars, see below
+  - this accepts `MAC=<mac>` and `TINK_SERVER=<ip>` env vars, see below
 
 Other, less common commands are:
 
@@ -131,26 +131,27 @@ Of course, you may also set them in the environment before running the script (t
 The most important environment variables are:
 
 - general, applies to most commands:
-    - `DEBUG=yes`: set this to get lots of debugging messages which can make understanding the build and finding problems easier.
-    - `HOOK_VERSION`: The Hook version, ends up in `/etc/os-release` and on the screen at boot.
-    - `HOOK_KERNEL_OCI_BASE`: OCI base coordinates for the kernel images.
-    - `HOOK_LK_CONTAINERS_OCI_BASE`: OCI base coordinates for the LinuxKit containers.
-    - `CACHE_DIR`: directory where the build system will cache downloaded files. Relative to the project root.
+  - `DEBUG=yes`: set this to get lots of debugging messages which can make understanding the build and finding problems easier.
+  - `HOOK_VERSION`: The Hook version, ends up in `/etc/os-release` and on the screen at boot.
+  - `HOOK_KERNEL_OCI_BASE`: OCI base coordinates for the kernel images.
+  - `HOOK_LK_CONTAINERS_OCI_BASE`: OCI base coordinates for the LinuxKit containers.
+  - `CACHE_DIR`: directory where the build system will cache downloaded files. Relative to the project root.
+  - `USE_LATEST_BUILT_KERNEL`: set this to `yes` to use the latest built kernel from `quay.io/tinkerbell/hook-kernel`.
 - exclusively for the `qemu` command:
-    - `TINK_SERVER=<ip>`: the IP address of the Tinkerbell GRPC server. No default.
-    - `MAC=<mac>`: the MAC address of the machine that will be provisioned. No default.
-    - and also
-        - `TINK_WORKER_IMAGE`, defaults to `"quay.io/tinkerbell/tink-worker:latest"`
-        - `TINK_TLS` defaults to `false`
-        - `TINK_GRPC_PORT` defaults to `42113`
+  - `TINK_SERVER=<ip>`: the IP address of the Tinkerbell GRPC server. No default.
+  - `MAC=<mac>`: the MAC address of the machine that will be provisioned. No default.
+  - and also
+    - `TINK_WORKER_IMAGE`, defaults to `"quay.io/tinkerbell/tink-worker:latest"`
+    - `TINK_TLS` defaults to `false`
+    - `TINK_GRPC_PORT` defaults to `42113`
 
 ### CI (GitHub Actions)
 
 - There's a distributed GitHub Actions build workflow `"matrix"`.
-    - The bash build system produces JSON objects that drive the matrix stages:
-        - One matrix is per-arch, and builds all the containers whose source is hosted in this repo (bootkit, docker, mdev)
-        - Second matrix is per-flavor(/kernel), and builds the kernel
-        - Third matrix, depending on the other two, is per-flavor(/kernel), and builds Hook itself (via LinuxKit) and prepares a .tar.gz into GH artifacts
+  - The bash build system produces JSON objects that drive the matrix stages:
+    - One matrix is per-arch, and builds all the containers whose source is hosted in this repo (bootkit, docker, mdev)
+    - Second matrix is per-flavor(/kernel), and builds the kernel
+    - Third matrix, depending on the other two, is per-flavor(/kernel), and builds Hook itself (via LinuxKit) and prepares a .tar.gz into GH artifacts
 
 The `gha-matrix` CLI command prepares a set of JSON outputs for GitHub Actions matrix workflow, based on the inventory and certain environment variables:
 
@@ -164,16 +165,8 @@ The `gha-matrix` CLI command prepares a set of JSON outputs for GitHub Actions m
 - [ ] Update to Linuxkit 1.2.0 and new linuxkit pkgs; this might lead into the containerd vs dind;
 - [ ] `make debug` functionality (sshd enabled) was lost in the Makefile -> bash transition;
 
-[current_versions.sh]: https://github.com/tinkerbell/sandbox/blob/main/current_versions.sh
-
 [formats]: https://github.com/linuxkit/linuxkit/blob/master/README.md#booting-and-testing
-
 [linuxkit]: https://github.com/linuxkit/linuxkit
-
 [osie]: https://github.com/tinkerbell/osie
-
-[sandbox]: https://github.com/tinkerbell/sandbox
-
 [specification]: https://github.com/linuxkit/linuxkit/blob/master/docs/yaml.md
-
 [tinkerbell]: https://tinkerbell.org

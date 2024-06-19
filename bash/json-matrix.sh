@@ -81,10 +81,7 @@ function prepare_json_matrix() {
 		if json_matrix_tag_match "${kernel_info[TAG]}"; then
 			declare runner="unknown-runner"
 			runner="$(json_matrix_find_runner "${matrix_type}" "${kernel_info[DOCKER_ARCH]}")"
-			declare gha_cache="no"                              # default to not using a GHA cache
-			if [[ "${runner}" == "[\"ubuntu-latest\"]" ]]; then # enable cache if using a GH-hosted runner
-				gha_cache="yes"
-			fi
+			declare gha_cache="yes" # always use GH cache; hitting DockerHub for linuxkit images is prone to rate limiting
 
 			all_arches["${kernel_info[DOCKER_ARCH]}"]=1
 			json_items+=("{\"kernel\":\"${kernel}\",\"arch\":\"${kernel_info[ARCH]}\",\"docker_arch\":\"${kernel_info[DOCKER_ARCH]}\",\"runner\":${runner},\"gha_cache\":\"${gha_cache}\"}")

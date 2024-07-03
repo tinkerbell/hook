@@ -42,9 +42,13 @@ type tinkWorkerConfig struct {
 
 	// tinkServerTLS is whether or not to use TLS for tink-server communication.
 	tinkServerTLS string
-	httpProxy     string
-	httpsProxy    string
-	noProxy       string
+
+	// tinkServerInsecureTLS is whether or not to use insecure TLS for tink-server communication; only applies is TLS itself is on
+	tinkServerInsecureTLS string
+
+	httpProxy  string
+	httpsProxy string
+	noProxy    string
 }
 
 func main() {
@@ -167,6 +171,7 @@ func run(ctx context.Context, log logr.Logger) error {
 			fmt.Sprintf("REGISTRY_PASSWORD=%s", cfg.password),
 			fmt.Sprintf("TINKERBELL_GRPC_AUTHORITY=%s", cfg.grpcAuthority),
 			fmt.Sprintf("TINKERBELL_TLS=%s", cfg.tinkServerTLS),
+			fmt.Sprintf("TINKERBELL_INSECURE_TLS=%s", cfg.tinkServerInsecureTLS),
 			fmt.Sprintf("WORKER_ID=%s", cfg.workerID),
 			fmt.Sprintf("ID=%s", cfg.workerID),
 			fmt.Sprintf("HTTP_PROXY=%s", cfg.httpProxy),
@@ -267,6 +272,8 @@ func parseCmdLine(cmdLines []string) (cfg tinkWorkerConfig) {
 			cfg.tinkWorkerImage = cmdLine[1]
 		case "tinkerbell_tls":
 			cfg.tinkServerTLS = cmdLine[1]
+		case "tinkerbell_insecure_tls":
+			cfg.tinkServerInsecureTLS = cmdLine[1]
 		case "HTTP_PROXY":
 			cfg.httpProxy = cmdLine[1]
 		case "HTTPS_PROXY":

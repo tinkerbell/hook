@@ -124,6 +124,11 @@ services:
       major: 4
       minor: 65
       mode: "0666"
+    - path: "/dev/ttyS2"
+      type: c
+      major: 4
+      minor: 66
+      mode: "0666"
     - path: "/dev/ttyAMA0"
       type: c
       major: 204
@@ -284,6 +289,7 @@ files:
       hvc0
       ttyS0
       ttyS1
+      ttyS2
       ttyAMA0
       ttyAMA1
       ttyAML0

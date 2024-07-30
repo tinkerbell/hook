@@ -43,7 +43,7 @@ else # otherwise default to tty, but allow override
 fi
 
 # Set the default HOOK_VERSION; override with env var; -x exports it for envsubst later
-declare -g -r -x HOOK_VERSION="${HOOK_VERSION:-"0.9.0-alpha1"}"
+declare -g -r -x HOOK_VERSION="${HOOK_VERSION:-"0.9.0"}"
 log info "Using Hook version (HOOK_VERSION): ${HOOK_VERSION}"
 
 ### Inventory

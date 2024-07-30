@@ -64,7 +64,7 @@ It will then speak with the `hook-docker` engine API through the shared `/var/ru
 
 ### Introduction / recently changed
 
-> This refers to the 0.9.0-alpha version, compared to 0.8.1.
+> This refers to the 0.9.0 version, compared to 0.8.1.
 
 - Replaces the emulated Alpine kernel build with a Debian based cross-compiling build
   - Much faster building. Emulating x86_64 on arm64 is very slow and vice-versa.

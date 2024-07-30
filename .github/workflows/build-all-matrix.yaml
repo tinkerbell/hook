@@ -171,7 +171,7 @@ jobs:
           name: "hook-tarball-${{ matrix.kernel }}"
           path: out/*.tar.gz
 
-  release:
+  release-latest:
     name: Publish all Hooks to GitHub Releases
     needs: [ matrix_prep, build-hook-ensemble ]
     runs-on: ubuntu-latest
@@ -238,3 +238,52 @@ jobs:
             checksum.txt
           prerelease: true
           tag_name: latest
+
+  release-tag:
+    name: Publish all Hooks to GitHub Releases for a tag
+    needs: [ matrix_prep, build-hook-ensemble ]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download built Hook artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "hook-tarball-*"
+          merge-multiple: true
+
+      - name: Figure Out Commit Short ID
+        id: commitid
+        run: |
+          echo ::set-output name=short::$(git rev-parse --short HEAD)
+
+      - name: Generate Release Notes
+        run: |
+          generated_release_notes=$(gh api 'repos/{owner}/{repo}/releases/generate-notes' -F tag_name=${{github.ref}} --jq .body)
+          cat >>"$GITHUB_ENV" <<-EOF
+          	RELEASE_NOTES<<RELEASE_NOTES_EOF
+          	$generated_release_notes
+          	RELEASE_NOTES_EOF
+          EOF
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Generate checksum
+        uses: jmgilman/actions-generate-checksum@v1
+        with:
+          method: sha512
+          patterns: "*.tar.gz"
+
+      - name: Update tag release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{github.ref}}
+          body: ${{env.RELEASE_NOTES}}
+          files: |
+            *.tar.gz
+            checksum.txt
+          prerelease: true
+          tag_name: ${{github.ref}}  

@@ -255,11 +255,6 @@ jobs:
           pattern: "hook-tarball-*"
           merge-multiple: true
 
-      - name: Figure Out Commit Short ID
-        id: commitid
-        run: |
-          echo ::set-output name=short::$(git rev-parse --short HEAD)
-
       - name: Generate Release Notes
         run: |
           generated_release_notes=$(gh api 'repos/{owner}/{repo}/releases/generate-notes' -F tag_name=${{github.ref}} --jq .body)

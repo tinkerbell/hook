@@ -26,7 +26,7 @@ function parse_kernel_cmdline_for() {
 	if [ -z "${result}" ]; then
 		return 1
 	else
-		printf "%s\n" "$result"
+		printf "%s" "$result"
 	fi
 }
 
@@ -43,15 +43,14 @@ function add_vlan_interface() {
 
 	# check if  hw_addr are set in the kernel commandline, otherwise return.
 	if ! kernel_cmdline_exists hw_addr; then
-		echo "No hw_addr=xx:xx:xx:xx:xx:xx set in kernel commandline; no VLAN handling." >&2
-		return
+		echo "No hw_addr=xx:xx:xx:xx:xx:xx set in kernel commandline." >&2
 	fi
 
 	echo "Starting VLAN handling, parsing..." >&2
 
 	declare vlan_id hw_addr
-	vlan_id="$(parse_cmdline vlan_id)"
-	hw_addr="$(parse_cmdline hw_addr)"
+	vlan_id="$(parse_kernel_cmdline_for vlan_id)"
+	hw_addr="$(parse_kernel_cmdline_for hw_addr)"
 
 	echo "VLAN handling - vlan_id: '${vlan_id}', hw_addr: '${hw_addr}'" >&2
 
@@ -60,21 +59,23 @@ function add_vlan_interface() {
 			echo "VLAN handling - vlan_id: '${vlan_id}', hw_addr: '${hw_addr}', searching for interface..." >&2
 			ifname="$(ip -br link | awk '$3 ~ /'"${hw_addr}"'/ {print $1}')"
 			echo "VLAN handling - vlan_id: '${vlan_id}', hw_addr: '${hw_addr}', found interface: '${ifname}'" >&2
-			if [ -n "$ifname" ]; then
-				echo "VLAN handling - vlan_id: '${vlan_id}', hw_addr: '${hw_addr}', adding VLAN interface..." >&2
-				ip link set dev "${ifname}" up || true
-				ip link add link "${ifname}" name "${ifname}.${vlan_id}" type vlan id "${vlan_id}" || true
-				ip link set "${ifname}.${vlan_id}" up || true
-				echo "VLAN handling - vlan_id: '${vlan_id}', hw_addr: '${hw_addr}', added VLAN interface: '${ifname}.${vlan_id}'" >&2
-				return 0
-			else
-				echo "VLAN handling - vlan_id: '${vlan_id}', hw_addr: '${hw_addr}', no interface found for hw_addr." >&2
-				return 3
-			fi
 		else
-			echo "VLAN handling - vlan_id: '${vlan_id}', hw_addr: '${hw_addr}', no hw_addr found in kernel commandline." >&2
-			return 2
+			echo "VLAN handling - vlan_id: '${vlan_id}', hw_addr: '${hw_addr}', no hw_addr found in kernel commandline; default ifname to eth0." >&2
+			ifname="eth0"
 		fi
+
+		if [ -n "$ifname" ]; then
+			echo "VLAN handling - vlan_id: '${vlan_id}', hw_addr: '${hw_addr}', adding VLAN interface..." >&2
+			ip link set dev "${ifname}" up || true
+			ip link add link "${ifname}" name "${ifname}.${vlan_id}" type vlan id "${vlan_id}" || true
+			ip link set "${ifname}.${vlan_id}" up || true
+			echo "VLAN handling - vlan_id: '${vlan_id}', hw_addr: '${hw_addr}', added VLAN interface: '${ifname}.${vlan_id}'" >&2
+			return 0
+		else
+			echo "VLAN handling - vlan_id: '${vlan_id}', hw_addr: '${hw_addr}', no interface found for hw_addr." >&2
+			return 3
+		fi
+
 	else
 		echo "VLAN handling - vlan_id: '${vlan_id}', hw_addr: '${hw_addr}', no vlan_id found in kernel commandline." >&2
 		return 1

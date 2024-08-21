@@ -9,21 +9,36 @@
 # - HOOK_CONTAINER_MDEV_IMAGE: ${HOOK_CONTAINER_MDEV_IMAGE}
 # - HOOK_CONTAINER_CONTAINERD_IMAGE: ${HOOK_CONTAINER_CONTAINERD_IMAGE}
 # - HOOK_CONTAINER_RUNC_IMAGE: ${HOOK_CONTAINER_RUNC_IMAGE}
+# - HOOK_CONTAINER_EMBEDDED_IMAGE: ${HOOK_CONTAINER_EMBEDDED_IMAGE}
 # - Other variables are not replaced: for example this is a literal dollarsign-SOMETHING: $SOMETHING and with braces: ${SOMETHING}
 
 kernel:
   image: "${HOOK_KERNEL_IMAGE}"
-  cmdline: "this_is_not_used=at_at_all_in_hook command_line_is_determined_by=ipxe"
+  cmdline: "this_is_not_used=at_all_in_hook command_line_is_determined_by=ipxe"
 
 init:
-  # this sha is the first with cgroups v2 as the default
-  - linuxkit/init:8a7b6cdb89197dc94eb6db69ef9dc90b750db598
+  # this init container sha has support for volumes
+  - linuxkit/init:872d2e1be745f1acb948762562cf31c367303a3b
   - "${HOOK_CONTAINER_RUNC_IMAGE}"
   - "${HOOK_CONTAINER_CONTAINERD_IMAGE}"
   - linuxkit/ca-certificates:v1.0.0
   - linuxkit/firmware:24402a25359c7bc290f7fc3cd23b6b5f0feb32a5 # "Some" firmware from Linuxkit pkg; see https://github.com/linuxkit/linuxkit/blob/master/pkg/firmware/Dockerfile
 
+volumes:
+  - name: embedded-images
+    image: "${HOOK_CONTAINER_EMBEDDED_IMAGE}"
+
 onboot:
+  - name: embedded-images
+    image: alpine
+    binds:
+      - /var/run/images:/var/run/images
+      - embedded-images:/images
+    command: [ "sh", "-xc", "mv /images/* /var/run/images/" ]
+    runtime:
+      mkdir:
+        - /var/run/images
+
   - name: rngd1
     image: linuxkit/rngd:v1.0.0
     command: [ "/sbin/rngd", "-1" ]
@@ -100,6 +115,8 @@ services:
     devices:
     - path: all
       type: b
+    - path: all
+      type: c
     - path: "/dev/console"
       type: c
       major: 5
@@ -187,6 +204,8 @@ services:
     devices:
     - path: all
       type: b
+    - path: all
+      type: c
 
   - name: hook-bootkit
     image: "${HOOK_CONTAINER_BOOTKIT_IMAGE}"
@@ -219,8 +238,14 @@ services:
       mkdir:
         - /var/lib/dhcpcd
 
-#dbg  - name: sshd
-#dbg    image: linuxkit/sshd:v1.0.0
+#SSH_SERVER  - name: sshd
+#SSH_SERVER    image: linuxkit/sshd:v1.0.0
+#SSH_SERVER    binds.add:
+#SSH_SERVER      - /etc/profile.d/local.sh:/etc/profile.d/local.sh
+#SSH_SERVER      - /root/.ssh/authorized_keys:/root/.ssh/authorized_keys
+#SSH_SERVER      - /usr/bin/nerdctl:/usr/bin/nerdctl
+#SSH_SERVER      - /:/host_root
+
 
 files:
   - path: etc/profile.d/local.sh
@@ -299,10 +324,10 @@ files:
       ttyUSB1
       ttyUSB2
 
-#dbg  - path: root/.ssh/authorized_keys
-#dbg    source: ~/.ssh/id_rsa.pub
-#dbg    mode: "0600"
-#dbg    optional: true
+#SSH_SERVER  - path: root/.ssh/authorized_keys
+#SSH_SERVER    source: ~/.ssh/id_rsa.pub
+#SSH_SERVER    mode: "0600"
+#SSH_SERVER    optional: true
 
 trust:
   org:

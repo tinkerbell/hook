@@ -14,3 +14,4 @@ cache/
 kernel/Dockerfile.autogen.*
 images/hook-embedded/images/*
 !images/hook-embedded/images/.keep
+images/hook-embedded/images.txt

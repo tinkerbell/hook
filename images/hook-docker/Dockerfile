@@ -1,4 +1,4 @@
-FROM golang:1.20-alpine as dev
+FROM golang:1.20-alpine AS dev
 COPY . /src/
 WORKDIR /src
 RUN CGO_ENABLED=0 go build -a -ldflags '-s -w -extldflags "-static"' -o /hook-docker
@@ -13,4 +13,5 @@ RUN strip /usr/local/bin/docker /usr/local/bin/dockerd /usr/local/bin/docker-pro
 # Purge binutils package after stripping
 RUN apk del binutils
 COPY --from=dev /hook-docker .
+
 ENTRYPOINT ["/hook-docker"]

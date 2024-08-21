@@ -164,6 +164,8 @@ The `gha-matrix` CLI command prepares a set of JSON outputs for GitHub Actions m
 
 For use cases where having container images already available in Docker is needed, the following steps can be taken to embed container images into hook-docker (DinD):
 
+> Note: This is optional and no container images will be embedded by default.
+
 1. Create a file named `images.txt` in the [images/hook-embedded/](images/hook-embedded/) directory.
 1. Populate this `images.txt` file with the list of images to be embedded. See [images/hook-embedded/images.txt.example](images/hook-embedded/images.txt.example) for details on the required file format.
 1. Change directories to [images/hook-embedded/](images/hook-embedded/) and run the [pull-images.sh](images/hook-embedded/pull-images.sh) script. Read the comments at the top of the script for more details.

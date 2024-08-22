@@ -1,5 +1,5 @@
 FROM scratch
 ENTRYPOINT []
 WORKDIR /
-COPY ./images/ /
+COPY ./images/ /etc/embedded-images/
 CMD []

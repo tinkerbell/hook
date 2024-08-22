@@ -23,22 +23,9 @@ init:
   - "${HOOK_CONTAINER_CONTAINERD_IMAGE}"
   - linuxkit/ca-certificates:v1.0.0
   - linuxkit/firmware:24402a25359c7bc290f7fc3cd23b6b5f0feb32a5 # "Some" firmware from Linuxkit pkg; see https://github.com/linuxkit/linuxkit/blob/master/pkg/firmware/Dockerfile
-
-volumes:
-  - name: embedded-images
-    image: "${HOOK_CONTAINER_EMBEDDED_IMAGE}"
+  - "${HOOK_CONTAINER_EMBEDDED_IMAGE}"
 
 onboot:
-  - name: embedded-images
-    image: alpine
-    binds:
-      - /var/run/images:/var/run/images
-      - embedded-images:/images
-    command: [ "sh", "-xc", "mv /images/* /var/run/images/" ]
-    runtime:
-      mkdir:
-        - /var/run/images
-
   - name: rngd1
     image: linuxkit/rngd:v1.0.0
     command: [ "/sbin/rngd", "-1" ]
@@ -196,6 +183,7 @@ services:
       - /var/run/docker:/var/run
       - /var/run/images:/var/lib/docker
       - /var/run/worker:/worker
+      - /etc/embedded-images/:/etc/embedded-images/
     runtime:
       mkdir:
         - /var/run/images

@@ -18,6 +18,7 @@ function main() {
     local dind_container="$1"
     local images_file="$2"
     local arch="$3"
+    local dind_container_image="$4"
     # as this function maybe called multiple times, we need to ensure the container is removed
     trap "docker rm -f "${dind_container}" &> /dev/null" RETURN
     # we're using set -e so the trap on RETURN will not be executed when a command fails
@@ -28,7 +29,7 @@ function main() {
     # will change the permissions of the bind mount directory (images/) to root.
     echo -e "Starting DinD container"
     echo -e "-----------------------"
-    docker run -d --rm --privileged --name "${dind_container}" -v ${PWD}/images/:/var/lib/docker-embedded/ -d docker:dind
+    docker run -d --rm --privileged --name "${dind_container}" -v ${PWD}/images/:/var/lib/docker-embedded/ -d "${dind_container_image}"
 
     # wait until the docker daemon is ready
     until docker exec "${dind_container}" docker info &> /dev/null; do
@@ -58,4 +59,5 @@ function main() {
 arch="${1-amd64}"
 dind_container_name="hookos-dind-${arch}"
 images_file="images.txt"
-main "${dind_container_name}" "${images_file}" "${arch}"
+dind_container_image="${2-docker:dind}"
+main "${dind_container_name}" "${images_file}" "${arch}" "${dind_container_image}"

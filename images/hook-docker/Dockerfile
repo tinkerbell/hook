@@ -13,6 +13,5 @@ RUN strip /usr/local/bin/docker /usr/local/bin/dockerd /usr/local/bin/docker-pro
 # Purge binutils package after stripping
 RUN apk del binutils
 COPY --from=dev /hook-docker .
-COPY entrypoint.sh /entrypoint.sh
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/hook-docker"]

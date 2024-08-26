@@ -19,14 +19,7 @@ function docker_save_image() {
     local output_dir="$2"
     local output_file="${output_dir}/$(echo "${image}" | tr '/' '-')"
 
-    docker save -o "${output_file}" "${image}"
-}
-
-function docker_load_image() {
-    local image_file="$1"
-    local socket_location="$2"
-
-    sudo -E DOCKER_HOST=unix://"${socket_location}" docker load -i "${image_file}"
+    docker save -o "${output_file}".tar "${image}"
 }
 
 function docker_pull_image() {
@@ -73,7 +66,7 @@ function main() {
     # will change the permissions of the bind mount directory (images/) to root.
     echo -e "Starting DinD container"
     echo -e "-----------------------"
-    docker run -d --privileged --name "${dind_container}" -v ${PWD}/docker:/run -v ${PWD}/images/:/var/lib/docker-embedded/ -d "${dind_container_image}"
+    docker run -d --privileged --name "${dind_container}" -v "${PWD}/images_tar":/images_tar -v "${PWD}"/images/:/var/lib/docker-embedded/ -d "${dind_container_image}"
 
     # wait until the docker daemon is ready
     until docker exec "${dind_container}" docker info &> /dev/null; do
@@ -90,7 +83,8 @@ function main() {
 
     # Load the images
     for image_file in "${output_dir}"/*; do
-        docker_load_image "${image_file}" "${PWD}/docker/docker.sock"
+        echo -e "Loading image: ${image_file}"
+        docker exec "${dind_container}" docker load -i "/images_tar/$(basename ${image_file})"
     done
 
     # clean up tar files

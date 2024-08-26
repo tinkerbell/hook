@@ -14,46 +14,89 @@
 
 set -euo pipefail
 
+function docker_save_image() {
+    local image="$1"
+    local output_dir="$2"
+    local output_file="${output_dir}/$(echo "${image}" | tr '/' '-')"
+
+    docker save -o "${output_file}" "${image}"
+}
+
+function docker_load_image() {
+    local image_file="$1"
+    local socket_location="$2"
+
+    sudo -E DOCKER_HOST=unix://"${socket_location}" docker load -i "${image_file}"
+}
+
+function docker_pull_image() {
+    local image="$1"
+    local arch="${2-amd64}"
+
+    docker pull --platform=linux/"${arch}" "${image}"
+}
+
 function main() {
     local dind_container="$1"
     local images_file="$2"
     local arch="$3"
     local dind_container_image="$4"
+
+    # Pull the images
+    while IFS=" " read -r first_image image_tag || [ -n "${first_image}" ] ; do
+        echo -e "----------------------- $first_image -----------------------"
+        docker_pull_image "${first_image}"
+    done < "${images_file}"
+
+    # Save the images
+    local output_dir="${PWD}/images_tar"
+    mkdir -p "${output_dir}"
+    while IFS=" " read -r first_image image_tag || [ -n "${first_image}" ] ; do
+        docker_save_image "${first_image}" "${output_dir}"
+    done < "${images_file}"
+
     # as this function maybe called multiple times, we need to ensure the container is removed
     trap "docker rm -f "${dind_container}" &> /dev/null" RETURN
     # we're using set -e so the trap on RETURN will not be executed when a command fails
     trap "docker rm -f "${dind_container}" &> /dev/null" EXIT
+
     # start DinD container
     # In order to avoid the src bind mount directory (./images/) ownership from changing to root
     # we don't bind mount to /var/lib/docker in the container because the DinD container is running as root and
     # will change the permissions of the bind mount directory (images/) to root.
     echo -e "Starting DinD container"
     echo -e "-----------------------"
-    docker run -d --rm --privileged --name "${dind_container}" -v ${PWD}/images/:/var/lib/docker-embedded/ -d "${dind_container_image}"
+    docker run -d --privileged --name "${dind_container}" -v ${PWD}/docker:/run -v ${PWD}/images/:/var/lib/docker-embedded/ -d "${dind_container_image}"
 
     # wait until the docker daemon is ready
     until docker exec "${dind_container}" docker info &> /dev/null; do
         sleep 1
+        if [[ $(docker inspect -f '{{.State.Status}}' "${dind_container}") == "exited" ]]; then
+            echo "DinD container exited unexpectedly"
+            exit 1
+        fi
     done
 
     # remove the contents of /var/lib/docker-embedded so that any previous images are removed. Without this it seems to cause boot issues.
     docker exec "${dind_container}" sh -c "rm -rf /var/lib/docker-embedded/*"
 
-    # pull images from list
-    # this expects a file named images.txt in the same directory as this script
-    # the format of this file is line separated: <image> <optional tag>
-    #
-    # the || [ -n "$first_image" ] is to handle the last line of the file that doesn't have a newline.
+    # Load the images
+    for image_file in "${output_dir}"/*; do
+        docker_load_image "${image_file}" "${PWD}/docker/docker.sock"
+    done
+
+    # clean up tar files
+    rm -rf "${output_dir}"/*
+
+    # Create any tags for the images
     while IFS=" " read -r first_image image_tag || [ -n "${first_image}" ] ; do
-        echo -e "----------------------- $first_image -----------------------"
-        docker exec "${dind_container}" docker pull --platform=linux/"${arch}" "${first_image}"
         if [[ "${image_tag}" != "" ]]; then
             docker exec "${dind_container}" docker tag "${first_image}" "${image_tag}"
         fi
     done < "${images_file}"
 
     # We need to copy /var/lib/docker to /var/lib/docker-embedded in order for HookOS to use the Docker images in its build.
-    docker exec "${dind_container}" sh -c "cp -a /var/lib/docker/* /var/lib/docker-embedded/"
+    docker exec "${dind_container}" sh -c "cp -a /var/lib/docker/* /var/lib/docker-embedded/"    
 }
 
 arch="${1-amd64}"

@@ -90,10 +90,13 @@ function main() {
     # clean up tar files
     rm -rf "${output_dir}"/*
 
-    # Create any tags for the images
-    while IFS=" " read -r first_image image_tag || [ -n "${first_image}" ] ; do
+    # Create any tags for the images and remove any original tags
+    while IFS=" " read -r first_image image_tag remove_original || [ -n "${first_image}" ] ; do
         if [[ "${image_tag}" != "" ]]; then
             docker exec "${dind_container}" docker tag "${first_image}" "${image_tag}"
+            if [[ "${remove_original}" == "true" ]]; then
+                docker exec "${dind_container}" docker rmi "${first_image}"
+            fi
         fi
     done < "${images_file}"
 

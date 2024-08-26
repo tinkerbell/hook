@@ -1,16 +1,7 @@
 #!/bin/bash
 
-# This script is used to pull 
-# This script is used to build an image that is embedded in HookOS.
-# The image contains the /var/lib/docker directory which has pulled images
-# from the images.txt file. When HookOS boots up, the DinD container will
-# have all the images in its cache.
-
-# The purpose of doing this is so that EKS Anywhere doesn't have to set registry
-# and registry credentials in each Hardware object.
-
-# In my testing the initramfs for HookOS with these embedded images was about 334MB.
-# The machine booting HookOS needed 6GB of RAM to boot up successfully.
+# This script is used to build container images that are embedded in HookOS.
+# When HookOS boots up, the DinD container will have all the images in its cache.
 
 set -euo pipefail
 
@@ -44,6 +35,7 @@ function main() {
     # Pull the images
     while IFS=" " read -r first_image image_tag || [ -n "${first_image}" ] ; do
         echo -e "----------------------- $first_image -----------------------"
+        # Remove the image if it exists so that the image pulls the correct architecture
         docker_remove_image "${first_image}"
         docker_pull_image "${first_image}" "${arch}"
     done < "${images_file}"

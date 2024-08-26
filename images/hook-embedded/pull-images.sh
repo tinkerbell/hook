@@ -36,6 +36,12 @@ function docker_pull_image() {
     docker pull --platform=linux/"${arch}" "${image}"
 }
 
+function docker_remove_image() {
+    local image="$1"
+
+    docker rmi "${image}" || true
+}
+
 function main() {
     local dind_container="$1"
     local images_file="$2"
@@ -45,7 +51,8 @@ function main() {
     # Pull the images
     while IFS=" " read -r first_image image_tag || [ -n "${first_image}" ] ; do
         echo -e "----------------------- $first_image -----------------------"
-        docker_pull_image "${first_image}"
+        docker_remove_image "${first_image}"
+        docker_pull_image "${first_image}" "${arch}"
     done < "${images_file}"
 
     # Save the images
@@ -73,6 +80,7 @@ function main() {
         sleep 1
         if [[ $(docker inspect -f '{{.State.Status}}' "${dind_container}") == "exited" ]]; then
             echo "DinD container exited unexpectedly"
+            docker logs "${dind_container}"
             exit 1
         fi
     done

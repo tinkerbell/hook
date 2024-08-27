@@ -3,6 +3,7 @@
 # - HOOK_KERNEL_IMAGE: ${HOOK_KERNEL_IMAGE}
 # - HOOK_KERNEL_ID: ${HOOK_KERNEL_ID}
 # - HOOK_KERNEL_VERSION: ${HOOK_KERNEL_VERSION}
+# - HOOK_CONTAINER_IP_IMAGE: ${HOOK_CONTAINER_IP_IMAGE}
 # - HOOK_CONTAINER_BOOTKIT_IMAGE: ${HOOK_CONTAINER_BOOTKIT_IMAGE}
 # - HOOK_CONTAINER_DOCKER_IMAGE: ${HOOK_CONTAINER_DOCKER_IMAGE}
 # - HOOK_CONTAINER_MDEV_IMAGE: ${HOOK_CONTAINER_MDEV_IMAGE}
@@ -38,7 +39,7 @@ onboot:
     command: [ "modprobe", "cdc_ncm" ] # for usb ethernet dongles
 
   - name: vlan
-    image: linuxkit/ip:v1.0.0
+    image: "${HOOK_CONTAINER_IP_IMAGE}"
     capabilities:
       - all
     binds.add:

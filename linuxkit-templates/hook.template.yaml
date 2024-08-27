@@ -231,6 +231,7 @@ services:
 #SSH_SERVER      - /etc/profile.d/local.sh:/etc/profile.d/local.sh
 #SSH_SERVER      - /root/.ssh/authorized_keys:/root/.ssh/authorized_keys
 #SSH_SERVER      - /usr/bin/nerdctl:/usr/bin/nerdctl
+#SSH_SERVER      - /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt
 #SSH_SERVER      - /:/host_root
 
 

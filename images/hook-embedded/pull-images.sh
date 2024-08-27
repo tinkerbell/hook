@@ -26,6 +26,16 @@ function docker_remove_image() {
     docker rmi "${image}" || true
 }
 
+function trap_handler() {
+    local dind_container="$1"
+
+    if [[ "${remove_dind_container}" == "true" ]]; then
+        docker rm -f "${dind_container}" &> /dev/null
+    else
+        echo "DinD container NOT removed, please remove it manually"
+    fi
+}
+
 function main() {
     local dind_container="$1"
     local images_file="$2"
@@ -47,10 +57,11 @@ function main() {
         docker_save_image "${first_image}" "${output_dir}"
     done < "${images_file}"
 
+    export remove_dind_container="true"
     # as this function maybe called multiple times, we need to ensure the container is removed
-    trap "docker rm -f "${dind_container}" &> /dev/null" RETURN
+    trap "trap_handler ${dind_container}" RETURN
     # we're using set -e so the trap on RETURN will not be executed when a command fails
-    trap "docker rm -f "${dind_container}" &> /dev/null" EXIT
+    trap "trap_handler ${dind_container}" EXIT
 
     # start DinD container
     # In order to avoid the src bind mount directory (./images/) ownership from changing to root
@@ -69,6 +80,16 @@ function main() {
             exit 1
         fi
     done
+
+    # As hook-docker uses the overlay2 storage driver the DinD must use the overlay2 storage driver too.
+    # make sure the overlay2 storage driver is used by the DinD container.
+    # The VFS storage driver might get used if /var/lib/docker in the DinD container cannot be used by overlay2.
+    storage_driver=$(docker exec "${dind_container}" docker info --format '{{.Driver}}')
+    if [[ "${storage_driver}" != "overlay2" ]]; then
+        export remove_dind_container="false"
+        echo "DinD container is not using overlay2 storage driver, storage driver detected: ${storage_driver}"
+        exit 1
+    fi
 
     # remove the contents of /var/lib/docker-embedded so that any previous images are removed. Without this it seems to cause boot issues.
     docker exec "${dind_container}" sh -c "rm -rf /var/lib/docker-embedded/*"
@@ -97,7 +118,7 @@ function main() {
 }
 
 arch="${1-amd64}"
-dind_container_name="hookos-dind-${arch}"
+dind_container_name="hookos-dind"
 images_file="images.txt"
 dind_container_image="${2-docker:dind}"
 main "${dind_container_name}" "${images_file}" "${arch}" "${dind_container_image}"

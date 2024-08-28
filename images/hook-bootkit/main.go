@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
@@ -127,13 +127,22 @@ func run(ctx context.Context, log logr.Logger) error {
 
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
 
-	pullOpts := types.ImagePullOptions{
+	pullOpts := image.PullOptions{
 		RegistryAuth: authStr,
 	}
 	var out io.ReadCloser
 	imagePullOperation := func() error {
+		// with embedded images, the tink worker could potentially already exist
+		// in the local Docker image cache. And the image name could be something
+		// unreachable via the network (for example: 127.0.0.1/embedded/tink-worker).
+		// Because of this we check if the image already exists and don't return an
+		// error if the image does not exist and the pull fails.
+		var imageExists bool
+		if _, _, err := cli.ImageInspectWithRaw(ctx, imageName); err == nil {
+			imageExists = true
+		}
 		out, err = cli.ImagePull(ctx, imageName, pullOpts)
-		if err != nil {
+		if err != nil && !imageExists {
 			log.Error(err, "image pull failure", "imageName", imageName)
 			return err
 		}
@@ -143,18 +152,20 @@ func run(ctx context.Context, log logr.Logger) error {
 		return err
 	}
 
-	buf := bufio.NewScanner(out)
-	for buf.Scan() {
-		structured := make(map[string]interface{})
-		if err := json.Unmarshal(buf.Bytes(), &structured); err != nil {
-			log.Info("image pull logs", "output", buf.Text())
-		} else {
-			log.Info("image pull logs", "logs", structured)
-		}
+	if out != nil {
+		buf := bufio.NewScanner(out)
+		for buf.Scan() {
+			structured := make(map[string]interface{})
+			if err := json.Unmarshal(buf.Bytes(), &structured); err != nil {
+				log.Info("image pull logs", "output", buf.Text())
+			} else {
+				log.Info("image pull logs", "logs", structured)
+			}
 
-	}
-	if err := out.Close(); err != nil {
-		log.Error(err, "closing image pull logs failed")
+		}
+		if err := out.Close(); err != nil {
+			log.Error(err, "closing image pull logs failed")
+		}
 	}
 
 	log.Info("Removing any existing tink-worker container")

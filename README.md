@@ -160,9 +160,21 @@ The `gha-matrix` CLI command prepares a set of JSON outputs for GitHub Actions m
 - `DOCKER_ARCH` is used by the `linuxkit-containers` command to build the containers for the specified architecture.
 - `DO_PUSH`: `yes` or `no`, will push the built containers to the OCI registry; defaults to `no`.
 
+### Embedding container images into the DinD (docker-in-docker), also known as [hook-docker](images/hook-docker/), container
+
+For use cases where having container images already available in Docker is needed, the following steps can be taken to embed container images into hook-docker (DinD):
+
+> Note: This is optional and no container images will be embedded by default.
+
+> Note: This will increase the overall size of HookOS. As HookOS is an in memory OS, make sure that the size increase works for the machines you are provisioning.
+
+1. Create a file named `images.txt` in the [images/hook-embedded/](images/hook-embedded/) directory.
+1. Populate this `images.txt` file with the list of images to be embedded. See [images/hook-embedded/images.txt.example](images/hook-embedded/images.txt.example) for details on the required file format.
+1. Change directories to [images/hook-embedded/](images/hook-embedded/) and run [`pull-images.sh`](images/hook-embedded/pull-images.sh) script when building amd64 images and run [`pull-images.sh arm64`](images/hook-embedded/pull-images.sh) when building arm64 images. Read the comments at the top of the script for more details.
+1. Change directories to the root of the HookOS repository and run `sudo ./build.sh build ...` to build the HookOS kernel and ramdisk. FYI, `sudo` is needed as DIND changes file ownerships to root.
+
 ### Build system TO-DO list
 
-- [ ] Update to Linuxkit 1.2.0 and new linuxkit pkgs; this might lead into the containerd vs dind;
 - [ ] `make debug` functionality (sshd enabled) was lost in the Makefile -> bash transition;
 
 [formats]: https://github.com/linuxkit/linuxkit/blob/master/README.md#booting-and-testing

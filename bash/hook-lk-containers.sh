@@ -13,6 +13,7 @@ function build_all_hook_linuxkit_containers() {
 	build_hook_linuxkit_container hook-mdev HOOK_CONTAINER_MDEV_IMAGE
 	build_hook_linuxkit_container hook-containerd HOOK_CONTAINER_CONTAINERD_IMAGE
 	build_hook_linuxkit_container hook-runc HOOK_CONTAINER_RUNC_IMAGE
+	build_hook_linuxkit_container hook-embedded HOOK_CONTAINER_EMBEDDED_IMAGE
 }
 
 function build_hook_linuxkit_container() {

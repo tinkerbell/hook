@@ -137,6 +137,7 @@ The most important environment variables are:
   - `HOOK_LK_CONTAINERS_OCI_BASE`: OCI base coordinates for the LinuxKit containers.
   - `CACHE_DIR`: directory where the build system will cache downloaded files. Relative to the project root.
   - `USE_LATEST_BUILT_KERNEL`: set this to `yes` to use the latest built kernel from `quay.io/tinkerbell/hook-kernel`.
+  - `LINUXKIT_ISO`: set this to `yes` to build an ISO image instead of a kernel and initrd.
 - exclusively for the `qemu` command:
   - `TINK_SERVER=<ip>`: the IP address of the Tinkerbell GRPC server. No default.
   - `MAC=<mac>`: the MAC address of the machine that will be provisioned. No default.

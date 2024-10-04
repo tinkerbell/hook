@@ -83,6 +83,26 @@ function linuxkit_build() {
 	declare lk_cache_dir="${CACHE_DIR}/linuxkit"
 	mkdir -p "${lk_cache_dir}"
 
+	# if LINUXKIT_ISO is set, build an ISO with the kernel and initramfs
+	if [[ -n "${LINUXKIT_ISO}" ]]; then
+		declare lk_iso_output_dir="out"
+		mkdir -p "${lk_iso_output_dir}"
+
+		declare -a lk_iso_args=(
+			"--docker"
+			"--arch" "${kernel_info['DOCKER_ARCH']}"
+			"--format" "iso-efi-initrd"
+			"--name" "hook"
+			"--cache" "${lk_cache_dir}"
+			"--dir" "${lk_iso_output_dir}"
+			"hook.${inventory_id}.yaml" # the linuxkit configuration file
+		)
+
+		log info "Building Hook ISO with kernel ${inventory_id} using linuxkit: ${lk_iso_args[*]}"
+		"${linuxkit_bin}" build "${lk_iso_args[@]}"
+		return 0
+	fi
+	
 	declare -a lk_args=(
 		"--docker"
 		"--arch" "${kernel_info['DOCKER_ARCH']}"

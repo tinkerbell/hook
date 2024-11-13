@@ -19,7 +19,7 @@ env: # Global environment, passed to all jobs & all steps
   # To do so, set the secret DOCKERHUB_USERNAME and DOCKERHUB_PASSWORD in the repo secrets, and set the below to yes.
   LOGIN_TO_DOCKERHUB: "yes"
   
-  HOOK_VERSION: "0.9.1-build-${{github.run_number}}" # Use a forced Hook version
+  HOOK_VERSION: "0.9.2-build-${{github.run_number}}" # Use a forced Hook version
   
   # Which flavors to build? space separated list, must match one of the TAG='s in flavors (this is used by matrix_prep job in gha-matrix command)
   CI_TAGS: "standard armbian-sbc armbian-uefi lts" # 'dev' is not included
@@ -165,11 +165,19 @@ jobs:
           DO_BUILD_LK_CONTAINERS: "no" # already built them; this is only for hook/linuxkit.
         run: bash build.sh build "${{ matrix.kernel }}"
 
+      - name: "Build Hook ISO with Kernel ${{matrix.kernel}} (${{ matrix.arch }}) - cache: ${{matrix.gha_cache}}"
+        if: ${{ matrix.kernel == 'hook-latest-lts-amd64' || matrix.kernel == 'hook-default-amd64' || matrix.kernel == 'hook-latest-lts-arm64' || matrix.kernel == 'hook-default-arm64' }}
+        env:
+          DO_BUILD_LK_CONTAINERS: "no" # already built them; this is only for hook/linuxkit.
+        run: bash build.sh build "${{ matrix.kernel }}" LINUXKIT_ISO=yes
+
       - name: Upload deb as artifact ${{ matrix.arch.name }} ${{ matrix.distro }}
         uses: actions/upload-artifact@v4
         with:
           name: "hook-tarball-${{ matrix.kernel }}"
-          path: out/*.tar.gz
+          path: |
+            out/*.tar.gz
+            out/*.iso
 
   release-latest:
     name: Publish all Hooks to GitHub Releases
@@ -226,7 +234,9 @@ jobs:
         uses: jmgilman/actions-generate-checksum@v1
         with:
           method: sha512
-          patterns: "*.tar.gz"
+          patterns: |
+            "*.tar.gz"
+            "*.iso"
 
       - name: Update latest release
         uses: softprops/action-gh-release@v2
@@ -235,6 +245,7 @@ jobs:
           body: ${{env.RELEASE_NOTES}}
           files: |
             *.tar.gz
+            *.iso
             checksum.txt
           prerelease: true
           tag_name: latest
@@ -270,7 +281,9 @@ jobs:
         uses: jmgilman/actions-generate-checksum@v1
         with:
           method: sha512
-          patterns: "*.tar.gz"
+          patterns: |
+            "*.tar.gz"
+            "*.iso"
 
       - name: Update tag release
         uses: softprops/action-gh-release@v2
@@ -279,6 +292,7 @@ jobs:
           body: ${{env.RELEASE_NOTES}}
           files: |
             *.tar.gz
+            *.iso
             checksum.txt
           prerelease: true
           tag_name: ${{github.ref}}  

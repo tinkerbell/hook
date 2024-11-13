@@ -92,7 +92,7 @@ function linuxkit_build() {
 			"--docker"
 			"--arch" "${kernel_info['DOCKER_ARCH']}"
 			"--format" "iso-efi-initrd"
-			"--name" "hook"
+			"--name" "hook-${OUTPUT_ID}"
 			"--cache" "${lk_cache_dir}"
 			"--dir" "${lk_iso_output_dir}"
 			"hook.${inventory_id}.yaml" # the linuxkit configuration file

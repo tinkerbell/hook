@@ -235,8 +235,8 @@ jobs:
         with:
           method: sha512
           patterns: |
-            "*.tar.gz"
-            "*.iso"
+            *.tar.gz
+            *.iso
 
       - name: Update latest release
         uses: softprops/action-gh-release@v2

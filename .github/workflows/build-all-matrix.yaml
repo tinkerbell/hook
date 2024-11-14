@@ -282,8 +282,8 @@ jobs:
         with:
           method: sha512
           patterns: |
-            "*.tar.gz"
-            "*.iso"
+            *.tar.gz
+            *.iso
 
       - name: Update tag release
         uses: softprops/action-gh-release@v2

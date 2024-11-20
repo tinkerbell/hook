@@ -227,6 +227,26 @@ services:
       mkdir:
         - /var/lib/dhcpcd
 
+  - name: hwinfo
+    image: docker.lightbitslabs.com/lb-dev-playground/hwinfo:latest
+    mounts:
+    - type: cgroup
+      options: ["rw", "nosuid", "noexec", "nodev", "relatime"]
+    capabilities:
+    - all
+    net: host
+    pid: host
+    devices:
+    - path: all
+      type: a
+    # all block devices
+    - path: all
+      type: b
+    binds:
+    - /dev/console:/dev/console
+    - /dev:/dev
+    - /proc:/proc
+    - /etc/resolv.conf:/etc/resolv.conf
 #SSH_SERVER  - name: sshd
 #SSH_SERVER    image: linuxkit/sshd:v1.0.0
 #SSH_SERVER    binds.add:

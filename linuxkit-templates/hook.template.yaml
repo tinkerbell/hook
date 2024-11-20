@@ -335,7 +335,7 @@ files:
       ttyUSB2
 
 #SSH_SERVER  - path: root/.ssh/authorized_keys
-#SSH_SERVER    source: ~/.ssh/id_rsa.pub
+#SSH_SERVER    allowed_hosts_rsa_keys/authorized_keys
 #SSH_SERVER    mode: "0600"
 #SSH_SERVER    optional: true
 

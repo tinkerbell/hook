@@ -266,17 +266,17 @@ files:
       ANSI_COLOR="1;34"
       HOME_URL="https://github.com/tinkerbell/hook"
 
-  # Putting scripts in /etc/init.d/ allows them to be run at boot time
+  # Putting scripts in /etc/init.d/ allows them to be run at boot time by the init system
   - path: etc/init.d/002-vlan.sh
     source: "files/vlan.sh"
     mode: "0777"
 
-  # Putting scripts in /etc/init.d/ allows them to be run at boot time
+  # Putting scripts in /etc/init.d/ allows them to be run at boot time by the init system
   - path: etc/init.d/003-static-network.sh
     source: "files/static-network.sh"
     mode: "0777"
 
-  # This makes the script available in the host PATH
+  # This makes the script available in the host $PATH
   - path: sbin/setup-dns
     source: "files/setup-dns.sh"
     mode: "0777"

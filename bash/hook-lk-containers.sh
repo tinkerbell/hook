@@ -7,7 +7,6 @@ function build_all_hook_linuxkit_containers() {
 	# when adding new container builds here you'll also want to add them to the
 	# `linuxkit_build` function in the linuxkit.sh file.
 	# # NOTE: linuxkit containers must be in the images/ directory
-	build_hook_linuxkit_container hook-ip HOOK_CONTAINER_IP_IMAGE
 	build_hook_linuxkit_container hook-bootkit HOOK_CONTAINER_BOOTKIT_IMAGE
 	build_hook_linuxkit_container hook-docker HOOK_CONTAINER_DOCKER_IMAGE
 	build_hook_linuxkit_container hook-mdev HOOK_CONTAINER_MDEV_IMAGE

@@ -3,7 +3,6 @@
 # - HOOK_KERNEL_IMAGE: ${HOOK_KERNEL_IMAGE}
 # - HOOK_KERNEL_ID: ${HOOK_KERNEL_ID}
 # - HOOK_KERNEL_VERSION: ${HOOK_KERNEL_VERSION}
-# - HOOK_CONTAINER_IP_IMAGE: ${HOOK_CONTAINER_IP_IMAGE}
 # - HOOK_CONTAINER_BOOTKIT_IMAGE: ${HOOK_CONTAINER_BOOTKIT_IMAGE}
 # - HOOK_CONTAINER_DOCKER_IMAGE: ${HOOK_CONTAINER_DOCKER_IMAGE}
 # - HOOK_CONTAINER_MDEV_IMAGE: ${HOOK_CONTAINER_MDEV_IMAGE}
@@ -41,14 +40,6 @@ onboot:
   - name: modprobe
     image: linuxkit/modprobe:v1.0.0
     command: [ "modprobe", "cdc_ncm" ] # for usb ethernet dongles
-
-  - name: vlan
-    image: "${HOOK_CONTAINER_IP_IMAGE}"
-    capabilities:
-      - all
-    binds.add:
-      - /etc/ip/vlan.sh:/etc/ip/vlan.sh
-    command: [ "/etc/ip/vlan.sh" ]
 
   - name: dhcpcd-once
     image: linuxkit/dhcpcd:v1.0.0
@@ -275,8 +266,19 @@ files:
       ANSI_COLOR="1;34"
       HOME_URL="https://github.com/tinkerbell/hook"
 
-  - path: etc/ip/vlan.sh
+  # Putting scripts in /etc/init.d/ allows them to be run at boot time
+  - path: etc/init.d/002-vlan.sh
     source: "files/vlan.sh"
+    mode: "0777"
+
+  # Putting scripts in /etc/init.d/ allows them to be run at boot time
+  - path: etc/init.d/003-static-network.sh
+    source: "files/static-network.sh"
+    mode: "0777"
+
+  # This makes the script available in the host PATH
+  - path: sbin/setup-dns
+    source: "files/setup-dns.sh"
     mode: "0777"
 
   - path: etc/ip/dhcp.sh

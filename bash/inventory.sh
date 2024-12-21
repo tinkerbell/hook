@@ -36,18 +36,15 @@ function produce_kernels_flavours_inventory() {
 	## Armbian bcm2711 (Broadcom) current, from RaspberryPi Foundation with many CNCF-landscape fixes and patches; for the RaspberryPi 3b+/4b/5
 	define_id "armbian-bcm2711-current" METHOD='armbian' ARCH='aarch64' TAG='armbian-sbc' ARMBIAN_KERNEL_ARTIFACT='kernel-bcm2711-current'
 
-	## Armbian rockchip64 (Rockchip) edge, for many rk356x/3399 SoCs. Not for rk3588!
+	## Armbian rockchip64 (Rockchip) edge, for many rk356x/3399 SoCs. As of late December 2024, also for rk3588.
 	define_id "armbian-rockchip64-edge" METHOD='armbian' ARCH='aarch64' TAG='armbian-sbc' ARMBIAN_KERNEL_ARTIFACT='kernel-rockchip64-edge'
 
-	## Armbian rk35xx (Rockchip) mainline bleeding edge for rk3588, rk3588s SoCs
-	define_id "armbian-rk3588-edge" METHOD='armbian' ARCH='aarch64' TAG='armbian-sbc' ARMBIAN_KERNEL_ARTIFACT='kernel-rockchip-rk3588-edge'
-
-	## Armbian rk35xx (Rockchip) vendor, for rk3566, rk3568, rk3588, rk3588s SoCs -- 6.1-rkr1 - BSP / vendor kernel
+	## Armbian rk35xx (Rockchip) vendor, for rk3566, rk3568, rk3588, rk3588s SoCs -- 6.1-rkr4.1 - BSP / vendor kernel, roughly equivalent to Android's 6.1.84
 	# Use with edk2 (v0.9.1+) or mainline u-boot + EFI: matches the DT included in https://github.com/edk2-porting/edk2-rk3588 _after_ v0.9.1
 	define_id "armbian-rk35xx-vendor" METHOD='armbian' ARCH='aarch64' TAG='armbian-sbc' ARMBIAN_KERNEL_ARTIFACT='kernel-rk35xx-vendor'
 
 	###  Armbian mainline Generic UEFI kernels, for EFI capable machines might use those:
-	## Armbian generic edge UEFI kernel (Armbian calls it x86)
+	## Armbian generic edge UEFI kernel for arm64
 	define_id "armbian-uefi-arm64-edge" METHOD='armbian' ARCH='aarch64' TAG='standard armbian-uefi' ARMBIAN_KERNEL_ARTIFACT='kernel-arm64-edge'
 
 	## Armbian generic edge UEFI kernel (Armbian calls it x86)

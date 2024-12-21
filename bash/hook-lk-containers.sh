@@ -7,17 +7,17 @@ function build_all_hook_linuxkit_containers() {
 	# when adding new container builds here you'll also want to add them to the
 	# `linuxkit_build` function in the linuxkit.sh file.
 	# # NOTE: linuxkit containers must be in the images/ directory
-	build_hook_linuxkit_container hook-bootkit HOOK_CONTAINER_BOOTKIT_IMAGE
-	build_hook_linuxkit_container hook-docker HOOK_CONTAINER_DOCKER_IMAGE
-	build_hook_linuxkit_container hook-mdev HOOK_CONTAINER_MDEV_IMAGE
-	build_hook_linuxkit_container hook-containerd HOOK_CONTAINER_CONTAINERD_IMAGE
-	build_hook_linuxkit_container hook-runc HOOK_CONTAINER_RUNC_IMAGE
-	build_hook_linuxkit_container hook-embedded HOOK_CONTAINER_EMBEDDED_IMAGE
+	build_hook_linuxkit_container hook-bootkit "HOOK_CONTAINER_BOOTKIT_IMAGE"
+	build_hook_linuxkit_container hook-docker "HOOK_CONTAINER_DOCKER_IMAGE"
+	build_hook_linuxkit_container hook-mdev "HOOK_CONTAINER_MDEV_IMAGE"
+	build_hook_linuxkit_container hook-containerd "HOOK_CONTAINER_CONTAINERD_IMAGE"
+	build_hook_linuxkit_container hook-runc "HOOK_CONTAINER_RUNC_IMAGE"
+	build_hook_linuxkit_container hook-embedded "HOOK_CONTAINER_EMBEDDED_IMAGE"
 }
 
 function build_hook_linuxkit_container() {
 	declare container_dir="${1}"
-	declare -n output_var="${2}" # bash name reference, kind of an output var but weird
+	declare template_var="${2}" # bash name reference, kind of an output var but weird
 	declare container_base_dir="images"
 
 	# Lets hash the contents of the directory and use that as a tag
@@ -28,8 +28,7 @@ function build_hook_linuxkit_container() {
 
 	declare container_oci_ref="${HOOK_LK_CONTAINERS_OCI_BASE}${container_dir}:${container_files_hash_short}-${DOCKER_ARCH}"
 	log info "Consider building LK container ${container_oci_ref} from ${container_base_dir}/${container_dir} for platform ${DOCKER_ARCH}"
-	output_var="${container_oci_ref}" # the the name reference
-	echo "${output_var}" > /dev/null  # no-op; just to avoid shellcheck SC2034 (unused var; but it is actually a bash nameref)
+	hook_template_vars["${template_var}"]="${container_oci_ref}" # set the template var for envsubst
 
 	# If the image is in the local docker cache, skip building
 	log debug "Checking if image ${container_oci_ref} exists in local registry"

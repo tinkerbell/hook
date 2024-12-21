@@ -49,29 +49,37 @@ function linuxkit_build() {
 		fi
 	fi
 
+	# A dictionary (bash associative array) with variables and their values, for templating using envsubst.
+	declare -A -g hook_template_vars=(
+		["HOOK_VERSION"]="${HOOK_VERSION}"
+		["HOOK_KERNEL_IMAGE"]="${kernel_oci_image}"
+		["HOOK_KERNEL_ID"]="${inventory_id}"
+		["HOOK_KERNEL_VERSION"]="${kernel_oci_version}"
+	)
+
 	# Build the containers in this repo used in the LinuxKit YAML;
-	build_all_hook_linuxkit_containers # sets HOOK_CONTAINER_BOOTKIT_IMAGE, HOOK_CONTAINER_DOCKER_IMAGE, HOOK_CONTAINER_MDEV_IMAGE, HOOK_CONTAINER_CONTAINERD_IMAGE
+	build_all_hook_linuxkit_containers # sets HOOK_CONTAINER_BOOTKIT_IMAGE, HOOK_CONTAINER_DOCKER_IMAGE and others in the hook_template_vars dict
 
 	# Template the linuxkit configuration file.
 	# - You'd think linuxkit would take --build-args or something by now, but no.
 	# - Linuxkit does have @pkg but that's only useful in its own repo (with pkgs/ dir)
 	# - envsubst doesn't offer a good way to escape $ in the input, so we pass the exact list of vars to consider, so escaping is not needed
-
 	log info "Using Linuxkit template '${kernel_info['TEMPLATE']}'..."
 
-	# HOOK_VERSION is read-only & already exported so is not listed in the env vars here, but is included in the dollar-sign list for envsubst to process
-	# shellcheck disable=SC2002 # Again, no, I love my cat, leave me alone
-	# shellcheck disable=SC2016 # I'm using single quotes to avoid shell expansion, envsubst wants the dollar signs.
-	cat "linuxkit-templates/${kernel_info['TEMPLATE']}.template.yaml" |
-		HOOK_KERNEL_IMAGE="${kernel_oci_image}" HOOK_KERNEL_ID="${inventory_id}" HOOK_KERNEL_VERSION="${kernel_oci_version}" \
-			HOOK_CONTAINER_BOOTKIT_IMAGE="${HOOK_CONTAINER_BOOTKIT_IMAGE}" \
-			HOOK_CONTAINER_DOCKER_IMAGE="${HOOK_CONTAINER_DOCKER_IMAGE}" \
-			HOOK_CONTAINER_MDEV_IMAGE="${HOOK_CONTAINER_MDEV_IMAGE}" \
-			HOOK_CONTAINER_CONTAINERD_IMAGE="${HOOK_CONTAINER_CONTAINERD_IMAGE}" \
-			HOOK_CONTAINER_RUNC_IMAGE="${HOOK_CONTAINER_RUNC_IMAGE}" \
-			HOOK_CONTAINER_EMBEDDED_IMAGE="${HOOK_CONTAINER_EMBEDDED_IMAGE}" \
-			envsubst '$HOOK_VERSION $HOOK_KERNEL_IMAGE $HOOK_KERNEL_ID $HOOK_KERNEL_VERSION $HOOK_CONTAINER_BOOTKIT_IMAGE $HOOK_CONTAINER_DOCKER_IMAGE $HOOK_CONTAINER_MDEV_IMAGE $HOOK_CONTAINER_CONTAINERD_IMAGE $HOOK_CONTAINER_RUNC_IMAGE $HOOK_CONTAINER_EMBEDDED_IMAGE' \
-			> "hook.${inventory_id}.yaml"
+	# Calculate, from hook_template_vars dictionary:
+	# envsubst_arg_string: a space separated list of dollar-prefixed variables name to be substituted
+	# envusbst_env: the environment variables to be passed to envsubst (array of KEY=var) to be used via 'env'
+	declare envsubst_arg_string=""
+	declare -a envsubst_envs=()
+	for key in "${!hook_template_vars[@]}"; do
+		envsubst_arg_string+="\$${key} " # extra space at the end doesn't hurt
+		envsubst_envs+=("${key}=${hook_template_vars["${key}"]}")
+	done
+	log debug "envsubst_arg_string: ${envsubst_arg_string}"
+	log debug "envsubst_envs: ${envsubst_envs[*]}"
+
+	# Run envsubst on the template file, output to a new file; pass the envs and the arg string
+	env "${envsubst_envs[@]}" envsubst "${envsubst_arg_string}" < "linuxkit-templates/${kernel_info['TEMPLATE']}.template.yaml" > "hook.${inventory_id}.yaml"
 
 	declare -g linuxkit_bin=""
 	obtain_linuxkit_binary_cached # sets "${linuxkit_bin}"
@@ -101,7 +109,7 @@ function linuxkit_build() {
 		"${linuxkit_bin}" build "${lk_iso_args[@]}"
 		return 0
 	fi
-	
+
 	declare -a lk_args=(
 		"--docker"
 		"--arch" "${kernel_info['DOCKER_ARCH']}"

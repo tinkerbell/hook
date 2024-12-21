@@ -3,6 +3,9 @@
 function obtain_linuxkit_binary_cached() {
 	# Grab linuxkit from official GitHub releases; account for arm64/amd64 differences
 
+	declare linuxkit_os="linux"
+	[[ "$(uname -s)" == "Darwin" ]] && linuxkit_os="darwin"
+
 	declare linuxkit_arch=""
 	# determine the arch to download from current arch
 	case "$(uname -m)" in
@@ -11,8 +14,8 @@ function obtain_linuxkit_binary_cached() {
 		*) log error "ERROR: ARCH $(uname -m) not supported by linuxkit? check https://github.com/linuxkit/linuxkit/releases" && exit 1 ;;
 	esac
 
-	declare linuxkit_down_url="https://github.com/linuxkit/linuxkit/releases/download/v${LINUXKIT_VERSION}/linuxkit-linux-${linuxkit_arch}"
-	declare -g linuxkit_bin="${CACHE_DIR}/linuxkit-linux-${linuxkit_arch}-${LINUXKIT_VERSION}"
+	declare linuxkit_down_url="https://github.com/linuxkit/linuxkit/releases/download/v${LINUXKIT_VERSION}/linuxkit-${linuxkit_os}-${linuxkit_arch}"
+	declare -g linuxkit_bin="${CACHE_DIR}/linuxkit-${linuxkit_os}-${linuxkit_arch}-${LINUXKIT_VERSION}"
 
 	# Download using curl if not already present
 	if [[ ! -f "${linuxkit_bin}" ]]; then
@@ -22,7 +25,7 @@ function obtain_linuxkit_binary_cached() {
 	fi
 
 	# Show the binary's version
-	log info "LinuxKit binary version: ('0.8+' reported for 1.2.0, bug?): $("${linuxkit_bin}" version | xargs echo -n)"
+	log info "LinuxKit binary version: $("${linuxkit_bin}" version | xargs echo -n)"
 
 }
 

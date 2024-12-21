@@ -5,9 +5,9 @@ function produce_kernels_flavours_inventory() {
 
 	##### METHOD=default; Hook's own kernel, in kernel/ directory
 	## Hook default kernel, source code stored in `kernel` dir in this repo -- currently 5.10.y
-	define_id "hook-default-amd64" METHOD='default' ARCH='x86_64' TAG='standard' \
+	define_id "hook-default-amd64" METHOD='default' ARCH='x86_64' TAG='standard' SUPPORTS_ISO='yes' \
 		KERNEL_MAJOR='5' KERNEL_MINOR='10' KCONFIG='generic'
-	define_id "hook-default-arm64" METHOD='default' ARCH='aarch64' TAG='standard' \
+	define_id "hook-default-arm64" METHOD='default' ARCH='aarch64' TAG='standard' SUPPORTS_ISO='yes' \
 		KERNEL_MAJOR='5' KERNEL_MINOR='10' KCONFIG='generic'
 
 	## A 'peg' is not really a 'hook': for development purposes; testing new LK version and simpler LK configurations, using the default kernel
@@ -16,9 +16,9 @@ function produce_kernels_flavours_inventory() {
 		KERNEL_MAJOR='5' KERNEL_MINOR='10' KCONFIG='generic'
 
 	## development purposes: trying out kernel 6.6.y
-	define_id "hook-latest-lts-amd64" METHOD='default' ARCH='x86_64' TAG='lts' \
+	define_id "hook-latest-lts-amd64" METHOD='default' ARCH='x86_64' TAG='lts' SUPPORTS_ISO='yes' \
 		KERNEL_MAJOR='6' KERNEL_MINOR='6' KCONFIG='generic' FORCE_OUTPUT_ID='latest-lts'
-	define_id "hook-latest-lts-arm64" METHOD='default' ARCH='aarch64' TAG='lts' \
+	define_id "hook-latest-lts-arm64" METHOD='default' ARCH='aarch64' TAG='lts' SUPPORTS_ISO='yes' \
 		KERNEL_MAJOR='6' KERNEL_MINOR='6' KCONFIG='generic' FORCE_OUTPUT_ID='latest-lts'
 
 	##### METHOD=armbian; Foreign kernels, taken from Armbian's OCI repos. Those are "exotic" kernels for certain SoC's.

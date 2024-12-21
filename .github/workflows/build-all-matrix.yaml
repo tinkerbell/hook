@@ -166,7 +166,7 @@ jobs:
         run: bash build.sh build "${{ matrix.kernel }}"
 
       - name: "Build Hook ISO with Kernel ${{matrix.kernel}} (${{ matrix.arch }}) - cache: ${{matrix.gha_cache}}"
-        if: ${{ matrix.kernel == 'hook-latest-lts-amd64' || matrix.kernel == 'hook-default-amd64' || matrix.kernel == 'hook-latest-lts-arm64' || matrix.kernel == 'hook-default-arm64' }}
+        if: ${{ matrix.build_iso == 'yes' }} # Set via inventory.sh and SUPPORTS_ISO='yes' for each flavor
         env:
           DO_BUILD_LK_CONTAINERS: "no" # already built them; this is only for hook/linuxkit.
         run: bash build.sh build "${{ matrix.kernel }}" LINUXKIT_ISO=yes

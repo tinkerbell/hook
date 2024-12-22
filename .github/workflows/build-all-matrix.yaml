@@ -51,6 +51,10 @@ jobs:
         id: date_prep
         run: echo "created=$(date -u +'%Y%m%d-%H%M')" >> "${GITHUB_OUTPUT}"
 
+      - name: Run shellcheck # so fail fast in case of bash errors/warnings
+        id: shellcheck
+        run: bash build.sh shellcheck
+
       - name: Run the matrix JSON preparation bash script
         id: prepare-matrix
         run: bash build.sh gha-matrix # This sets the output "kernels_json" & "lkcontainers_json" & "lk_hooks_json" internally

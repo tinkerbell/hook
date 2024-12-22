@@ -60,8 +60,8 @@ function resolve_latest_kernel_version_lts() { # Produces KERNEL_POINT_RELEASE
 	# HookOS using an existing kernel container image from the registry. This only works with
 	# unauthenticated registries.
 	if [[ -n "${USE_LATEST_BUILT_KERNEL}" ]]; then
-		reg="$(echo ${HOOK_KERNEL_OCI_BASE} | cut -d'/' -f1)"
-		repo="$(echo ${HOOK_KERNEL_OCI_BASE} | cut -d'/' -f2-)"
+		reg="$(echo "${HOOK_KERNEL_OCI_BASE}" | cut -d'/' -f1)"
+		repo="$(echo "${HOOK_KERNEL_OCI_BASE}" | cut -d'/' -f2-)"
 		# expected format is: 6.6.32-14b8be17 (major.minor.point-hash)
 		latest_point_release="$(curl -sL "https://${reg}/v2/${repo}/tags/list" | jq -r ".tags[]" | grep -e "^${KERNEL_MAJOR}.${KERNEL_MINOR}" | sort -V | tail -n1 | cut -d"-" -f1 | cut -d"." -f3)"
 		log info "Using latest point release from registry ${HOOK_KERNEL_OCI_BASE} for kernel ${KERNEL_MAJOR}.${KERNEL_MINOR}: ${latest_point_release}"

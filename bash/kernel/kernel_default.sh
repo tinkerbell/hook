@@ -36,7 +36,7 @@ function calculate_kernel_version_default() {
 			KERNEL_CROSS_COMPILE="x86_64-linux-gnu-"
 			KERNEL_OUTPUT_IMAGE="arch/x86_64/boot/bzImage"
 			;;
-		"aarch64")
+		"aarch64" | "arm64")
 			KERNEL_ARCH="arm64"
 			KERNEL_CROSS_COMPILE_PKGS="crossbuild-essential-arm64"
 			KERNEL_CROSS_COMPILE="aarch64-linux-gnu-"

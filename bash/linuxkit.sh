@@ -10,7 +10,7 @@ function obtain_linuxkit_binary_cached() {
 	# determine the arch to download from current arch
 	case "$(uname -m)" in
 		"x86_64") linuxkit_arch="amd64" ;;
-		"aarch64") linuxkit_arch="arm64" ;;
+		"aarch64" | "arm64") linuxkit_arch="arm64" ;;
 		*) log error "ERROR: ARCH $(uname -m) not supported by linuxkit? check https://github.com/linuxkit/linuxkit/releases" && exit 1 ;;
 	esac
 

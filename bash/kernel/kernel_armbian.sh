@@ -50,7 +50,7 @@ function calculate_kernel_version_armbian() {
 	declare oras_arch="unknown"
 	case "$(uname -m)" in
 		"x86_64") oras_arch="amd64" ;;
-		"aarch64") oras_arch="arm64" ;;
+		"aarch64" | "arm64") oras_arch="arm64" ;;
 		*) log error "ERROR: ARCH $(uname -m) not supported by ORAS? check https://github.com/oras-project/oras/releases" && exit 1 ;;
 	esac
 	declare oras_down_url="https://github.com/oras-project/oras/releases/download/v${oras_version}/oras_${oras_version}_linux_${oras_arch}.tar.gz"

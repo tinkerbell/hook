@@ -60,8 +60,8 @@ function resolve_latest_kernel_version_lts() { # Produces KERNEL_POINT_RELEASE
 	# HookOS using an existing kernel container image from the registry. This only works with
 	# unauthenticated registries.
 	if [[ -n "${USE_LATEST_BUILT_KERNEL}" ]]; then
-		reg="$(echo ${HOOK_KERNEL_OCI_BASE} | cut -d'/' -f1)"
-		repo="$(echo ${HOOK_KERNEL_OCI_BASE} | cut -d'/' -f2-)"
+		reg="$(echo "${HOOK_KERNEL_OCI_BASE}" | cut -d'/' -f1)"
+		repo="$(echo "${HOOK_KERNEL_OCI_BASE}" | cut -d'/' -f2-)"
 		# expected format is: 6.6.32-14b8be17 (major.minor.point-hash)
 		latest_point_release="$(curl -sL "https://${reg}/v2/${repo}/tags/list" | jq -r ".tags[]" | grep -e "^${KERNEL_MAJOR}.${KERNEL_MINOR}" | sort -V | tail -n1 | cut -d"-" -f1 | cut -d"." -f3)"
 		log info "Using latest point release from registry ${HOOK_KERNEL_OCI_BASE} for kernel ${KERNEL_MAJOR}.${KERNEL_MINOR}: ${latest_point_release}"
@@ -121,7 +121,7 @@ function get_kernel_info_dict() {
 	# convert ARCH (x86_64, aarch64) to docker-ARCH (amd64, arm64)
 	case "${kernel_info['ARCH']}" in
 		"x86_64") kernel_info['DOCKER_ARCH']="amd64" ;;
-		"aarch64") kernel_info['DOCKER_ARCH']="arm64" ;;
+		"aarch64" | "arm64") kernel_info['DOCKER_ARCH']="arm64" ;;
 		*) log error "ARCH ${kernel_info['ARCH']} not supported" && exit 1 ;;
 	esac
 }
@@ -139,7 +139,7 @@ function get_host_docker_arch() {
 	# convert ARCH (x86_64, aarch64) to docker-ARCH (amd64, arm64)
 	case "$(uname -m)" in
 		"x86_64") host_docker_arch="amd64" ;;
-		"aarch64") host_docker_arch="arm64" ;;
+		"aarch64" | "arm64") host_docker_arch="arm64" ;;
 		*) log error "ARCH $(uname -m) not supported" && exit 1 ;;
 	esac
 	return 0

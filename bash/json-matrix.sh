@@ -84,7 +84,7 @@ function prepare_json_matrix() {
 			declare gha_cache="yes" # always use GH cache; hitting DockerHub for linuxkit images is prone to rate limiting
 
 			all_arches["${kernel_info[DOCKER_ARCH]}"]=1
-			json_items+=("{\"kernel\":\"${kernel}\",\"arch\":\"${kernel_info[ARCH]}\",\"docker_arch\":\"${kernel_info[DOCKER_ARCH]}\",\"runner\":${runner},\"gha_cache\":\"${gha_cache}\"}")
+			json_items+=("{\"kernel\":\"${kernel}\",\"arch\":\"${kernel_info[ARCH]}\",\"docker_arch\":\"${kernel_info[DOCKER_ARCH]}\",\"build_iso\":\"${kernel_info[SUPPORTS_ISO]}\",\"runner\":${runner},\"gha_cache\":\"${gha_cache}\"}")
 		fi
 	done
 

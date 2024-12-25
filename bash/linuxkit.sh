@@ -3,16 +3,19 @@
 function obtain_linuxkit_binary_cached() {
 	# Grab linuxkit from official GitHub releases; account for arm64/amd64 differences
 
+	declare linuxkit_os="linux"
+	[[ "$(uname -s)" == "Darwin" ]] && linuxkit_os="darwin"
+
 	declare linuxkit_arch=""
 	# determine the arch to download from current arch
 	case "$(uname -m)" in
 		"x86_64") linuxkit_arch="amd64" ;;
-		"aarch64") linuxkit_arch="arm64" ;;
+		"aarch64" | "arm64") linuxkit_arch="arm64" ;;
 		*) log error "ERROR: ARCH $(uname -m) not supported by linuxkit? check https://github.com/linuxkit/linuxkit/releases" && exit 1 ;;
 	esac
 
-	declare linuxkit_down_url="https://github.com/linuxkit/linuxkit/releases/download/v${LINUXKIT_VERSION}/linuxkit-linux-${linuxkit_arch}"
-	declare -g linuxkit_bin="${CACHE_DIR}/linuxkit-linux-${linuxkit_arch}-${LINUXKIT_VERSION}"
+	declare linuxkit_down_url="https://github.com/linuxkit/linuxkit/releases/download/v${LINUXKIT_VERSION}/linuxkit-${linuxkit_os}-${linuxkit_arch}"
+	declare -g linuxkit_bin="${CACHE_DIR}/linuxkit-${linuxkit_os}-${linuxkit_arch}-${LINUXKIT_VERSION}"
 
 	# Download using curl if not already present
 	if [[ ! -f "${linuxkit_bin}" ]]; then
@@ -22,7 +25,7 @@ function obtain_linuxkit_binary_cached() {
 	fi
 
 	# Show the binary's version
-	log info "LinuxKit binary version: ('0.8+' reported for 1.2.0, bug?): $("${linuxkit_bin}" version | xargs echo -n)"
+	log info "LinuxKit binary version: $("${linuxkit_bin}" version | xargs echo -n)"
 
 }
 
@@ -49,29 +52,37 @@ function linuxkit_build() {
 		fi
 	fi
 
+	# A dictionary (bash associative array) with variables and their values, for templating using envsubst.
+	declare -A -g hook_template_vars=(
+		["HOOK_VERSION"]="${HOOK_VERSION}"
+		["HOOK_KERNEL_IMAGE"]="${kernel_oci_image}"
+		["HOOK_KERNEL_ID"]="${inventory_id}"
+		["HOOK_KERNEL_VERSION"]="${kernel_oci_version}"
+	)
+
 	# Build the containers in this repo used in the LinuxKit YAML;
-	build_all_hook_linuxkit_containers # sets HOOK_CONTAINER_BOOTKIT_IMAGE, HOOK_CONTAINER_DOCKER_IMAGE, HOOK_CONTAINER_MDEV_IMAGE, HOOK_CONTAINER_CONTAINERD_IMAGE
+	build_all_hook_linuxkit_containers # sets HOOK_CONTAINER_BOOTKIT_IMAGE, HOOK_CONTAINER_DOCKER_IMAGE and others in the hook_template_vars dict
 
 	# Template the linuxkit configuration file.
 	# - You'd think linuxkit would take --build-args or something by now, but no.
 	# - Linuxkit does have @pkg but that's only useful in its own repo (with pkgs/ dir)
 	# - envsubst doesn't offer a good way to escape $ in the input, so we pass the exact list of vars to consider, so escaping is not needed
-
 	log info "Using Linuxkit template '${kernel_info['TEMPLATE']}'..."
 
-	# HOOK_VERSION is read-only & already exported so is not listed in the env vars here, but is included in the dollar-sign list for envsubst to process
-	# shellcheck disable=SC2002 # Again, no, I love my cat, leave me alone
-	# shellcheck disable=SC2016 # I'm using single quotes to avoid shell expansion, envsubst wants the dollar signs.
-	cat "linuxkit-templates/${kernel_info['TEMPLATE']}.template.yaml" |
-		HOOK_KERNEL_IMAGE="${kernel_oci_image}" HOOK_KERNEL_ID="${inventory_id}" HOOK_KERNEL_VERSION="${kernel_oci_version}" \
-			HOOK_CONTAINER_BOOTKIT_IMAGE="${HOOK_CONTAINER_BOOTKIT_IMAGE}" \
-			HOOK_CONTAINER_DOCKER_IMAGE="${HOOK_CONTAINER_DOCKER_IMAGE}" \
-			HOOK_CONTAINER_MDEV_IMAGE="${HOOK_CONTAINER_MDEV_IMAGE}" \
-			HOOK_CONTAINER_CONTAINERD_IMAGE="${HOOK_CONTAINER_CONTAINERD_IMAGE}" \
-			HOOK_CONTAINER_RUNC_IMAGE="${HOOK_CONTAINER_RUNC_IMAGE}" \
-			HOOK_CONTAINER_EMBEDDED_IMAGE="${HOOK_CONTAINER_EMBEDDED_IMAGE}" \
-			envsubst '$HOOK_VERSION $HOOK_KERNEL_IMAGE $HOOK_KERNEL_ID $HOOK_KERNEL_VERSION $HOOK_CONTAINER_BOOTKIT_IMAGE $HOOK_CONTAINER_DOCKER_IMAGE $HOOK_CONTAINER_MDEV_IMAGE $HOOK_CONTAINER_CONTAINERD_IMAGE $HOOK_CONTAINER_RUNC_IMAGE $HOOK_CONTAINER_EMBEDDED_IMAGE' \
-			> "hook.${inventory_id}.yaml"
+	# Calculate, from hook_template_vars dictionary:
+	# envsubst_arg_string: a space separated list of dollar-prefixed variables name to be substituted
+	# envusbst_env: the environment variables to be passed to envsubst (array of KEY=var) to be used via 'env'
+	declare envsubst_arg_string=""
+	declare -a envsubst_envs=()
+	for key in "${!hook_template_vars[@]}"; do
+		envsubst_arg_string+="\$${key} " # extra space at the end doesn't hurt
+		envsubst_envs+=("${key}=${hook_template_vars["${key}"]}")
+	done
+	log debug "envsubst_arg_string: ${envsubst_arg_string}"
+	log debug "envsubst_envs: ${envsubst_envs[*]}"
+
+	# Run envsubst on the template file, output to a new file; pass the envs and the arg string
+	env "${envsubst_envs[@]}" envsubst "${envsubst_arg_string}" < "linuxkit-templates/${kernel_info['TEMPLATE']}.template.yaml" > "hook.${inventory_id}.yaml"
 
 	declare -g linuxkit_bin=""
 	obtain_linuxkit_binary_cached # sets "${linuxkit_bin}"
@@ -101,7 +112,7 @@ function linuxkit_build() {
 		"${linuxkit_bin}" build "${lk_iso_args[@]}"
 		return 0
 	fi
-	
+
 	declare -a lk_args=(
 		"--docker"
 		"--arch" "${kernel_info['DOCKER_ARCH']}"

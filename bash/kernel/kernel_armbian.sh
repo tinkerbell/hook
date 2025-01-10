@@ -58,7 +58,7 @@ function calculate_kernel_version_armbian() {
 	# Lets create a Dockerfile that will be used to obtain the artifacts needed, using ORAS binary
 	echo "Creating Dockerfile '${ARMBIAN_KERNEL_DOCKERFILE}'... "
 	cat <<- ARMBIAN_ORAS_DOCKERFILE > "${ARMBIAN_KERNEL_DOCKERFILE}"
-		FROM debian:stable as downloader
+		FROM debian:stable AS downloader
 		# Install ORAS binary tool from GitHub releases
 		ENV DEBIAN_FRONTEND=noninteractive
 		RUN apt -o "Dpkg::Use-Pty=0" update && apt install -o "Dpkg::Use-Pty=0" -y curl dpkg-dev && \
@@ -67,7 +67,7 @@ function calculate_kernel_version_armbian() {
 		      chmod +x /usr/local/bin/oras && \
 		      oras version
 
-		FROM downloader as downloaded
+		FROM downloader AS downloaded
 
 		# lets create the output dir
 		WORKDIR /armbian/output

@@ -29,7 +29,7 @@ declare -g HOOK_LK_CONTAINERS_OCI_BASE="${HOOK_LK_CONTAINERS_OCI_BASE:-"quay.io/
 declare -g SKOPEO_IMAGE="${SKOPEO_IMAGE:-"quay.io/skopeo/stable:latest"}"
 
 # See https://github.com/linuxkit/linuxkit/releases
-declare -g -r LINUXKIT_VERSION_DEFAULT="1.5.2" # LinuxKit version to use by default; each flavor can set its own too
+declare -g -r LINUXKIT_VERSION_DEFAULT="1.5.3" # LinuxKit version to use by default; each flavor can set its own too
 
 # Directory to use for storing downloaded artifacts: LinuxKit binary, shellcheck binary, etc.
 declare -g -r CACHE_DIR="${CACHE_DIR:-"cache"}"

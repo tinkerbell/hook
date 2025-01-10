@@ -82,6 +82,20 @@ case "${first_param}" in
 		exit 0
 		;;
 
+	shellfmt)
+		download_prepare_shellfmt_bin
+		run_shellfmt # this exits with an error if changes are made
+		exit 0
+		;;
+
+	lint)
+		download_prepare_shellcheck_bin
+		download_prepare_shellfmt_bin
+		run_shellcheck
+		run_shellfmt # this exits with an error if changes are made
+		exit 0
+		;;
+
 	gha-matrix)
 		output_gha_matrixes
 		exit 0

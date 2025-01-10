@@ -22,23 +22,59 @@ function log() {
 
 function install_dependencies() {
 	declare -a debian_pkgs=()
-	[[ ! -f /usr/bin/jq ]] && debian_pkgs+=("jq")
-	[[ ! -f /usr/bin/envsubst ]] && debian_pkgs+=("gettext-base")
-	[[ ! -f /usr/bin/pigz ]] && debian_pkgs+=("pigz")
+	declare -a brew_pkgs=()
 
-	# If running on Debian or Ubuntu...
-	if [[ -f /etc/debian_version ]]; then
-		# If more than zero entries in the array, install
-		if [[ ${#debian_pkgs[@]} -gt 0 ]]; then
-			log warn "Installing dependencies: ${debian_pkgs[*]}"
-			sudo DEBIAN_FRONTEND=noninteractive apt -o "Dpkg::Use-Pty=0" -y update
-			sudo DEBIAN_FRONTEND=noninteractive apt -o "Dpkg::Use-Pty=0" -y install "${debian_pkgs[@]}"
-		fi
-	else
-		log error "Don't know how to install the equivalent of Debian packages: ${debian_pkgs[*]} -- teach me!"
+	command -v jq > /dev/null || {
+		debian_pkgs+=("jq")
+		brew_pkgs+=("jq")
+	}
+
+	command -v pigz > /dev/null || {
+		debian_pkgs+=("pigz")
+		brew_pkgs+=("pigz")
+	}
+
+	command -v envsubst > /dev/null || {
+		debian_pkgs+=("gettext-base")
+		brew_pkgs+=("gettext")
+	}
+
+	if [[ "$(uname)" == "Darwin" ]]; then
+		command -v gtar > /dev/null || brew_pkgs+=("gnu-tar")
+		command -v greadlink > /dev/null || brew_pkgs+=("coreutils")
+		command -v gsed > /dev/null || brew_pkgs+=("gnu-sed")
 	fi
 
-	return 0 # there's a shortcircuit above
+	# If more than zero entries in the array, install
+	if [[ ${#debian_pkgs[@]} -gt 0 ]]; then
+		# If running on Debian or Ubuntu...
+		if [[ -f /etc/debian_version ]]; then
+			log warn "Installing apt dependencies: ${debian_pkgs[*]}"
+			sudo DEBIAN_FRONTEND=noninteractive apt -o "Dpkg::Use-Pty=0" -y update
+			sudo DEBIAN_FRONTEND=noninteractive apt -o "Dpkg::Use-Pty=0" -y install "${debian_pkgs[@]}"
+		elif [[ "$(uname)" == "Darwin" ]]; then
+			log info "Skipping Debian deps installation for Darwin..."
+		else
+			log error "Don't know how to install the equivalent of Debian packages *on the host*: ${debian_pkgs[*]} -- teach me!"
+		fi
+	else
+		log info "All deps found, no apt installs necessary on host."
+	fi
+
+	if [[ "$(uname)" == "Darwin" ]]; then
+		if [[ ${#brew_pkgs[@]} -gt 0 ]]; then
+			log info "Detected Darwin, assuming 'brew' is available: running 'brew install ${brew_pkgs[*]}'"
+			brew install "${brew_pkgs[@]}"
+		fi
+
+		# Re-export PATH with the gnu-version of coreutils, tar, and sed
+		declare brew_prefix
+		brew_prefix="$(brew --prefix)"
+		export PATH="${brew_prefix}/opt/gnu-sed/libexec/gnubin:${brew_prefix}/opt/gnu-tar/libexec/gnubin:${brew_prefix}/opt/coreutils/libexec/gnubin:${PATH}"
+		log debug "Darwin; PATH is now: ${PATH}"
+	fi
+
+	return 0
 }
 
 # utility used by inventory.sh to define a kernel/flavour with less-terrible syntax.

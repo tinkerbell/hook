@@ -10,6 +10,9 @@ function check_docker_daemon_for_sanity() {
 	log debug "Setting DOCKER_HOST to '${current_context_docker_socket}'"
 	export DOCKER_HOST="${current_context_docker_socket}"
 
+	# Hide Docker, Inc spamming "What's next" et al.
+	export DOCKER_CLI_HINTS=false
+
 	# Shenanigans to go around error control & capture output in the same effort, 'docker info' is slow.
 	declare docker_info docker_buildx_version
 	docker_info="$({ docker info 2> /dev/null && echo "DOCKER_INFO_OK"; } || true)"

@@ -26,7 +26,7 @@ parse_command_line_arguments "${@}" # which fills the above vars & exports the k
 declare -g HOOK_KERNEL_OCI_BASE="${HOOK_KERNEL_OCI_BASE:-"quay.io/tinkerbell/hook-kernel"}"
 declare -g HOOK_LK_CONTAINERS_OCI_BASE="${HOOK_LK_CONTAINERS_OCI_BASE:-"quay.io/tinkerbell/"}"
 
-declare -g SKOPEO_IMAGE="${SKOPEO_IMAGE:-"quay.io/skopeo/stable:latest"}"
+declare -g SKOPEO_IMAGE="${SKOPEO_IMAGE:-"quay.io/skopeo/stable:v1.17.0"}" # See https://quay.io/repository/skopeo/stable?tab=tags&tag=latest
 
 # See https://github.com/linuxkit/linuxkit/releases
 declare -g -r LINUXKIT_VERSION_DEFAULT="1.5.3" # LinuxKit version to use by default; each flavor can set its own too

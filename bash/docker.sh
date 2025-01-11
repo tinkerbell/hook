@@ -1,4 +1,15 @@
 function check_docker_daemon_for_sanity() {
+	# LinuxKit is a bit confused about `docker context list` when you're using a non-default context.
+	# Let's obtain the currect socket from the current context and explicitly export it.
+	# This allows working on machines with Docker Desktop, colima, and other run-linux-in-a-VM solutions.
+	declare current_context_docker_socket="" current_docker_context_name=""
+	current_docker_context_name="$(docker context show)"
+	current_context_docker_socket="$(docker context inspect "${current_docker_context_name}" | jq -r '.[0].Endpoints.docker.Host')"
+	log info "Current Docker context ('${current_docker_context_name}') socket: '${current_context_docker_socket}'"
+
+	log debug "Setting DOCKER_HOST to '${current_context_docker_socket}'"
+	export DOCKER_HOST="${current_context_docker_socket}"
+
 	# Shenanigans to go around error control & capture output in the same effort, 'docker info' is slow.
 	declare docker_info docker_buildx_version
 	docker_info="$({ docker info 2> /dev/null && echo "DOCKER_INFO_OK"; } || true)"

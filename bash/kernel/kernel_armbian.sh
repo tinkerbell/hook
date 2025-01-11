@@ -8,31 +8,13 @@ function calculate_kernel_version_armbian() {
 
 	declare -g ARMBIAN_KERNEL_BASE_ORAS_REF="${ARMBIAN_BASE_ORAS_REF}/${ARMBIAN_KERNEL_ARTIFACT}"
 
-	# If ARMBIAN_KERNEL_VERSION is unset, for using the latest kernel, this requires skopeo & jq
+	# If ARMBIAN_KERNEL_VERSION is unset, for using the latest kernel
 	if [[ -z "${ARMBIAN_KERNEL_VERSION}" ]]; then
 		log info "ARMBIAN_KERNEL_VERSION is unset, obtaining the most recently pushed-to tag of ${ARMBIAN_KERNEL_BASE_ORAS_REF}"
-		log info "Getting most recent tag for ${ARMBIAN_KERNEL_BASE_ORAS_REF} via skopeo ${SKOPEO_IMAGE}..."
-
-		# A few tries to pull skopeo. Sorry. quay.io is undergoing an outage. @TODO refactor
-		declare -i skopeo_pulled=0 skopeo_pull_tries=0 skopeo_max_pull_tries=5
-		while [[ "${skopeo_pulled}" -eq 0 && "${skopeo_pull_tries}" -lt "${skopeo_max_pull_tries}" ]]; do
-			if docker pull "${SKOPEO_IMAGE}"; then
-				log info "Pulled skopeo image ${SKOPEO_IMAGE} OK"
-				skopeo_pulled=1
-			else
-				((skopeo_pull_tries += 1))
-				log info "Failed to pull ${SKOPEO_IMAGE}, retrying ${skopeo_pull_tries}/${skopeo_max_pull_tries}"
-				sleep $((3 + RANDOM % 12)) # sleep a random amount of seconds
-			fi
-		done
-		if [[ "${skopeo_pulled}" -eq 0 ]]; then
-			log error "Failed to pull after ${skopeo_max_pull_tries} tries, exiting"
-			exit 1
-		fi
-
-		# Pull separately to avoid tty hell in the subshell below
-		ARMBIAN_KERNEL_VERSION="$(docker run "${SKOPEO_IMAGE}" list-tags "docker://${ARMBIAN_KERNEL_BASE_ORAS_REF}" | jq -r ".Tags[]" | tail -1)"
-		log info "Using most recent tag: ${ARMBIAN_KERNEL_VERSION}"
+		declare latest_tag_for_docker_image
+		get_latest_tag_for_docker_image_using_skopeo "${ARMBIAN_KERNEL_BASE_ORAS_REF}" ".\-S..." # regex to match the tag, like "6.1.84-Sxxxx"
+		ARMBIAN_KERNEL_VERSION="${latest_tag_for_docker_image}"
+		log info "Using most recent Armbian kernel tag: ${ARMBIAN_KERNEL_VERSION}"
 	fi
 
 	# output ID is just the inventory_id

@@ -51,9 +51,8 @@ jobs:
         id: date_prep
         run: echo "created=$(date -u +'%Y%m%d-%H%M')" >> "${GITHUB_OUTPUT}"
 
-      - name: Run shellcheck # so fail fast in case of bash errors/warnings
-        id: shellcheck
-        run: bash build.sh shellcheck
+      - name: Run lint (shellcheck/shellfmt) # so fail fast in case of bash errors/warnings or unformatted code
+        run: bash build.sh lint
 
       - name: Run the matrix JSON preparation bash script
         id: prepare-matrix

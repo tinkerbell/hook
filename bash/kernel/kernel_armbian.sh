@@ -25,29 +25,19 @@ function calculate_kernel_version_armbian() {
 	ARMBIAN_KERNEL_MAJOR_MINOR_POINT="$(echo -n "${ARMBIAN_KERNEL_VERSION}" | cut -d "-" -f 1)"
 	log info "ARMBIAN_KERNEL_MAJOR_MINOR_POINT: ${ARMBIAN_KERNEL_MAJOR_MINOR_POINT}"
 
-	declare -g ARMBIAN_KERNEL_DOCKERFILE="kernel/Dockerfile.autogen.armbian.${inventory_id}"
 
-	declare oras_version="1.2.0-rc.1" # @TODO bump this once it's released; yes it's much better than 1.1.x's
-	# determine the arch to download from current arch
-	declare oras_arch="unknown"
-	case "$(uname -m)" in
-		"x86_64") oras_arch="amd64" ;;
-		"aarch64" | "arm64") oras_arch="arm64" ;;
-		*) log error "ERROR: ARCH $(uname -m) not supported by ORAS? check https://github.com/oras-project/oras/releases" && exit 1 ;;
-	esac
-	declare oras_down_url="https://github.com/oras-project/oras/releases/download/v${oras_version}/oras_${oras_version}_linux_${oras_arch}.tar.gz"
+	# A helper script, as escaping bash into a RUN command in Dockerfile is a pain; included in input_hash later
+	declare dockerfile_helper_filename="undefined.sh"
+	produce_dockerfile_helper_apt_oras "kernel/" # will create the helper script in kernel/ directory; sets helper_name
 
 	# Lets create a Dockerfile that will be used to obtain the artifacts needed, using ORAS binary
+	declare -g ARMBIAN_KERNEL_DOCKERFILE="kernel/Dockerfile.autogen.armbian.${inventory_id}"
 	echo "Creating Dockerfile '${ARMBIAN_KERNEL_DOCKERFILE}'... "
 	cat <<- ARMBIAN_ORAS_DOCKERFILE > "${ARMBIAN_KERNEL_DOCKERFILE}"
 		FROM debian:stable AS downloader
-		# Install ORAS binary tool from GitHub releases
-		ENV DEBIAN_FRONTEND=noninteractive
-		RUN apt -o "Dpkg::Use-Pty=0" update && apt install -o "Dpkg::Use-Pty=0" -y curl dpkg-dev && \
-		      curl -sL -o /oras.tar.gz ${oras_down_url} && \
-		      tar -xvf /oras.tar.gz -C /usr/local/bin/ oras && \
-		      chmod +x /usr/local/bin/oras && \
-		      oras version
+		# Call the helper to install curl, oras, and dpkg-dev
+		ADD ./${dockerfile_helper_filename} /apt-oras-helper.sh
+		RUN bash /apt-oras-helper.sh dpkg-dev
 
 		FROM downloader AS downloaded
 
@@ -76,11 +66,11 @@ function calculate_kernel_version_armbian() {
 		# Important: this tarball needs to have permissions for the root directory included! Otherwise linuxkit rootfs will have the wrong permissions on / (root)
 		WORKDIR /armbian/modules_only
 		RUN mv /armbian/image/lib /armbian/modules_only/
-		RUN echo "Before cleaning: " && du -h -d 10 -x . | sort -h | tail -n 20
+		RUN echo "Before cleaning: " && du -h -d 10 -x lib/modules | sort -h | tail -n 20
 		# Trim the kernel modules to save space; hopefully your required hardware is not included here
-		RUN rm -rfv ./lib/modules/*/kernel/drivers/net/wireless ./lib/modules/*/kernel/sound ./lib/modules/*/kernel/drivers/media
-		RUN rm -rfv ./lib/modules/*/kernel/drivers/infiniband
-		RUN echo "After cleaning: " &&  du -h -d 10 -x . | sort -h | tail -n 20
+		RUN rm -rf ./lib/modules/*/kernel/drivers/net/wireless ./lib/modules/*/kernel/sound ./lib/modules/*/kernel/drivers/media
+		RUN rm -rf ./lib/modules/*/kernel/drivers/infiniband
+		RUN echo "After cleaning: " &&  du -h -d 10 -x lib/modules | sort -h | tail -n 20
 		RUN tar -cf /armbian/output/kernel.tar .
 
 		# Create a tarball with the dtbs in usr/lib/linux-image-*
@@ -96,8 +86,7 @@ function calculate_kernel_version_armbian() {
 	ARMBIAN_ORAS_DOCKERFILE
 
 	declare input_hash="" short_input_hash=""
-	# shellcheck disable=SC2002 # keep cat & hash stdin so we can easily add more factors to the hash one day
-	input_hash="$(cat "${ARMBIAN_KERNEL_DOCKERFILE}" | sha256sum - | cut -d ' ' -f 1)"
+	input_hash="$(cat "${ARMBIAN_KERNEL_DOCKERFILE}" "kernel/${dockerfile_helper_filename}" | sha256sum - | cut -d ' ' -f 1)"
 	short_input_hash="${input_hash:0:8}"
 	kernel_oci_version="${ARMBIAN_KERNEL_MAJOR_MINOR_POINT}-${short_input_hash}"
 	armbian_type="${inventory_id#"armbian-"}" # remove the 'armbian-' prefix from inventory_id, but keep the rest. "uefi" has "current/edge" and "arm64/x86" variants.

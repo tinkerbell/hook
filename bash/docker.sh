@@ -78,3 +78,37 @@ function pull_docker_image_from_remote_with_retries() {
 	log error "Failed to pull ${image} after ${retries} retries."
 	exit 1
 }
+
+# Helper script, for common task of installing packages on a Debian Dockerfile
+# always includes curl and downloads ORAS binary too
+# takes the relative directory to write the helper to
+# sets outer scope dockerfile_helper_filename with the name of the file for the Dockerfile (does not include the directory)
+function produce_dockerfile_helper_apt_oras() {
+	declare target_dir="$1"
+	declare helper_name="apt-oras-helper.sh"
+	dockerfile_helper_filename="Dockerfile.autogen.helper.${helper_name}" # this is negated in .dockerignore
+
+	declare fn="${target_dir}${dockerfile_helper_filename}"
+	cat <<- 'DOWNLOAD_HELPER_SCRIPT' > "${fn}"
+		#!/bin/bash
+		set -e
+		declare oras_version="1.2.2" # See https://github.com/oras-project/oras/releases
+		# determine the arch to download from current arch
+		declare oras_arch="unknown"
+		case "$(uname -m)" in
+			"x86_64") oras_arch="amd64" ;;
+			"aarch64" | "arm64") oras_arch="arm64" ;;
+			*) log error "ERROR: ARCH $(uname -m) not supported by ORAS? check https://github.com/oras-project/oras/releases" && exit 1 ;;
+		esac
+		declare oras_down_url="https://github.com/oras-project/oras/releases/download/v${oras_version}/oras_${oras_version}_linux_${oras_arch}.tar.gz"
+		export DEBIAN_FRONTEND=noninteractive
+		apt-get -qq -o "Dpkg::Use-Pty=0" update || apt-get -o "Dpkg::Use-Pty=0" update
+		apt-get -qq install -o "Dpkg::Use-Pty=0" -q -y curl "${@}" || apt-get install -o "Dpkg::Use-Pty=0" -q -y curl "${@}"
+		curl -sL -o /oras.tar.gz ${oras_down_url}
+		tar -xvf /oras.tar.gz -C /usr/local/bin/ oras
+		rm -rf /oras.tar.gz
+		chmod +x /usr/local/bin/oras
+		echo -n "ORAS version: " && oras version
+	DOWNLOAD_HELPER_SCRIPT
+	log debug "Created apt-oras helper script '${fn}'"
+}

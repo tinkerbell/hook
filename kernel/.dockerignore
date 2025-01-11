@@ -3,3 +3,4 @@
 Dockerfile*
 Makefile
 README.md
+!Dockerfile.autogen.helper*

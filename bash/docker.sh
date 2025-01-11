@@ -123,3 +123,70 @@ function produce_dockerfile_helper_apt_oras() {
 	DOWNLOAD_HELPER_SCRIPT
 	log debug "Created apt-oras helper script '${fn}'"
 }
+
+# A huge hack to force the architecture of a Docker image to a specific value.
+# This is required for the LinuxKit kernel images: LK expects them to have the correct arch, despite the
+#  actual contents always being the same. Docker's buildkit tags a locally built image with the host arch.
+# Thus change the host arch to the expected arch in the image's manifests via a dump/reimport.
+function ensure_docker_image_architecture() {
+	declare kernel_oci_image="$1"
+	declare expected_arch="$2"
+
+	# If the host arch is the same as the expected arch, no need to do anything
+	if [[ "$(uname -m)" == "${expected_arch}" ]]; then
+		log info "Host architecture is already ${expected_arch}, no need to rewrite Docker image ${kernel_oci_image}"
+		return 0
+	fi
+
+	log info "Rewriting Docker image ${kernel_oci_image} to architecture ${expected_arch}, wait..."
+
+	# Create a temporary directory, use mktemp
+	declare -g tmpdir
+	tmpdir="$(mktemp -d)"
+	log debug "Created temporary directory: ${tmpdir}"
+
+	# Export the image to a tarball
+	docker save -o "${tmpdir}/original.tar" "${kernel_oci_image}"
+
+	# Untag the hostarch image
+	docker rmi "${kernel_oci_image}"
+
+	# Create a working dir under the tmpdir
+	mkdir -p "${tmpdir}/working"
+
+	# Extract the tarball into the working dir
+	tar -xf "${tmpdir}/original.tar" -C "${tmpdir}/working"
+	log debug "Extracted tarball to ${tmpdir}/working"
+
+	# Remove the original tarball
+	rm -f "${tmpdir}/original.tar"
+
+	declare working_blobs_dir="${tmpdir}/working/blobs/sha256"
+
+	# Find all files under working_blobs_dir which are smaller than 2048 bytes
+	# Use mapfile to create an array of files
+	declare -a small_files
+	mapfile -t small_files < <(find "${working_blobs_dir}" -type f -size -2048c)
+	log debug "Found small blob files: ${small_files[*]}"
+
+	# Replace the architecture in each of the small files
+	for file in "${small_files[@]}"; do
+		log debug "Replacing architecture in ${file}"
+		sed -i "s|\"architecture\":\".....\"|\"architecture\":\"${expected_arch}\"|g" "${file}" # 🤮
+	done
+
+	# Create a new tarball with the modified files
+	tar -cf "${tmpdir}/modified.tar" -C "${tmpdir}/working" .
+	log debug "Created modified tarball: ${tmpdir}/modified.tar"
+
+	# Remove the working directory
+	rm -rf "${tmpdir}/working"
+
+	# Import the modified tarball back into the local cache
+	docker load -i "${tmpdir}/modified.tar"
+
+	# Remove the temporary directory, completely
+	rm -rf "${tmpdir}"
+
+	log info "Rewrote Docker image ${kernel_oci_image} to architecture ${expected_arch}."
+}

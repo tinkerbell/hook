@@ -25,7 +25,6 @@ function calculate_kernel_version_armbian() {
 	ARMBIAN_KERNEL_MAJOR_MINOR_POINT="$(echo -n "${ARMBIAN_KERNEL_VERSION}" | cut -d "-" -f 1)"
 	log info "ARMBIAN_KERNEL_MAJOR_MINOR_POINT: ${ARMBIAN_KERNEL_MAJOR_MINOR_POINT}"
 
-
 	# A helper script, as escaping bash into a RUN command in Dockerfile is a pain; included in input_hash later
 	declare dockerfile_helper_filename="undefined.sh"
 	produce_dockerfile_helper_apt_oras "kernel/" # will create the helper script in kernel/ directory; sets helper_name
@@ -99,8 +98,10 @@ function build_kernel_armbian() {
 	log info "Building armbian kernel from deb-tar at ${ARMBIAN_KERNEL_FULL_ORAS_REF_DEB_TAR}"
 	log info "Will build Dockerfile ${ARMBIAN_KERNEL_DOCKERFILE}"
 
-	# Build the Dockerfile; don't specify platform, our Dockerfile is multiarch, thus you can get build x86 kernels in arm64 hosts and vice-versa
+	# Don't specify platform, our Dockerfile is multiarch, thus you can build x86 kernels in arm64 hosts and vice-versa ...
 	docker buildx build --load "--progress=${DOCKER_BUILDX_PROGRESS_TYPE}" -t "${kernel_oci_image}" -f "${ARMBIAN_KERNEL_DOCKERFILE}" kernel
+	# .. but enforce the target arch for LK in the final image via dump/edit-manifests/reimport trick
+	ensure_docker_image_architecture "${kernel_oci_image}" "${kernel_info['DOCKER_ARCH']}"
 }
 
 function configure_kernel_armbian() {

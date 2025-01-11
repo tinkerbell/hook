@@ -33,7 +33,7 @@ function kernel_build() {
 	log debug "Kernel build method: ${kernel_info[BUILD_FUNC]}"
 	"${kernel_info[BUILD_FUNC]}"
 
-	# Push it to the OCI registry
+	# Push it to the OCI registry; this discards the os/arch information that BuildKit generates
 	if [[ "${DO_PUSH:-"no"}" == "yes" ]]; then
 		log info "Kernel built; pushing to ${kernel_oci_image}"
 		docker push "${kernel_oci_image}"

@@ -91,6 +91,12 @@ case "${first_param}" in
 	lint)
 		download_prepare_shellcheck_bin
 		download_prepare_shellfmt_bin
+		log info "Installing lint as pre-commit hook in git by directly creating a script in .git/hooks/pre-commit"
+		cat <<- PRE_COMMIT_HOOK > .git/hooks/pre-commit
+			#!/usr/bin/env bash
+			bash build.sh lint
+		PRE_COMMIT_HOOK
+		chmod +x .git/hooks/pre-commit
 		run_shellcheck
 		run_shellfmt # this exits with an error if changes are made
 		exit 0

@@ -36,7 +36,7 @@ function calculate_kernel_version_armbian() {
 		FROM debian:stable AS downloader
 		# Call the helper to install curl, oras, and dpkg-dev
 		ADD ./${dockerfile_helper_filename} /apt-oras-helper.sh
-		RUN bash /apt-oras-helper.sh dpkg-dev
+		RUN bash /apt-oras-helper.sh
 
 		FROM downloader AS downloaded
 

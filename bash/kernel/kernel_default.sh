@@ -131,9 +131,8 @@ function build_kernel_default() {
 	common_build_args_kernel_default
 	log info "Will build with: ${build_args[*]}"
 
-	(
-		cd kernel
-		docker buildx build --load "--progress=${DOCKER_BUILDX_PROGRESS_TYPE}" "${build_args[@]}" -t "${kernel_oci_image}" .
-	)
-
+	# Don't specify platform, our Dockerfile is multiarch, thus you can build x86 kernels in arm64 hosts and vice-versa ...
+	docker buildx build --load "--progress=${DOCKER_BUILDX_PROGRESS_TYPE}" "${build_args[@]}" -t "${kernel_oci_image}" -f kernel/Dockerfile kernel
+	# .. but enforce the target arch for LK in the final image via dump/edit-manifests/reimport trick
+	ensure_docker_image_architecture "${kernel_oci_image}" "${kernel_info['DOCKER_ARCH']}"
 }

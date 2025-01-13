@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:146f540f25cd92ec8ff0c5b0c98342a9a95e479e as builder
+FROM linuxkit/alpine:146f540f25cd92ec8ff0c5b0c98342a9a95e479e AS builder
 
 ARG TARGETPLATFORM
 
@@ -29,7 +29,7 @@ RUN cp bin/containerd bin/ctr bin/containerd-shim bin/containerd-shim-runc-v2 /u
 RUN strip /usr/bin/containerd /usr/bin/ctr /usr/bin/containerd-shim /usr/bin/containerd-shim-runc-v2
 RUN mkdir -p /opt/containerd
 
-FROM scratch as containerd-dev
+FROM scratch AS containerd-dev
 ENTRYPOINT []
 WORKDIR /
 COPY --from=builder /usr/bin/containerd /usr/bin/ctr /usr/bin/containerd-shim /usr/bin/containerd-shim-runc-v2 /usr/bin/
@@ -38,7 +38,7 @@ COPY --from=builder /usr/local/bin/nerdctl /usr/bin/
 COPY --from=builder /opt/containerd/ /opt/containerd/
 
 # Dockerfile to build linuxkit/containerd for linuxkit
-FROM linuxkit/alpine:146f540f25cd92ec8ff0c5b0c98342a9a95e479e as alpine
+FROM linuxkit/alpine:146f540f25cd92ec8ff0c5b0c98342a9a95e479e AS alpine
 
 RUN apk add tzdata binutils
 RUN mkdir -p /etc/init.d && ln -s /usr/bin/service /etc/init.d/020-containerd

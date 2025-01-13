@@ -66,7 +66,6 @@ function build_hook_linuxkit_container() {
 	return 0
 }
 
-
 function push_hook_linuxkit_container() {
 	declare container_oci_ref="${1}"
 

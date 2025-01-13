@@ -1,4 +1,4 @@
-FROM debian:stable as kernel-source-unpacked
+FROM debian:stable AS kernel-source-unpacked
 ENV DEBIAN_FRONTEND=noninteractive
 
 # crossbuild-essentials are pretty heavy; here we install for both architecures to maximize Docker layer hit cache rate during development, but only one will be used
@@ -30,7 +30,7 @@ RUN set -x &&  \
     cat linux-${KERNEL_VERSION}.tar | tar --absolute-names -x && mv /linux-${KERNEL_VERSION} /linux
 
 
-FROM kernel-source-unpacked as kernel-with-config
+FROM kernel-source-unpacked AS kernel-with-config
 
 ARG INPUT_DEFCONFIG
 ARG KERNEL_ARCH
@@ -54,7 +54,7 @@ RUN set -x && make "ARCH=${KERNEL_ARCH}" olddefconfig
 #   docker buildx build --load --progress=plain --build-arg KERNEL_VERSION=5.10.212 --build-arg KERNEL_SERIES=5.10.y -t hook-kernel:builder --target kernel-configurator .
 #   docker run -it -v "$(pwd)":/out-config hook-kernel:builder
 # Otherwise, since this stage is not referenced anywhere during normal build, it is completely skipped
-FROM kernel-with-config as kernel-configurator
+FROM kernel-with-config AS kernel-configurator
 VOLUME /host
 
 

@@ -93,6 +93,11 @@ function linuxkit_build() {
 	declare lk_cache_dir="${CACHE_DIR}/linuxkit"
 	mkdir -p "${lk_cache_dir}"
 
+	declare -a lk_debug_args=()
+	if [[ "${DEBUG}" == "yes" ]]; then
+		lk_debug_args+=("--verbose" "2") # 0 = quiet, 1 = info, 2 = debug, 3 = trace.
+	fi
+
 	# if LINUXKIT_ISO is set, build an ISO with the kernel and initramfs
 	if [[ -n "${LINUXKIT_ISO}" ]]; then
 		declare lk_iso_output_dir="out"
@@ -109,7 +114,7 @@ function linuxkit_build() {
 		)
 
 		log info "Building Hook ISO with kernel ${inventory_id} using linuxkit: ${lk_iso_args[*]}"
-		"${linuxkit_bin}" build "${lk_iso_args[@]}"
+		"${linuxkit_bin}" build "${lk_debug_args[@]}" "${lk_iso_args[@]}"
 		return 0
 	fi
 
@@ -124,11 +129,11 @@ function linuxkit_build() {
 
 	if [[ "${OUTPUT_TARBALL_FILELIST:-"no"}" == "yes" ]]; then
 		log info "OUTPUT_TARBALL_FILELIST=yes; Building Hook (tar/filelist) with kernel ${inventory_id} using linuxkit: ${lk_args[*]}"
-		"${linuxkit_bin}" build "--format" "tar" "${lk_args[@]}"
+		"${linuxkit_bin}" build "--format" "tar" "${lk_debug_args[@]}" "${lk_args[@]}"
 	fi
 
 	log info "Building Hook with kernel ${inventory_id} using linuxkit: ${lk_args[*]}"
-	"${linuxkit_bin}" build "--format" "kernel+initrd" "${lk_args[@]}"
+	"${linuxkit_bin}" build "--format" "kernel+initrd" "${lk_debug_args[@]}" "${lk_args[@]}"
 
 	declare initramfs_path="${lk_output_dir}/hook-initrd.img"
 	# initramfs_path is a gzipped file. obtain the uncompressed byte size, without decompressing it

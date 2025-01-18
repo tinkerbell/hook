@@ -95,20 +95,8 @@ function download_prepare_shellfmt_bin() {
 }
 
 function run_shellcheck() {
-	declare -a params=() excludes=()
-
-	excludes+=(
-		#"SC2034" # "appears unused" -- bad, but no-one will die of this
-	)
-
-	params+=(--check-sourced --color=always --external-sources --format=tty --shell=bash)
-
-	# --severity=SEVERITY        Minimum severity of errors to consider (error, warning, info, style)
-	params+=("--severity=style") # warning is the default
-
-	for exclude in "${excludes[@]}"; do
-		params+=(--exclude="${exclude}")
-	done
+	declare -a params=()
+	params+=(--check-sourced --color=always --external-sources --format=tty --shell=bash --severity=style) # warning is the default
 
 	log info "Running shellcheck ${SHELLCHECK_ACTUAL_VERSION} against 'build.sh', please wait..."
 	log debug "All shellcheck params: " "${params[@]}"

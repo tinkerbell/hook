@@ -194,6 +194,9 @@ function json_matrix_find_runner() {
 	declare matrix_type="${1}"
 	declare docker_arch="${2}"
 	declare runner="ubuntu-latest"
+	if [[ "${docker_arch}" == "arm64" ]]; then
+		runner="ubuntu-24.04-arm"
+	fi
 	#log debug "Finding runner for matrix type '${matrix_type}' and docker arch '${docker_arch}'"
 	declare -a vars_to_try=("CI_RUNNER_${matrix_type^^}_${docker_arch^^}" "CI_RUNNER_${matrix_type^^}" "CI_RUNNER_${docker_arch^^}" "CI_RUNNER")
 	for var in "${vars_to_try[@]}"; do

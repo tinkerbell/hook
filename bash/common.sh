@@ -34,6 +34,11 @@ function install_dependencies() {
 		brew_pkgs+=("pigz")
 	}
 
+	command -v pixz > /dev/null || {
+		debian_pkgs+=("pixz")
+		brew_pkgs+=("pixz")
+	}
+
 	command -v envsubst > /dev/null || {
 		debian_pkgs+=("gettext-base")
 		brew_pkgs+=("gettext")

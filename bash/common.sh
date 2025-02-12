@@ -49,7 +49,7 @@ function install_dependencies() {
 	if [[ ${#debian_pkgs[@]} -gt 0 ]]; then
 		# If running on Debian or Ubuntu...
 		if [[ -f /etc/debian_version ]]; then
-			log warn "Installing apt dependencies: ${debian_pkgs[*]}"
+			log info "Installing apt dependencies: ${debian_pkgs[*]}"
 			sudo DEBIAN_FRONTEND=noninteractive apt -o "Dpkg::Use-Pty=0" -y update
 			sudo DEBIAN_FRONTEND=noninteractive apt -o "Dpkg::Use-Pty=0" -y install "${debian_pkgs[@]}"
 		elif [[ "$(uname)" == "Darwin" ]]; then

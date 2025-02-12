@@ -73,7 +73,7 @@ function resolve_latest_kernel_version_lts() { # Produces KERNEL_POINT_RELEASE
 		log debug "Found disk cached kernel-releases.json"
 		# if the cache is older than 2 hours, refresh it
 		if [[ "$(find "${CACHE_DIR}/kernel-releases.json" -mmin +120)" ]]; then
-			log warn "Cached kernel-releases.json is older than 2 hours, will refresh..."
+			log info "Cached kernel-releases.json is older than 2 hours, will refresh..."
 		else
 			log info "Using cached kernel-releases.json"
 			cache_valid=1

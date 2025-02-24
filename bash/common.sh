@@ -20,6 +20,20 @@ function log() {
 	echo -e "${emoji} ${ansi_reset}[${color}${level}${ansi_reset}] ${color}${*}${ansi_reset}" >&2
 }
 
+# Helper for debugging directory trees;
+function log_tree() {
+	declare directory="${1}"
+	shift
+	declare level="${1}"
+	[[ "${level}" == "debug" && "${DEBUG}" != "yes" ]] && return # Skip debugs unless DEBUG=yes is set in the environment
+	log "${@}" "-- directory ${directory}:"
+	if command -v tree > /dev/null; then
+		tree "${directory}"
+	else
+		log "${level}" "'tree' utility not installed; install it to see directory structure in logs."
+	fi
+}
+
 function install_dependencies() {
 	declare -a debian_pkgs=()
 	declare -a brew_pkgs=()

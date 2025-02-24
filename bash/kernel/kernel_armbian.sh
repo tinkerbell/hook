@@ -2,6 +2,12 @@
 
 declare -g ARMBIAN_BASE_ORAS_REF="${ARMBIAN_BASE_ORAS_REF:-"ghcr.io/armbian/os"}"
 
+function obtain_kernel_output_id_armbian() {
+	: "${inventory_id:?"ERROR: inventory_id is not defined"}"
+	# output ID is just the inventory_id
+	declare -g OUTPUT_ID="${inventory_id}"
+}
+
 function calculate_kernel_version_armbian() {
 	: "${inventory_id:?"ERROR: inventory_id is not defined"}"
 	log info "Calculating version of Armbian kernel..."
@@ -17,8 +23,7 @@ function calculate_kernel_version_armbian() {
 		log info "Using most recent Armbian kernel tag: ${ARMBIAN_KERNEL_VERSION}"
 	fi
 
-	# output ID is just the inventory_id
-	declare -g OUTPUT_ID="${inventory_id}"
+	obtain_kernel_output_id_armbian
 
 	declare -g ARMBIAN_KERNEL_FULL_ORAS_REF_DEB_TAR="${ARMBIAN_KERNEL_BASE_ORAS_REF}:${ARMBIAN_KERNEL_VERSION}"
 	declare -g ARMBIAN_KERNEL_MAJOR_MINOR_POINT="unknown"

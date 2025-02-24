@@ -2,18 +2,8 @@
 
 set -e
 
-function calculate_kernel_version_default() {
-	# Make sure inventory_id is defined or exit with an error; using a one liner
+function obtain_kernel_output_id_default() {
 	: "${inventory_id:?"ERROR: inventory_id is not defined"}"
-	log debug "Starting calculate_kernel_version_default for inventory_id='${inventory_id}'"
-
-	# Calculate the input DEFCONFIG
-	declare -g INPUT_DEFCONFIG="${KCONFIG}-${KERNEL_MAJOR}.${KERNEL_MINOR}.y-${ARCH}"
-	if [[ ! -f "kernel/configs/${INPUT_DEFCONFIG}" ]]; then
-		log error "kernel/configs/${INPUT_DEFCONFIG} does not exist, check inputs/envs"
-		exit 1
-	fi
-
 	# The default kernel output id is just the arch (for compatibility with the old hook)
 	# One can override with FORCE_OUTPUT_ID, which will be prepended to ARCH.
 	# If that is not set, and KCONFIG != generic, an output will be generated with KCONFIG, MAJOR, MINOR, ARCH.
@@ -26,6 +16,21 @@ function calculate_kernel_version_default() {
 	elif [[ -n "${USE_KERNEL_ID}" ]]; then
 		OUTPUT_ID="${inventory_id}"
 	fi
+}
+
+function calculate_kernel_version_default() {
+	# Make sure inventory_id is defined or exit with an error; using a one liner
+	: "${inventory_id:?"ERROR: inventory_id is not defined"}"
+	log debug "Starting calculate_kernel_version_default for inventory_id='${inventory_id}'"
+
+	# Calculate the input DEFCONFIG
+	declare -g INPUT_DEFCONFIG="${KCONFIG}-${KERNEL_MAJOR}.${KERNEL_MINOR}.y-${ARCH}"
+	if [[ ! -f "kernel/configs/${INPUT_DEFCONFIG}" ]]; then
+		log error "kernel/configs/${INPUT_DEFCONFIG} does not exist, check inputs/envs"
+		exit 1
+	fi
+
+	obtain_kernel_output_id_default # Sets OUTPUT_ID
 
 	# Calculate the KERNEL_ARCH from ARCH; also what is the cross-compiler package needed for the arch
 	declare -g KERNEL_ARCH="" KERNEL_CROSS_COMPILE_PKGS="" KERNEL_OUTPUT_IMAGE=""

@@ -13,6 +13,14 @@ function obtain_kernel_data_from_id() {
 	return 0
 }
 
+function kernel_obtain_output_id() {
+	log debug "Running obtain output id method: ${kernel_info[OUTPUT_ID_FUNC]}"
+	"${kernel_info[OUTPUT_ID_FUNC]}"
+
+	return 0
+
+}
+
 function kernel_calculate_version() {
 	log debug "Running calculate version method: ${kernel_info[VERSION_FUNC]}"
 	"${kernel_info[VERSION_FUNC]}"
@@ -106,6 +114,7 @@ function get_kernel_info_dict() {
 	# Post process
 	kernel_info['BUILD_FUNC']="build_kernel_${kernel_info['METHOD']}"
 	kernel_info['VERSION_FUNC']="calculate_kernel_version_${kernel_info['METHOD']}"
+	kernel_info['OUTPUT_ID_FUNC']="obtain_kernel_output_id_${kernel_info['METHOD']}"
 	kernel_info['CONFIG_FUNC']="configure_kernel_${kernel_info['METHOD']}"
 
 	# Defaults for optional settings

@@ -31,7 +31,7 @@ function produce_default_kernel_inventory() {
 
 	define_id "hook-default-arm64" METHOD='default' ARCH='aarch64' TAG='standard' SUPPORTS_ISO='yes' \
 		KERNEL_MAJOR='5' KERNEL_MINOR='10' KCONFIG='generic'
-	add_bootable_id "grub-arm64" HANDLER='grub' SERIAL_CONSOLE='ttyAMA0' DTB='yes' TAG='standard'
+	add_bootable_id "grub-arm64" HANDLER='grub' SERIAL_CONSOLE='ttyAMA0' TAG='standard'
 
 	## A 'peg' is not really a 'hook': for development purposes; testing new LK version and simpler LK configurations, using the default kernel
 	define_id "peg-default-amd64" METHOD='default' ARCH='x86_64' TAG='dev' \
@@ -45,7 +45,7 @@ function produce_default_kernel_inventory() {
 
 	define_id "hook-latest-lts-arm64" METHOD='default' ARCH='aarch64' TAG='lts' SUPPORTS_ISO='yes' \
 		KERNEL_MAJOR='6' KERNEL_MINOR='6' KCONFIG='generic' FORCE_OUTPUT_ID='latest-lts'
-	add_bootable_id "grub-latest-lts-arm64" SERIAL_CONSOLE='ttyAMA0' HANDLER='grub' DTB='yes' TAG='lts'
+	add_bootable_id "grub-latest-lts-arm64" SERIAL_CONSOLE='ttyAMA0' HANDLER='grub' TAG='lts'
 }
 
 ##### METHOD=armbian; Foreign kernels, taken from Armbian's OCI repos. Those are "exotic" kernels for certain SoC's.

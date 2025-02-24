@@ -16,6 +16,7 @@ source bash/kernel.sh
 source bash/kernel/kernel_default.sh
 source bash/kernel/kernel_armbian.sh
 source bash/bootable-media.sh
+source bash/bootable/grub.sh
 source bash/bootable/armbian-u-boot.sh
 source bash/bootable/rpi.sh
 source bash/bootable/fat32-image.sh

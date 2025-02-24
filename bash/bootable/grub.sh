@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
 function list_bootable_grub() {
+	: "${bootable_info['BOOTABLE_ID']:?"bootable_info['BOOTABLE_ID'] is unset"}"
 	declare -g -A bootable_boards=()
-	bootable_boards["generic"]="NOT=used" # A single, generic "board" for all grub bootables
+	declare board_name="${bootable_info['BOOTABLE_ID']}-generic"
+	bootable_boards["${board_name}"]="NOT=used" # A single, generic "board" for all grub bootables
 }
 
 function build_bootable_grub() {

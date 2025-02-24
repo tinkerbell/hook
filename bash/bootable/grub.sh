@@ -64,6 +64,15 @@ function build_bootable_grub() {
 
 	download_grub_binaries_from_linuxkit_docker_images "${fat32_efi_dir}" "${grub_arch}" "${grub_linuxkit_image}"
 
+	cat <<- GRUB_CFG > "${fat32_efi_dir}/grub.cfg"
+		set timeout=0
+		set gfxpayload=text
+		menuentry 'Tinkerbell Hook' {
+			linux /vmlinuz ${kernel_command_line}
+			initrd /initrd.img
+		}
+	GRUB_CFG
+
 	# Show the state
 	du -h -d 1 "${bootable_base_dir}"
 	tree "${bootable_base_dir}"

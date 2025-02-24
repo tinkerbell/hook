@@ -75,7 +75,7 @@ function build_bootable_grub() {
 
 	# Show the state
 	du -h -d 1 "${bootable_base_dir}"
-	tree "${bootable_base_dir}"
+	log_tree "${bootable_base_dir}" "debug" "State of the bootable directory"
 
 	# Use a Dockerfile to assemble a GPT image, with a single FAT32 partition, containing the files in the fat32-root directory
 	# This is common across all GPT-based bootable media; the only difference is the ESP flag, which is set for UEFI bootable media.
@@ -112,5 +112,5 @@ function download_grub_binaries_from_linuxkit_docker_images() {
 	docker buildx build --output "type=local,dest=${output_dir}" "--progress=${DOCKER_BUILDX_PROGRESS_TYPE}" -f "${grub_grabber_dockerfile}" bootable
 
 	log info "Done, GRUB binaries are in ${output_dir}"
-	tree "${output_dir}"
+	log_tree "${output_dir}" "debug" "State of the GRUB binaries directory"
 }

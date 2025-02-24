@@ -41,12 +41,13 @@ function build_bootable_rpi_firmware() {
 	# Handle DTBs for rpi
 	mkdir -p "${fat32_root_dir}/dtb"
 	tar -C "${fat32_root_dir}/dtb" --strip-components=1 -xzf "out/hook/dtbs-${hook_id}.tar.gz"
-	tree "${fat32_root_dir}"
+	log_tree "${fat32_root_dir}" "debug" "State of the FAT32 directory pre-moving DTBs"
 
 	# RPi: put DTBs directly in the fat32-root directory; overlays go into a subdirectory
 	mv -v "${fat32_root_dir}/dtb/overlays" "${fat32_root_dir}/overlays"
 	mv -v "${fat32_root_dir}/dtb/broadcom"/*.dtb "${fat32_root_dir}/"
 	rm -rf "${fat32_root_dir}/dtb"
+	log_tree "${fat32_root_dir}" "debug" "State of the FAT32 directory post-moving DTBs"
 
 	# Write the Raspberry Pi firmware files
 	rpi_write_binary_firmware_from_rpi_foundation "${fat32_root_dir}"

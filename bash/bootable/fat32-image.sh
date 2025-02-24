@@ -69,7 +69,7 @@ function create_image_fat32_root_from_dir() {
 		FROM debian:stable AS builder
 		# Call the helper to install curl, oras, parted, and mtools
 		ADD ./${dockerfile_helper_filename} /apt-oras-helper.sh
-		RUN bash /apt-oras-helper.sh parted mtools tree u-boot-tools gdisk
+		RUN bash /apt-oras-helper.sh parted mtools u-boot-tools gdisk
 		ADD ./${fat32_root_dir} /work/input
 		ADD ./Dockerfile.autogen.helper.mkfat32.sh /Dockerfile.autogen.helper.mkfat32.sh
 		WORKDIR /output

@@ -41,8 +41,11 @@ function produce_default_kernel_inventory() {
 	## development purposes: trying out kernel 6.6.y
 	define_id "hook-latest-lts-amd64" METHOD='default' ARCH='x86_64' TAG='lts' SUPPORTS_ISO='yes' \
 		KERNEL_MAJOR='6' KERNEL_MINOR='6' KCONFIG='generic' FORCE_OUTPUT_ID='latest-lts'
+	add_bootable_id "grub-latest-lts-amd64" HANDLER='grub' TAG='lts'
+
 	define_id "hook-latest-lts-arm64" METHOD='default' ARCH='aarch64' TAG='lts' SUPPORTS_ISO='yes' \
 		KERNEL_MAJOR='6' KERNEL_MINOR='6' KCONFIG='generic' FORCE_OUTPUT_ID='latest-lts'
+	add_bootable_id "grub-latest-lts-arm64" HANDLER='grub' DTB='yes' TAG='lts'
 }
 
 ##### METHOD=armbian; Foreign kernels, taken from Armbian's OCI repos. Those are "exotic" kernels for certain SoC's.

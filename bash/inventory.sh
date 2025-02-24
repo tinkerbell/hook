@@ -27,8 +27,11 @@ function produce_default_kernel_inventory() {
 	## Hook default kernel, source code stored in `kernel` dir in this repo -- currently 5.10.y
 	define_id "hook-default-amd64" METHOD='default' ARCH='x86_64' TAG='standard' SUPPORTS_ISO='yes' \
 		KERNEL_MAJOR='5' KERNEL_MINOR='10' KCONFIG='generic'
+	add_bootable_id "grub-amd64" HANDLER='grub' TAG='standard'
+
 	define_id "hook-default-arm64" METHOD='default' ARCH='aarch64' TAG='standard' SUPPORTS_ISO='yes' \
 		KERNEL_MAJOR='5' KERNEL_MINOR='10' KCONFIG='generic'
+	add_bootable_id "grub-arm64" HANDLER='grub' DTB='yes' TAG='standard'
 
 	## A 'peg' is not really a 'hook': for development purposes; testing new LK version and simpler LK configurations, using the default kernel
 	define_id "peg-default-amd64" METHOD='default' ARCH='x86_64' TAG='dev' \

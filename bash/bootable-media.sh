@@ -12,8 +12,11 @@ function build_bootable_media() {
 
 	# Get the kernel info from the bootable_info INVENTORY_ID
 	declare -g -A kernel_info=()
-	get_kernel_info_dict "${bootable_info['INVENTORY_ID']}"
+	declare -g inventory_id="${bootable_info['INVENTORY_ID']}"
+	get_kernel_info_dict "${inventory_id}"
 	log info "kernel_info: $(declare -p kernel_info)"
+	set_kernel_vars_from_info_dict
+	kernel_obtain_output_id # sets OUTPUT_ID
 
 	# A few scenarios we want to support:
 	# A) UEFI bootable media; GPT + ESP, FAT32, GRUB, kernel/initrd, grub.conf + some kernel command line.

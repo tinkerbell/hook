@@ -77,7 +77,9 @@ function produce_armbian_kernel_inventory() {
 	###  Armbian mainline Generic UEFI kernels, for EFI capable machines might use those:
 	## Armbian generic edge UEFI kernel for arm64
 	define_id "armbian-uefi-arm64-edge" METHOD='armbian' ARCH='aarch64' TAG='standard armbian-uefi' ARMBIAN_KERNEL_ARTIFACT='kernel-arm64-edge'
+	add_bootable_id "grub-armbian-uefi-arm64" HANDLER='grub' DTB='yes' TAG='standard'
 
 	## Armbian generic edge UEFI kernel (Armbian calls it x86)
 	define_id "armbian-uefi-x86-edge" METHOD='armbian' ARCH='x86_64' TAG='standard armbian-uefi' ARMBIAN_KERNEL_ARTIFACT='kernel-x86-edge'
+	add_bootable_id "grub-armbian-uefi-amd64" HANDLER='grub' TAG='standard'
 }

@@ -27,11 +27,11 @@ function produce_default_kernel_inventory() {
 	## Hook default kernel, source code stored in `kernel` dir in this repo -- currently 5.10.y
 	define_id "hook-default-amd64" METHOD='default' ARCH='x86_64' TAG='standard' SUPPORTS_ISO='yes' \
 		KERNEL_MAJOR='5' KERNEL_MINOR='10' KCONFIG='generic'
-	add_bootable_id "grub-amd64" HANDLER='grub' TAG='standard'
+	add_bootable_id "grub-amd64" HANDLER='grub' SERIAL_CONSOLE='ttyS0' TAG='standard'
 
 	define_id "hook-default-arm64" METHOD='default' ARCH='aarch64' TAG='standard' SUPPORTS_ISO='yes' \
 		KERNEL_MAJOR='5' KERNEL_MINOR='10' KCONFIG='generic'
-	add_bootable_id "grub-arm64" HANDLER='grub' DTB='yes' TAG='standard'
+	add_bootable_id "grub-arm64" HANDLER='grub' SERIAL_CONSOLE='ttyAMA0' DTB='yes' TAG='standard'
 
 	## A 'peg' is not really a 'hook': for development purposes; testing new LK version and simpler LK configurations, using the default kernel
 	define_id "peg-default-amd64" METHOD='default' ARCH='x86_64' TAG='dev' \
@@ -41,11 +41,11 @@ function produce_default_kernel_inventory() {
 	## development purposes: trying out kernel 6.6.y
 	define_id "hook-latest-lts-amd64" METHOD='default' ARCH='x86_64' TAG='lts' SUPPORTS_ISO='yes' \
 		KERNEL_MAJOR='6' KERNEL_MINOR='6' KCONFIG='generic' FORCE_OUTPUT_ID='latest-lts'
-	add_bootable_id "grub-latest-lts-amd64" HANDLER='grub' TAG='lts'
+	add_bootable_id "grub-latest-lts-amd64" SERIAL_CONSOLE='ttyS0' HANDLER='grub' TAG='lts'
 
 	define_id "hook-latest-lts-arm64" METHOD='default' ARCH='aarch64' TAG='lts' SUPPORTS_ISO='yes' \
 		KERNEL_MAJOR='6' KERNEL_MINOR='6' KCONFIG='generic' FORCE_OUTPUT_ID='latest-lts'
-	add_bootable_id "grub-latest-lts-arm64" HANDLER='grub' DTB='yes' TAG='lts'
+	add_bootable_id "grub-latest-lts-arm64" SERIAL_CONSOLE='ttyAMA0' HANDLER='grub' DTB='yes' TAG='lts'
 }
 
 ##### METHOD=armbian; Foreign kernels, taken from Armbian's OCI repos. Those are "exotic" kernels for certain SoC's.
@@ -77,9 +77,9 @@ function produce_armbian_kernel_inventory() {
 	###  Armbian mainline Generic UEFI kernels, for EFI capable machines might use those:
 	## Armbian generic edge UEFI kernel for arm64
 	define_id "armbian-uefi-arm64-edge" METHOD='armbian' ARCH='aarch64' TAG='standard armbian-uefi' ARMBIAN_KERNEL_ARTIFACT='kernel-arm64-edge'
-	add_bootable_id "grub-armbian-uefi-arm64" HANDLER='grub' DTB='yes' TAG='standard'
+	add_bootable_id "grub-armbian-uefi-arm64" HANDLER='grub' SERIAL_CONSOLE='ttyAMA0' DTB='yes' TAG='standard'
 
 	## Armbian generic edge UEFI kernel (Armbian calls it x86)
 	define_id "armbian-uefi-x86-edge" METHOD='armbian' ARCH='x86_64' TAG='standard armbian-uefi' ARMBIAN_KERNEL_ARTIFACT='kernel-x86-edge'
-	add_bootable_id "grub-armbian-uefi-amd64" HANDLER='grub' TAG='standard'
+	add_bootable_id "grub-armbian-uefi-amd64" HANDLER='grub' SERIAL_CONSOLE='ttyS0' TAG='standard'
 }

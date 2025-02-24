@@ -14,7 +14,7 @@ function build_bootable_grub() {
 
 	declare hook_id="${bootable_info['INVENTORY_ID']}"
 	declare bootable_img="bootable_grub_${OUTPUT_ID}.img"
-	declare kernel_command_line="console=ttyS0" # @TODO: common stuff for tink, etc
+	declare kernel_command_line="console=${bootable_info['SERIAL_CONSOLE']}" # @TODO: common stuff for tink, etc
 
 	declare has_dtbs="${bootable_info['DTB']}"
 	[[ -z "${has_dtbs}" ]] && has_dtbs="no"

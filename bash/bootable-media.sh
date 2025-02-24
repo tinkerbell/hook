@@ -2,7 +2,6 @@ function build_bootable_media() {
 	log info "would build build_bootable_media: '${*}'"
 
 	declare -r -g bootable_id="${1}" # read-only variable from here
-	#obtain_bootable_data_from_id "${bootable_id}" # Gather the information about the inventory_id now; this will exit if the inventory_id is not found
 
 	declare -g -A bootable_info=()
 	get_bootable_info_dict "${bootable_id}"

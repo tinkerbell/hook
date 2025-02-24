@@ -164,6 +164,8 @@ function add_bootable_id() {
 		dict["INVENTORY_ID"]="${last_defined_id}"
 	fi
 
+	dict["BOOTABLE_ID"]="${id}"
+
 	# Sanity checking: METHOD, ARCH and TAG are required.
 	if [[ -z "${dict['HANDLER']}" || -z "${dict['TAG']}" ]]; then
 		log error "Bootable definition for id=${id} is missing HANDLER or TAG"

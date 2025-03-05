@@ -111,5 +111,49 @@ function define_id() {
 	# eval it into the inventory_dict dict
 	eval "inventory_dict[${id}]='${str_dict}'"
 
+	# declare a global with the id of the last-added kernel, for add_bootable_id's convenience
+	declare -g last_defined_id="${id}"
+
+	return 0
+}
+
+function add_bootable_id() {
+	declare id="${1}"
+	shift
+
+	declare -A dict=()
+	declare arg
+	for arg in "$@"; do
+		if [[ "${arg}" == *=* ]]; then # contains an equal sign. it's a param.
+			local param_name param_value
+			param_name=${arg%%=*}
+			param_value=${arg##*=}
+			dict["${param_name}"]="${param_value}" # For current run.
+		else
+			log error "Unknown argument to define, id=${id}: '${arg}'"
+			exit 10
+		fi
+	done
+
+	# if dict["INVENTORY_ID"] is not defined, set it to the last defined id
+	if [[ -z "${dict['INVENTORY_ID']}" ]]; then
+		dict["INVENTORY_ID"]="${last_defined_id}"
+	fi
+
+	# Sanity checking: METHOD, ARCH and TAG are required.
+	if [[ -z "${dict['HANDLER']}" || -z "${dict['TAG']}" ]]; then
+		log error "Bootable definition for id=${id} is missing HANDLER or TAG"
+		exit 11
+	fi
+
+	declare str_dict
+	str_dict="$(declare -p dict)"                  # bash high sorcery; get a string representation of the dict
+	str_dict="${str_dict#*"dict=("}"               # remove 'declare -A dict=(' from the string
+	str_dict="${str_dict%?}"                       # remove the last character, which is a ")"
+	log debug "str dict for id=${id}: ${str_dict}" # this _will_ go wrong, so add a debug
+
+	# eval it into the inventory_dict dict
+	eval "bootable_inventory_dict[${id}]='${str_dict}'"
+
 	return 0
 }

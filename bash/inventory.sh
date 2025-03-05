@@ -53,16 +53,20 @@ function produce_armbian_kernel_inventory() {
 	### SBC-oriented:
 	## Armbian meson64 (Amlogic) edge Khadas VIM3/3L, Radxa Zero/2, LibreComputer Potatos, and many more
 	define_id "armbian-meson64-edge" METHOD='armbian' ARCH='aarch64' TAG='armbian-sbc' ARMBIAN_KERNEL_ARTIFACT='kernel-meson64-edge'
+	add_bootable_id "uboot-aml" HANDLER='armbian_uboot_amlogic' TAG='armbian-sbc' UBOOT_TYPE='extlinux' CONSOLE_EXTRA_ARGS=',115200' # all meson64, mainline kernel and u-boot, uses extlinux to boot
 
 	## Armbian bcm2711 (Broadcom) current, from RaspberryPi Foundation with many CNCF-landscape fixes and patches; for the RaspberryPi 3b+/4b/5
 	define_id "armbian-bcm2711-current" METHOD='armbian' ARCH='aarch64' TAG='armbian-sbc' ARMBIAN_KERNEL_ARTIFACT='kernel-bcm2711-current'
+	add_bootable_id "rpi" HANDLER='rpi_firmware' TAG='armbian-sbc'
 
 	## Armbian rockchip64 (Rockchip) edge, for many rk356x/3399 SoCs. As of late December 2024, also for rk3588.
 	define_id "armbian-rockchip64-edge" METHOD='armbian' ARCH='aarch64' TAG='armbian-sbc' ARMBIAN_KERNEL_ARTIFACT='kernel-rockchip64-edge'
+	add_bootable_id "uboot-rk" HANDLER='armbian_uboot_rockchip' TAG='armbian-sbc' UBOOT_TYPE='extlinux' CONSOLE_EXTRA_ARGS=',1500000' # rk3588, mainline u-boot, uses extlinux to boot
 
 	## Armbian rk35xx (Rockchip) vendor, for rk3566, rk3568, rk3588, rk3588s SoCs -- 6.1-rkr4.1 - BSP / vendor kernel, roughly equivalent to Android's 6.1.84
 	# Use with edk2 (v0.9.1+) or mainline u-boot + EFI: matches the DT included in https://github.com/edk2-porting/edk2-rk3588 _after_ v0.9.1
 	define_id "armbian-rk35xx-vendor" METHOD='armbian' ARCH='aarch64' TAG='armbian-sbc' ARMBIAN_KERNEL_ARTIFACT='kernel-rk35xx-vendor'
+	add_bootable_id "uboot-rk35xx-vendor" HANDLER='armbian_uboot_rockchip_vendor' TAG='armbian-sbc' CONSOLE_EXTRA_ARGS=',1500000'
 
 	###  Armbian mainline Generic UEFI kernels, for EFI capable machines might use those:
 	## Armbian generic edge UEFI kernel for arm64

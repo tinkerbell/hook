@@ -118,6 +118,7 @@ case "${first_param}" in
 		;;
 
 	bootable-media | bootable | media)
+		install_dependencies "bootable-media"             # bootable's need more dependencies (pixz, pv)
 		build_bootable_media "${CLI_NON_PARAM_ARGS[@]:1}" # this handles its own arguments, namely the bootable_id
 		exit 0
 		;;

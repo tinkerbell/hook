@@ -35,6 +35,8 @@ function log_tree() {
 }
 
 function install_dependencies() {
+	declare extra="${1}"
+
 	declare -a debian_pkgs=()
 	declare -a brew_pkgs=()
 
@@ -48,20 +50,22 @@ function install_dependencies() {
 		brew_pkgs+=("pigz")
 	}
 
-	command -v pixz > /dev/null || {
-		debian_pkgs+=("pixz")
-		brew_pkgs+=("pixz")
-	}
-
-	command -v pv > /dev/null || {
-		debian_pkgs+=("pv")
-		brew_pkgs+=("pv")
-	}
-
 	command -v envsubst > /dev/null || {
 		debian_pkgs+=("gettext-base")
 		brew_pkgs+=("gettext")
 	}
+
+	if [[ "${extra}" == "bootable-media" ]]; then
+		command -v pixz > /dev/null || {
+			debian_pkgs+=("pixz")
+			brew_pkgs+=("pixz")
+		}
+
+		command -v pv > /dev/null || {
+			debian_pkgs+=("pv")
+			brew_pkgs+=("pv")
+		}
+	fi
 
 	if [[ "$(uname)" == "Darwin" ]]; then
 		command -v gtar > /dev/null || brew_pkgs+=("gnu-tar")
@@ -91,11 +95,13 @@ function install_dependencies() {
 			brew install "${brew_pkgs[@]}"
 		fi
 
-		# Re-export PATH with the gnu-version of coreutils, tar, and sed
-		declare brew_prefix
-		brew_prefix="$(brew --prefix)"
-		export PATH="${brew_prefix}/opt/gnu-sed/libexec/gnubin:${brew_prefix}/opt/gnu-tar/libexec/gnubin:${brew_prefix}/opt/coreutils/libexec/gnubin:${PATH}"
-		log debug "Darwin; PATH is now: ${PATH}"
+		if [[ "${extra}" == "" ]]; then # Do not to this if extra dependencies are being installed
+			# Re-export PATH with the gnu-version of coreutils, tar, and sed
+			declare brew_prefix
+			brew_prefix="$(brew --prefix)"
+			export PATH="${brew_prefix}/opt/gnu-sed/libexec/gnubin:${brew_prefix}/opt/gnu-tar/libexec/gnubin:${brew_prefix}/opt/coreutils/libexec/gnubin:${PATH}"
+			log debug "Darwin; PATH is now: ${PATH}"
+		fi
 	fi
 
 	return 0

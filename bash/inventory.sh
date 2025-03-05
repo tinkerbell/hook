@@ -2,6 +2,7 @@
 
 function produce_kernels_flavours_inventory() {
 	declare -g -A inventory_dict=()
+	declare -g -A bootable_inventory_dict=()
 
 	produce_default_kernel_inventory
 	produce_armbian_kernel_inventory
@@ -13,8 +14,10 @@ function produce_kernels_flavours_inventory() {
 	fi
 
 	# extract keys & make readonly
-	declare -g -a -r inventory_ids=("${!inventory_dict[@]}") # extract the _keys_ from the inventory_ids dict
-	declare -g -A -r inventory_dict                          # make kernels_data dict readonly
+	declare -g -a -r inventory_ids=("${!inventory_dict[@]}")                   # extract the _keys_ from the inventory_ids dict
+	declare -g -A -r inventory_dict                                            # make kernels_data dict readonly
+	declare -g -a -r bootable_inventory_ids=("${!bootable_inventory_dict[@]}") # extract the _keys_ from the inventory_ids dict
+	declare -g -A -r bootable_inventory_dict                                   # make kernels_data dict readonly
 
 	return 0
 }

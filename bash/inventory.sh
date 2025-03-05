@@ -3,6 +3,23 @@
 function produce_kernels_flavours_inventory() {
 	declare -g -A inventory_dict=()
 
+	produce_default_kernel_inventory
+	produce_armbian_kernel_inventory
+
+	# if a function `produce_custom_kernel_inventory` exists, call it.
+	if type -t produce_custom_kernel_inventory &> /dev/null; then
+		log info "Custom kernel inventory function found, calling it."
+		produce_custom_kernel_inventory
+	fi
+
+	# extract keys & make readonly
+	declare -g -a -r inventory_ids=("${!inventory_dict[@]}") # extract the _keys_ from the inventory_ids dict
+	declare -g -A -r inventory_dict                          # make kernels_data dict readonly
+
+	return 0
+}
+
+function produce_default_kernel_inventory() {
 	##### METHOD=default; Hook's own kernel, in kernel/ directory
 	## Hook default kernel, source code stored in `kernel` dir in this repo -- currently 5.10.y
 	define_id "hook-default-amd64" METHOD='default' ARCH='x86_64' TAG='standard' SUPPORTS_ISO='yes' \
@@ -20,15 +37,16 @@ function produce_kernels_flavours_inventory() {
 		KERNEL_MAJOR='6' KERNEL_MINOR='6' KCONFIG='generic' FORCE_OUTPUT_ID='latest-lts'
 	define_id "hook-latest-lts-arm64" METHOD='default' ARCH='aarch64' TAG='lts' SUPPORTS_ISO='yes' \
 		KERNEL_MAJOR='6' KERNEL_MINOR='6' KCONFIG='generic' FORCE_OUTPUT_ID='latest-lts'
+}
 
-	##### METHOD=armbian; Foreign kernels, taken from Armbian's OCI repos. Those are "exotic" kernels for certain SoC's.
-	#                    edge = (release candidates or stable but rarely LTS, more aggressive patching)
-	#                    current = (LTS kernels, stable-ish patching)
-	#                    vendor/legacy = (vendor/BSP kernels, stable patching, NOT mainline, not frequently rebased)
-	#                    Check https://github.com/orgs/armbian/packages?tab=packages&q=kernel- for possibilities
-	#                    nb: when no ARMBIAN_KERNEL_VERSION, will use the first tag returned, high traffic, low cache rate.
-	#                        one might set eg ARMBIAN_KERNEL_VERSION='6.7.10-xxxx' to use a fixed version.
-
+##### METHOD=armbian; Foreign kernels, taken from Armbian's OCI repos. Those are "exotic" kernels for certain SoC's.
+#                    edge = (release candidates or stable but rarely LTS, more aggressive patching)
+#                    current = (LTS kernels, stable-ish patching)
+#                    vendor/legacy = (vendor/BSP kernels, stable patching, NOT mainline, not frequently rebased)
+#                    Check https://github.com/orgs/armbian/packages?tab=packages&q=kernel- for possibilities
+#                    nb: when no ARMBIAN_KERNEL_VERSION, will use the first tag returned, high traffic, low cache rate.
+#                        one might set eg ARMBIAN_KERNEL_VERSION='6.7.10-xxxx' to use a fixed version.
+function produce_armbian_kernel_inventory() {
 	### SBC-oriented:
 	## Armbian meson64 (Amlogic) edge Khadas VIM3/3L, Radxa Zero/2, LibreComputer Potatos, and many more
 	define_id "armbian-meson64-edge" METHOD='armbian' ARCH='aarch64' TAG='armbian-sbc' ARMBIAN_KERNEL_ARTIFACT='kernel-meson64-edge'
@@ -49,10 +67,4 @@ function produce_kernels_flavours_inventory() {
 
 	## Armbian generic edge UEFI kernel (Armbian calls it x86)
 	define_id "armbian-uefi-x86-edge" METHOD='armbian' ARCH='x86_64' TAG='standard armbian-uefi' ARMBIAN_KERNEL_ARTIFACT='kernel-x86-edge'
-
-	#### END; extract keys & make readonly
-	declare -g -a -r inventory_ids=("${!inventory_dict[@]}") # extract the _keys_ from the inventory_ids dict
-	declare -g -A -r inventory_dict                          # make kernels_data dict readonly
-
-	return 0
 }

@@ -61,3 +61,40 @@ function get_bootable_info_dict() {
 		exit 1
 	fi
 }
+
+function output_bootable_media() {
+	declare input_file="${1}"
+	declare output_fn="${2}"
+	declare full_output_fn="out/${output_fn}.xz"
+
+	# If CARD_DEVICE is set, write the image to the device; otherwise, compress it
+	if [[ -n "${CARD_DEVICE}" ]]; then
+		write_image_to_device "${input_file}" "${CARD_DEVICE}"
+		log info "Wrote image file ${input_file} to device ${CARD_DEVICE}; done."
+		return 0
+	fi
+
+	# Use pixz to compress the image; use all CPU cores, default compression level
+	log info "Compressing image file ${input_file} to ${full_output_fn} -- wait..."
+	pixz -i "${input_file}" -o "${full_output_fn}"
+	ls -lah "${full_output_fn}"
+	log info "Compressed image file ${input_file} to ${full_output_fn}"
+
+	return 0
+}
+
+function write_image_to_device() {
+	local image_file="${1}"
+	local device="${2}"
+	if [[ -b "${device}" && -f "${image_file}" ]]; then
+		log info "Writing image file ${image_file} to device ${device}"
+		pv -p -b -r -c -N "dd" "${image_file}" | dd "of=${device}" bs=1M iflag=fullblock oflag=direct status=none
+		log info "Waiting for fsync()..."
+		sync
+	else
+		if [[ -n ${device} ]]; then
+			log error "Device ${device} not found or image file ${image_file} not found"
+			exit 3
+		fi
+	fi
+}

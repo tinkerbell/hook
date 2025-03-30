@@ -66,12 +66,16 @@ function build_bootable_grub() {
 
 	download_grub_binaries_from_linuxkit_docker_images "${fat32_efi_dir}" "${grub_arch}" "${grub_linuxkit_image}"
 
+	declare -g -a bootable_tinkerbell_kernel_params=()
+	fill_array_bootable_tinkerbell_kernel_parameters "efi-${grub_arch}"
+	declare tinkerbell_args="${bootable_tinkerbell_kernel_params[*]}"
+
 	cat <<- GRUB_CFG > "${fat32_efi_dir}/grub.cfg"
 		set timeout=0
 		set gfxpayload=text
-		menuentry 'Tinkerbell Hook' {
-			linux /vmlinuz ${kernel_command_line}
-			initrd /initrd.img
+		menuentry 'Tinkerbell Hook ${grub_arch}' {
+		  linux /vmlinuz ${kernel_command_line} ${tinkerbell_args}
+		  initrd /initrd.img
 		}
 	GRUB_CFG
 

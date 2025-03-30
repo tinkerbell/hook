@@ -106,3 +106,28 @@ function write_image_to_device() {
 		fi
 	fi
 }
+
+function fill_array_bootable_tinkerbell_kernel_parameters() {
+	declare -g -a bootable_tinkerbell_kernel_params=() # output global var
+	declare -r board_id="${1}"                         # board_id is the first argument
+
+	declare TINK_WORKER_IMAGE="${TINK_WORKER_IMAGE:-"ghcr.io/tinkerbell/tink-agent:latest"}"
+	declare TINK_TLS="${TINK_TLS:-"false"}"
+	declare TINK_GRPC_PORT="${TINK_GRPC_PORT:-"42113"}"
+	declare TINK_SERVER="${TINK_SERVER:-"tinkerbell"}" # export TINK_SERVER="192.168.66.75"
+	declare WORKER_ID="${WORKER_ID:-"${board_id}"}"    # export WORKER_ID="11:22:33:44:55:66"
+
+	log info "WORKER_ID is set to '${WORKER_ID}'"
+	log info "TINK_WORKER_IMAGE is set to '${TINK_WORKER_IMAGE}'"
+	log info "TINK_SERVER is set to '${TINK_SERVER}'"
+	log info "TINK_TLS is set to '${TINK_TLS}'"
+	log info "TINK_GRPC_PORT is set to '${TINK_GRPC_PORT}'"
+
+	bootable_tinkerbell_kernel_params+=(
+		"worker_id=${WORKER_ID}"
+		"tink_worker_image=${TINK_WORKER_IMAGE}"
+		"grpc_authority=${TINK_SERVER}:${TINK_GRPC_PORT}"
+		"tinkerbell_tls=${TINK_TLS}"
+		"syslog_host=${TINK_SERVER}"
+	)
+}

@@ -1,7 +1,13 @@
 function build_bootable_media() {
-	log info "would build build_bootable_media: '${*}'"
+	log debug "would build build_bootable_media: '${*}'"
 
 	declare -r -g bootable_id="${1}" # read-only variable from here
+
+	# Check if the bootable_id is set, otherwise bomb
+	if [[ -z "${bootable_id}" ]]; then
+		log error "No bootable_id specified; please specify one of: ${bootable_inventory_ids[*]}"
+		exit 1
+	fi
 
 	declare -g -A bootable_info=()
 	get_bootable_info_dict "${bootable_id}"

@@ -34,6 +34,25 @@ function log_tree() {
 	fi
 }
 
+# Helper for showing the contents of a file (using bat, if installed)
+function log_file_bat() {
+	declare file="${1}"
+	shift
+	declare level="${1}"
+	shift
+	[[ "${level}" == "debug" && "${DEBUG}" != "yes" ]] && return # Skip debugs unless DEBUG=yes is set in the environment
+	log "${level}" "${@}" "-- file ${file}:"
+	declare extra_bat_args=()
+	if [[ -n "${bat_language}" ]]; then
+		extra_bat_args+=("--language=${bat_language}")
+	fi
+	if command -v bat > /dev/null; then
+		bat --color=always "${extra_bat_args[@]}" "${file}"
+	else
+		log "${level}" "'bat' utility not installed; install it to see file contents in logs."
+	fi
+}
+
 function install_dependencies() {
 	declare extra="${1}"
 

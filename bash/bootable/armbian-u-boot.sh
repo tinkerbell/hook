@@ -233,6 +233,10 @@ function write_uboot_extlinux() {
 	declare bootargs="${UBOOT_EXTLINUX_CMDLINE} console=${UBOOT_KERNEL_SERIALCON}${console_extra_args}"
 	log info "Writing extlinux.conf; kernel cmdline: ${bootargs}"
 
+	declare -g -a bootable_tinkerbell_kernel_params=()
+	fill_array_bootable_tinkerbell_kernel_parameters "${BOARD}"
+	declare tinkerbell_args="${bootable_tinkerbell_kernel_params[*]}"
+
 	mkdir -p "${fat32_root_dir}/extlinux"
 	declare extlinux_conf="${fat32_root_dir}/extlinux/extlinux.conf"
 	cat <<- EXTLINUX_CONF > "${extlinux_conf}"
@@ -240,7 +244,7 @@ function write_uboot_extlinux() {
 		LABEL hook
 			linux /vmlinuz
 			initrd /initramfs
-			append ${bootargs}
+			append ${bootargs} ${tinkerbell_args}
 			fdt /dtb/${UBOOT_KERNEL_DTB}
 	EXTLINUX_CONF
 	# @TODO: fdtdir when UBOOT_KERNEL_DTB is unset

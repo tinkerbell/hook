@@ -28,6 +28,7 @@ function build_bootable_armbian_uboot_amlogic() {
 function list_bootable_armbian_uboot_rockchip() {
 	declare -g -A bootable_boards=()
 	bootable_boards["odroidm1"]="BOARD=odroidm1 BRANCH=edge"
+	bootable_boards["quartz64a"]="BOARD=quartz64a BRANCH=edge"
 	bootable_boards["rockpro64"]="BOARD=rockpro64 BRANCH=edge"
 	bootable_boards["nanopct6"]="BOARD=nanopct6 BRANCH=edge"
 	bootable_boards["cm3588-nas"]="BOARD=cm3588-nas BRANCH=edge"

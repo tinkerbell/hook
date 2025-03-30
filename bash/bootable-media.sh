@@ -13,13 +13,13 @@ function build_bootable_media() {
 	get_bootable_info_dict "${bootable_id}"
 
 	# Dump the bootable_info dict
-	log info "bootable_info: $(declare -p bootable_info)"
+	log debug "bootable_info: $(declare -p bootable_info)"
 
 	# Get the kernel info from the bootable_info INVENTORY_ID
 	declare -g -A kernel_info=()
 	declare -g inventory_id="${bootable_info['INVENTORY_ID']}"
 	get_kernel_info_dict "${inventory_id}"
-	log info "kernel_info: $(declare -p kernel_info)"
+	log debug "kernel_info: $(declare -p kernel_info)"
 	set_kernel_vars_from_info_dict
 	kernel_obtain_output_id # sets OUTPUT_ID
 
@@ -82,11 +82,16 @@ function output_bootable_media() {
 		return 0
 	fi
 
+	declare human_size_input_file=""
+	human_size_input_file="$(du -h "${input_file}" | awk '{print $1}')"
+
 	# Use pixz to compress the image; use all CPU cores, default compression level
-	log info "Compressing image file ${input_file} to ${full_output_fn} -- wait..."
+	log info "Compressing image file ${input_file} (${human_size_input_file}) to ${full_output_fn} -- wait..."
 	pixz -i "${input_file}" -o "${full_output_fn}"
-	ls -lah "${full_output_fn}"
-	log info "Compressed image file ${input_file} to ${full_output_fn}"
+
+	declare human_size_output_file=""
+	human_size_output_file="$(du -h "${full_output_fn}" | awk '{print $1}')"
+	log info "Compressed image file to ${full_output_fn} (${human_size_output_file})"
 
 	return 0
 }

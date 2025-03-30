@@ -122,8 +122,8 @@ function build_bootable_armbian_uboot() {
 	mkdir -p "${fat32_root_dir}"
 
 	# Kernel and initrd go directly in the root of the FAT32 partition
-	cp -vp "out/hook/vmlinuz-${hook_id}" "${fat32_root_dir}/vmlinuz"
-	cp -vp "out/hook/initramfs-${hook_id}" "${fat32_root_dir}/initramfs"
+	cp -p "${debug_dash_v[@]}" "out/hook/vmlinuz-${hook_id}" "${fat32_root_dir}/vmlinuz"
+	cp -p "${debug_dash_v[@]}" "out/hook/initramfs-${hook_id}" "${fat32_root_dir}/initramfs"
 
 	declare -i initramfs_size_bytes
 	initramfs_size_bytes=$(stat --format="%s" "${fat32_root_dir}/initramfs")
@@ -139,16 +139,10 @@ function build_bootable_armbian_uboot() {
 	# it also might require the metadata files from the uboot tarball, as those have details eg the exact DTB to use, console information, etc.
 	write_uboot_script_or_extlinux "${fat32_root_dir}"
 
-	# Show the state
-	du -h -d 1 "${bootable_base_dir}"
-
 	# Use a Dockerfile to assemble a GPT image, with a single FAT32 partition, containing the files in the fat32-root directory
 	# This is common across all GPT-based bootable media; the only difference is the ESP flag, which is set for UEFI bootable media but not for Rockchip/RaspberryPi
 	# The u-boot binaries are written _later_ in the process, after the image is created, using Armbian's helper scripts.
 	create_image_fat32_root_from_dir "${bootable_base_dir}" "bootable-media-${BOARD}-${BRANCH}.img" "${bootable_dir}/fat32-root"
-
-	log info "Show info about produced image..."
-	ls -lah "${bootable_base_dir}/bootable-media-${BOARD}-${BRANCH}.img"
 
 	# Deploy u-boot binaries to the image; use the function defined in the platform_install.sh script
 	# They should only use 'dd' or such; we've special handling for dd, to add 'conv=trunc'
@@ -156,16 +150,13 @@ function build_bootable_armbian_uboot() {
 	# shellcheck disable=SC2317 # used by write_uboot_platform
 	function dd() {
 		# We're going to use dd to write the u-boot binaries to the image; log the command and then run it
-		log info "dd: ${1} + conv=notrunc"
+		log debug "dd: ${1} + conv=notrunc"
 		log debug "dd: ${*@Q}"
 		command dd "$@" "conv=notrunc"
 	}
 
 	log info "Writing u-boot binaries to the image..."
 	write_uboot_platform "${uboot_extract_dir}" "${bootable_base_dir}/bootable-media-${BOARD}-${BRANCH}.img"
-
-	log info "Show info about produced image (with written u-boot)..."
-	ls -lah "${bootable_base_dir}/bootable-media-${BOARD}-${BRANCH}.img"
 
 	log info "Done building Armbian u-boot for hook ${hook_id} with type ${uboot_type}"
 	output_bootable_media "${bootable_base_dir}/bootable-media-${BOARD}-${BRANCH}.img" "hook-bootable-${BOARD}-${BRANCH}.img"
@@ -221,7 +212,7 @@ function write_uboot_script() {
 		booti \${kernel_addr_r} \${ramdisk_addr_r} \${fdt_addr_r}
 	BOOT_CMD
 
-	command -v bat &> /dev/null && bat --file-name "boot.scr" "${boot_cmd_file}"
+	log_file_bat "${boot_cmd_file}" "info" "Produced Armbian u-boot boot.cmd/boot.scr"
 
 	return 0
 }
@@ -249,7 +240,7 @@ function write_uboot_extlinux() {
 	EXTLINUX_CONF
 	# @TODO: fdtdir when UBOOT_KERNEL_DTB is unset
 
-	command -v bat && bat --file-name "extlinux.conf" "${extlinux_conf}"
+	log_file_bat "${extlinux_conf}" "info" "Produced Armbian u-boot extlinux.conf"
 
 	return 0
 }

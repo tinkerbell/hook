@@ -133,8 +133,12 @@ function rpi_write_config_txt() {
 }
 
 function rpi_write_cmdline_txt() {
+	declare -g -a bootable_tinkerbell_kernel_params=()
+	fill_array_bootable_tinkerbell_kernel_parameters "rpi"
+	declare tinkerbell_args="${bootable_tinkerbell_kernel_params[*]}"
+
 	declare fat32_root_dir="${1}"
 	cat <<- RPI_CMDLINE_TXT > "${fat32_root_dir}/cmdline.txt"
-		console=tty1 console=ttyAMA0,115200 loglevel=7 cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory
+		console=tty1 console=ttyAMA0,115200 loglevel=7 cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory ${tinkerbell_args}
 	RPI_CMDLINE_TXT
 }

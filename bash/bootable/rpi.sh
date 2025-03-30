@@ -110,11 +110,10 @@ function rpi_write_config_txt() {
 	declare fat32_root_dir="${1}"
 	cat <<- RPI_CONFIG_TXT > "${fat32_root_dir}/config.txt"
 		# For more options and information see http://rptl.io/configtxt
-		# Automatically load initramfs files, if found
 		auto_initramfs=1
 		# bootloader logs to serial, second stage
 		enable_uart=1
-		# if uart is enabled, disable Bluetooth which also uses UART
+		# disable Bluetooth, as having it enabled causes issues with the serial console due to fake Broadcom UART
 		dtoverlay=disable-bt
 		dtoverlay=vc4-kms-v3d
 		max_framebuffers=2

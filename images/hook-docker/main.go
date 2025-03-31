@@ -106,17 +106,17 @@ func parseCmdLine(cmdLines []string) (cfg tinkConfig) {
 			continue
 		}
 
-		switch cmd := cmdLine[0]; cmd {
+		switch cmd := strings.TrimSpace(cmdLine[0]); cmd {
 		case "syslog_host":
-			cfg.syslogHost = cmdLine[1]
+			cfg.syslogHost = strings.TrimSpace(cmdLine[1])
 		case "insecure_registries":
-			cfg.insecureRegistries = strings.Split(cmdLine[1], ",")
+			cfg.insecureRegistries = strings.Split(strings.TrimSpace(cmdLine[1]), ",")
 		case "HTTP_PROXY":
-			cfg.httpProxy = cmdLine[1]
+			cfg.httpProxy = strings.TrimSpace(cmdLine[1])
 		case "HTTPS_PROXY":
-			cfg.httpsProxy = cmdLine[1]
+			cfg.httpsProxy = strings.TrimSpace(cmdLine[1])
 		case "NO_PROXY":
-			cfg.noProxy = cmdLine[1]
+			cfg.noProxy = strings.TrimSpace(cmdLine[1])
 		}
 	}
 	return cfg

@@ -47,9 +47,14 @@ function output_gha_matrixes() {
 	prepare_json_matrix_lkcontainers "LK_CONTAINERS" # reads all_arches's keys and sets full_json
 	declare lkcontainers_json="${full_json}"
 
+	declare full_json=""
+	prepare_json_matrix_bootable "BOOTABLE" # lists boards under bootables
+	declare bootable_json="${full_json}"
+
 	log info "kernels_json to: ${kernels_json}"
 	log info "lk_hooks_json to: ${lk_hooks_json}"
 	log info "lkcontainers_json to: ${lkcontainers_json}"
+	log info "bootable_json to: ${bootable_json}"
 
 	# If under GHA, set a GHA output variable.
 	if [[ -n "${GITHUB_OUTPUT}" ]]; then
@@ -57,9 +62,11 @@ function output_gha_matrixes() {
 		echo "kernels_json=${kernels_json}" >> "${GITHUB_OUTPUT}"
 		echo "lk_hooks_json=${lk_hooks_json}" >> "${GITHUB_OUTPUT}"
 		echo "lkcontainers_json=${lkcontainers_json}" >> "${GITHUB_OUTPUT}"
+		echo "bootable_json=${bootable_json}" >> "${GITHUB_OUTPUT}"
 	fi
 
-	echo -n "${lk_hooks_json}" # output the hooks matrix to stdout, for cli/jq etc
+	echo -n "${bootable_json}" # output the hooks matrix to stdout, for cli/jq etc
+	#echo -n "${lk_hooks_json}" # output the hooks matrix to stdout, for cli/jq etc
 }
 
 function prepare_json_matrix() {
@@ -85,6 +92,45 @@ function prepare_json_matrix() {
 
 			all_arches["${kernel_info[DOCKER_ARCH]}"]=1
 			json_items+=("{\"kernel\":\"${kernel}\",\"arch\":\"${kernel_info[ARCH]}\",\"docker_arch\":\"${kernel_info[DOCKER_ARCH]}\",\"build_iso\":\"${kernel_info[SUPPORTS_ISO]}\",\"runner\":${runner},\"gha_cache\":\"${gha_cache}\"}")
+		fi
+	done
+
+	prepare_json_array_to_json
+	return 0
+}
+
+function prepare_json_matrix_bootable() {
+	declare -r matrix_type="${1}"
+
+	declare -a json_items=()
+	declare bootable_id
+	for bootable_id in "${bootable_inventory_ids[@]}"; do
+		declare -g -A bootable_info=()
+		get_bootable_info_dict "${bootable_id}"
+
+		declare -g -A kernel_info=()
+		get_kernel_info_dict "${bootable_info['INVENTORY_ID']}"
+
+		if json_matrix_tag_match "${bootable_info[TAG]}"; then
+			declare runner="unknown-runner"
+			runner="$(json_matrix_find_runner "${matrix_type}" "${kernel_info[DOCKER_ARCH]}")"
+
+			declare bootable_list_func="${bootable_info['BOOTABLE_LIST_FUNC']}"
+			if [[ -z "${bootable_list_func}" ]]; then
+				log error "No BOOTABLE_LIST_FUNC found for bootable '${bootable_id}'"
+				exit 1
+			fi
+
+			declare -A bootable_boards=()
+			log debug "Calling bootable list function: ${bootable_list_func}"
+			"${bootable_list_func}"
+			declare -a bootable_board_ids=("${!bootable_boards[@]}")
+
+			declare bootable_board_id
+			for bootable_board_id in "${bootable_board_ids[@]}"; do
+				declare board_opts="${bootable_boards[${bootable_board_id}]}"
+				json_items+=("{\"kernel\":\"${bootable_info['INVENTORY_ID']}\",\"bootable\":\"${bootable_id}\",\"arch\":\"${kernel_info[ARCH]}\",\"docker_arch\":\"${kernel_info[DOCKER_ARCH]}\",\"board_id\":\"${bootable_board_id}\",\"board_opts\":\"${board_opts}\",\"runner\":${runner}}")
+			done
 		fi
 	done
 

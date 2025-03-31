@@ -87,7 +87,11 @@ RUN set -x && \
     mkdir -p /tmp/kernel-dtb && \
     case "$KERNEL_ARCH" in \
     arm64) \
+        echo "Building DTBs for arm64" && \
         make -s -j"$(getconf _NPROCESSORS_ONLN)" INSTALL_DTBS_PATH=/tmp/kernel-dtb dtbs_install; \
+        ;; \
+    *) \
+        echo "No DTBs for $KERNEL_ARCH"; \
         ;; \
     esac && \
      ( cd /tmp/kernel-dtb && tar czvf /out/dtbs.tar.gz . )

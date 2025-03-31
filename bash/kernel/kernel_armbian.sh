@@ -2,6 +2,12 @@
 
 declare -g ARMBIAN_BASE_ORAS_REF="${ARMBIAN_BASE_ORAS_REF:-"ghcr.io/armbian/os"}"
 
+function obtain_kernel_output_id_armbian() {
+	: "${inventory_id:?"ERROR: inventory_id is not defined"}"
+	# output ID is just the inventory_id
+	declare -g OUTPUT_ID="${inventory_id}"
+}
+
 function calculate_kernel_version_armbian() {
 	: "${inventory_id:?"ERROR: inventory_id is not defined"}"
 	log info "Calculating version of Armbian kernel..."
@@ -17,8 +23,7 @@ function calculate_kernel_version_armbian() {
 		log info "Using most recent Armbian kernel tag: ${ARMBIAN_KERNEL_VERSION}"
 	fi
 
-	# output ID is just the inventory_id
-	declare -g OUTPUT_ID="${inventory_id}"
+	obtain_kernel_output_id_armbian
 
 	declare -g ARMBIAN_KERNEL_FULL_ORAS_REF_DEB_TAR="${ARMBIAN_KERNEL_BASE_ORAS_REF}:${ARMBIAN_KERNEL_VERSION}"
 	declare -g ARMBIAN_KERNEL_MAJOR_MINOR_POINT="unknown"
@@ -36,7 +41,7 @@ function calculate_kernel_version_armbian() {
 		FROM debian:stable AS downloader
 		# Call the helper to install curl, oras, and dpkg-dev
 		ADD ./${dockerfile_helper_filename} /apt-oras-helper.sh
-		RUN bash /apt-oras-helper.sh dpkg-dev
+		RUN bash /apt-oras-helper.sh
 
 		FROM downloader AS downloaded
 
@@ -73,7 +78,8 @@ function calculate_kernel_version_armbian() {
 		RUN tar -cf /armbian/output/kernel.tar .
 
 		# Create a tarball with the dtbs in usr/lib/linux-image-*
-		RUN { cd usr/lib/linux-image-* || { echo "No DTBS for this arch, empty tar..." && mkdir -p usr/lib/linux-image-no-dtbs && cd usr/lib/linux-image-* ; } ; }  && pwd && du -h -d 1 . && tar -czvf /armbian/output/dtbs.tar.gz . && ls -lah /armbian/output/dtbs.tar.gz
+		WORKDIR /armbian/image
+		RUN {  cd usr/lib/linux-image-* || { echo "No DTBS for this arch, empty tar..." && mkdir -p usr/lib/linux-image-no-dtbs && cd usr/lib/linux-image-* ; } ; }  && pwd && du -h -d 1 . && tar -czf /armbian/output/dtbs.tar.gz . && ls -lah /armbian/output/dtbs.tar.gz
 
 		# Show the contents of the output dir
 		WORKDIR /armbian/output

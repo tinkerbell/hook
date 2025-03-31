@@ -15,6 +15,11 @@ source bash/json-matrix.sh
 source bash/kernel.sh
 source bash/kernel/kernel_default.sh
 source bash/kernel/kernel_armbian.sh
+source bash/bootable-media.sh
+source bash/bootable/grub.sh
+source bash/bootable/armbian-u-boot.sh
+source bash/bootable/rpi.sh
+source bash/bootable/fat32-image.sh
 
 ### Initialize the command-line handling. This should behave similar to `make`; PARAM=value pairs are accepted in any order mixed with non-param arguments.
 declare -A -g CLI_PARSED_CMDLINE_PARAMS=()
@@ -91,6 +96,12 @@ case "${first_param}" in
 	lint)
 		download_prepare_shellcheck_bin
 		download_prepare_shellfmt_bin
+		log info "Installing lint as pre-commit hook in git by directly creating a script in .git/hooks/pre-commit"
+		cat <<- PRE_COMMIT_HOOK > .git/hooks/pre-commit
+			#!/usr/bin/env bash
+			bash build.sh lint
+		PRE_COMMIT_HOOK
+		chmod +x .git/hooks/pre-commit
 		run_shellcheck
 		run_shellfmt # this exits with an error if changes are made
 		exit 0
@@ -103,6 +114,12 @@ case "${first_param}" in
 
 	linuxkit-containers)
 		build_all_hook_linuxkit_containers
+		exit 0
+		;;
+
+	bootable-media | bootable | media)
+		install_dependencies "bootable-media"             # bootable's need more dependencies (pixz, pv)
+		build_bootable_media "${CLI_NON_PARAM_ARGS[@]:1}" # this handles its own arguments, namely the bootable_id
 		exit 0
 		;;
 esac

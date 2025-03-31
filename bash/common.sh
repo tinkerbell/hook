@@ -20,7 +20,23 @@ function log() {
 	echo -e "${emoji} ${ansi_reset}[${color}${level}${ansi_reset}] ${color}${*}${ansi_reset}" >&2
 }
 
+# Helper for debugging directory trees;
+function log_tree() {
+	declare directory="${1}"
+	shift
+	declare level="${1}"
+	[[ "${level}" == "debug" && "${DEBUG}" != "yes" ]] && return # Skip debugs unless DEBUG=yes is set in the environment
+	log "${@}" "-- directory ${directory}:"
+	if command -v tree > /dev/null; then
+		tree "${directory}"
+	else
+		log "${level}" "'tree' utility not installed; install it to see directory structure in logs."
+	fi
+}
+
 function install_dependencies() {
+	declare extra="${1}"
+
 	declare -a debian_pkgs=()
 	declare -a brew_pkgs=()
 
@@ -39,6 +55,18 @@ function install_dependencies() {
 		brew_pkgs+=("gettext")
 	}
 
+	if [[ "${extra}" == "bootable-media" ]]; then
+		command -v pixz > /dev/null || {
+			debian_pkgs+=("pixz")
+			brew_pkgs+=("pixz")
+		}
+
+		command -v pv > /dev/null || {
+			debian_pkgs+=("pv")
+			brew_pkgs+=("pv")
+		}
+	fi
+
 	if [[ "$(uname)" == "Darwin" ]]; then
 		command -v gtar > /dev/null || brew_pkgs+=("gnu-tar")
 		command -v greadlink > /dev/null || brew_pkgs+=("coreutils")
@@ -49,7 +77,7 @@ function install_dependencies() {
 	if [[ ${#debian_pkgs[@]} -gt 0 ]]; then
 		# If running on Debian or Ubuntu...
 		if [[ -f /etc/debian_version ]]; then
-			log warn "Installing apt dependencies: ${debian_pkgs[*]}"
+			log info "Installing apt dependencies: ${debian_pkgs[*]}"
 			sudo DEBIAN_FRONTEND=noninteractive apt -o "Dpkg::Use-Pty=0" -y update
 			sudo DEBIAN_FRONTEND=noninteractive apt -o "Dpkg::Use-Pty=0" -y install "${debian_pkgs[@]}"
 		elif [[ "$(uname)" == "Darwin" ]]; then
@@ -67,11 +95,13 @@ function install_dependencies() {
 			brew install "${brew_pkgs[@]}"
 		fi
 
-		# Re-export PATH with the gnu-version of coreutils, tar, and sed
-		declare brew_prefix
-		brew_prefix="$(brew --prefix)"
-		export PATH="${brew_prefix}/opt/gnu-sed/libexec/gnubin:${brew_prefix}/opt/gnu-tar/libexec/gnubin:${brew_prefix}/opt/coreutils/libexec/gnubin:${PATH}"
-		log debug "Darwin; PATH is now: ${PATH}"
+		if [[ "${extra}" == "" ]]; then # Do not to this if extra dependencies are being installed
+			# Re-export PATH with the gnu-version of coreutils, tar, and sed
+			declare brew_prefix
+			brew_prefix="$(brew --prefix)"
+			export PATH="${brew_prefix}/opt/gnu-sed/libexec/gnubin:${brew_prefix}/opt/gnu-tar/libexec/gnubin:${brew_prefix}/opt/coreutils/libexec/gnubin:${PATH}"
+			log debug "Darwin; PATH is now: ${PATH}"
+		fi
 	fi
 
 	return 0
@@ -110,6 +140,52 @@ function define_id() {
 
 	# eval it into the inventory_dict dict
 	eval "inventory_dict[${id}]='${str_dict}'"
+
+	# declare a global with the id of the last-added kernel, for add_bootable_id's convenience
+	declare -g last_defined_id="${id}"
+
+	return 0
+}
+
+function add_bootable_id() {
+	declare id="${1}"
+	shift
+
+	declare -A dict=()
+	declare arg
+	for arg in "$@"; do
+		if [[ "${arg}" == *=* ]]; then # contains an equal sign. it's a param.
+			local param_name param_value
+			param_name=${arg%%=*}
+			param_value=${arg##*=}
+			dict["${param_name}"]="${param_value}" # For current run.
+		else
+			log error "Unknown argument to define, id=${id}: '${arg}'"
+			exit 10
+		fi
+	done
+
+	# if dict["INVENTORY_ID"] is not defined, set it to the last defined id
+	if [[ -z "${dict['INVENTORY_ID']}" ]]; then
+		dict["INVENTORY_ID"]="${last_defined_id}"
+	fi
+
+	dict["BOOTABLE_ID"]="${id}"
+
+	# Sanity checking: METHOD, ARCH and TAG are required.
+	if [[ -z "${dict['HANDLER']}" || -z "${dict['TAG']}" ]]; then
+		log error "Bootable definition for id=${id} is missing HANDLER or TAG"
+		exit 11
+	fi
+
+	declare str_dict
+	str_dict="$(declare -p dict)"                  # bash high sorcery; get a string representation of the dict
+	str_dict="${str_dict#*"dict=("}"               # remove 'declare -A dict=(' from the string
+	str_dict="${str_dict%?}"                       # remove the last character, which is a ")"
+	log debug "str dict for id=${id}: ${str_dict}" # this _will_ go wrong, so add a debug
+
+	# eval it into the inventory_dict dict
+	eval "bootable_inventory_dict[${id}]='${str_dict}'"
 
 	return 0
 }

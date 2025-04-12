@@ -21,7 +21,7 @@
 # - CI_RUNNER_LK is the runner to use for all linuxkit builds
 # - CI_RUNNER_AMD64 is the runner to use for all AMD64 things
 # - CI_RUNNER is the runner to use for everything
-## LK containers (hook-bootkit, hook-docker, hook-mdev): (3):
+## LK containers (hook-bootkit, hook-docker, hook-udev): (3):
 # - CI_RUNNER_LK_CONTAINERS_AMD64 is the runner to use for amd64 linuxkit containers builds
 # - CI_RUNNER_LK_CONTAINERS is the runner to use for all linuxkit containers builds
 # - CI_RUNNER_AMD64 is the runner to use for all AMD64 things

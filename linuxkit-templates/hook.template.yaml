@@ -48,7 +48,7 @@ onboot:
     binds:
       - /dev:/dev
       - /sys:/sys
-      - /lib/modules:lib/modules
+      - /lib/modules:/lib/modules
     rootfsPropagation: shared
     devices:
       - path: all

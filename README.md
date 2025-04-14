@@ -150,7 +150,7 @@ The most important environment variables are:
 
 - There's a distributed GitHub Actions build workflow `"matrix"`.
   - The bash build system produces JSON objects that drive the matrix stages:
-    - One matrix is per-arch, and builds all the containers whose source is hosted in this repo (bootkit, docker, mdev)
+    - One matrix is per-arch, and builds all the containers whose source is hosted in this repo (bootkit, docker, udev)
     - Second matrix is per-flavor(/kernel), and builds the kernel
     - Third matrix, depending on the other two, is per-flavor(/kernel), and builds Hook itself (via LinuxKit) and prepares a .tar.gz into GH artifacts
 

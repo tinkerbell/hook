@@ -4,7 +4,6 @@ dist/
 .env
 !/hook-bootkit/
 !/hook-docker/
-!/hook-mdev/
 hook*.*.yaml
 !linuxkit-templates
 out/

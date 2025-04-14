@@ -5,7 +5,7 @@
 # - HOOK_KERNEL_VERSION: ${HOOK_KERNEL_VERSION}
 # - HOOK_CONTAINER_BOOTKIT_IMAGE: ${HOOK_CONTAINER_BOOTKIT_IMAGE}
 # - HOOK_CONTAINER_DOCKER_IMAGE: ${HOOK_CONTAINER_DOCKER_IMAGE}
-# - HOOK_CONTAINER_MDEV_IMAGE: ${HOOK_CONTAINER_MDEV_IMAGE}
+# - HOOK_CONTAINER_UDEV_IMAGE: ${HOOK_CONTAINER_UDEV_IMAGE}
 # - HOOK_CONTAINER_CONTAINERD_IMAGE: ${HOOK_CONTAINER_CONTAINERD_IMAGE}
 # - HOOK_CONTAINER_RUNC_IMAGE: ${HOOK_CONTAINER_RUNC_IMAGE}
 # - HOOK_CONTAINER_EMBEDDED_IMAGE: ${HOOK_CONTAINER_EMBEDDED_IMAGE}
@@ -41,6 +41,19 @@ onboot:
     image: linuxkit/modprobe:v1.0.0
     command: [ "modprobe", "cdc_ncm" ] # for usb ethernet dongles
 
+  - name: udev
+    image: "${HOOK_CONTAINER_UDEV_IMAGE}"
+    capabilities:
+      - all
+    binds:
+      - /dev:/dev
+      - /sys:/sys
+      - /lib/modules:/lib/modules
+    rootfsPropagation: shared
+    devices:
+      - path: all
+        type: b
+
   - name: dhcpcd-once
     image: linuxkit/dhcpcd:v1.0.0
     command: [ "/etc/ip/dhcp.sh", "true" ] # 2nd paramter is one-shot true/false: true for onboot, false for services
@@ -63,19 +76,6 @@ services:
 
   - name: ntpd
     image: linuxkit/openntpd:v1.0.0
-
-  - name: mdev
-    image: "${HOOK_CONTAINER_MDEV_IMAGE}"
-    command: [ "mdev", "-v", "-S", "-df" ]
-    capabilities:
-      - all
-    binds:
-      - /dev/:/dev/
-      - /lib/modules:lib/modules
-    rootfsPropagation: shared
-    devices:
-      - path: all
-        type: b
 
   - name: getty
     image: linuxkit/getty:v1.0.0

@@ -153,14 +153,14 @@ function linuxkit_build() {
 	fi
 
 	# rename outputs
-	mv -v "${lk_output_dir}/hook-kernel" "${lk_output_dir}/vmlinuz-${OUTPUT_ID}"
-	mv -v "${lk_output_dir}/hook-initrd.img" "${lk_output_dir}/initramfs-${OUTPUT_ID}"
+	mv "${debug_dash_v[@]}" "${lk_output_dir}/hook-kernel" "${lk_output_dir}/vmlinuz-${OUTPUT_ID}"
+	mv "${debug_dash_v[@]}" "${lk_output_dir}/hook-initrd.img" "${lk_output_dir}/initramfs-${OUTPUT_ID}"
 	rm "${lk_output_dir}/hook-cmdline"
 
 	# prepare out/hook dir with the kernel/initramfs pairs; this makes it easy to deploy to /opt/hook eg for stack chart (or nibs)
 	mkdir -p "out/hook"
-	mv -v "${lk_output_dir}/vmlinuz-${OUTPUT_ID}" "out/hook/vmlinuz-${OUTPUT_ID}"
-	mv -v "${lk_output_dir}/initramfs-${OUTPUT_ID}" "out/hook/initramfs-${OUTPUT_ID}"
+	mv "${debug_dash_v[@]}" "${lk_output_dir}/vmlinuz-${OUTPUT_ID}" "out/hook/vmlinuz-${OUTPUT_ID}"
+	mv "${debug_dash_v[@]}" "${lk_output_dir}/initramfs-${OUTPUT_ID}" "out/hook/initramfs-${OUTPUT_ID}"
 
 	declare -a output_files=("vmlinuz-${OUTPUT_ID}" "initramfs-${OUTPUT_ID}")
 
@@ -192,8 +192,8 @@ function linuxkit_build() {
 
 	if [[ "${OUTPUT_TARBALL_FILELIST:-"no"}" == "yes" ]]; then
 		log info "OUTPUT_TARBALL_FILELIST=yes; including tar and filelist in output."
-		mv -v "${lk_output_dir}/hook.tar" "out/hook/hook_rootfs_${OUTPUT_ID}.tar"
-		tar --list -vf "out/hook/hook_rootfs_${OUTPUT_ID}.tar" > "out/hook/hook_rootfs_${OUTPUT_ID}.filelist"
+		mv "${debug_dash_v[@]}" "${lk_output_dir}/hook.tar" "out/hook/hook_rootfs_${OUTPUT_ID}.tar"
+		tar --list -f "${debug_dash_v[@]}" "out/hook/hook_rootfs_${OUTPUT_ID}.tar" > "out/hook/hook_rootfs_${OUTPUT_ID}.filelist"
 	fi
 
 	# finally clean up the hook-specific out dir
@@ -201,7 +201,7 @@ function linuxkit_build() {
 
 	# tar the files into out/hook.tar in such a way that vmlinuz and initramfs are at the root of the tar; pigz it
 	# Those are the artifacts published to the GitHub release
-	tar -cvf- -C "out/hook" "${output_files[@]}" | pigz > "out/hook_${OUTPUT_ID}.tar.gz"
+	tar "${debug_dash_v[@]}" -cf- -C "out/hook" "${output_files[@]}" | pigz > "out/hook_${OUTPUT_ID}.tar.gz"
 }
 
 function linuxkit_run_qemu() {

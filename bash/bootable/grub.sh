@@ -49,8 +49,8 @@ function build_bootable_grub() {
 	mkdir -p "${fat32_root_dir}"
 
 	# Kernel and initrd go directly in the root of the FAT32 partition
-	cp -vp "out/hook/${hook_files['kernel']}" "${fat32_root_dir}/vmlinuz"
-	cp -vp "out/hook/${hook_files['initrd']}" "${fat32_root_dir}/initrd.img"
+	cp -p "${debug_dash_v[@]}" "out/hook/${hook_files['kernel']}" "${fat32_root_dir}/vmlinuz"
+	cp -p "${debug_dash_v[@]}" "out/hook/${hook_files['initrd']}" "${fat32_root_dir}/initrd.img"
 
 	# Handle DTBs
 	if [[ "${has_dtbs}" == "yes" ]]; then
@@ -66,26 +66,27 @@ function build_bootable_grub() {
 
 	download_grub_binaries_from_linuxkit_docker_images "${fat32_efi_dir}" "${grub_arch}" "${grub_linuxkit_image}"
 
+	declare -g -a bootable_tinkerbell_kernel_params=()
+	fill_array_bootable_tinkerbell_kernel_parameters "efi-${grub_arch}"
+	declare tinkerbell_args="${bootable_tinkerbell_kernel_params[*]}"
+
 	cat <<- GRUB_CFG > "${fat32_efi_dir}/grub.cfg"
 		set timeout=0
 		set gfxpayload=text
-		menuentry 'Tinkerbell Hook' {
-			linux /vmlinuz ${kernel_command_line}
-			initrd /initrd.img
+		menuentry 'Tinkerbell Hook ${grub_arch}' {
+		  linux /vmlinuz ${kernel_command_line} ${tinkerbell_args}
+		  initrd /initrd.img
 		}
 	GRUB_CFG
+	bat_language="Plain text" log_file_bat "${fat32_efi_dir}/grub.cfg" "info" "Produced GRUB grub.cfg"
 
 	# Show the state
-	du -h -d 1 "${bootable_base_dir}"
 	log_tree "${bootable_base_dir}" "debug" "State of the bootable directory"
 
 	# Use a Dockerfile to assemble a GPT image, with a single FAT32 partition, containing the files in the fat32-root directory
 	# This is common across all GPT-based bootable media; the only difference is the ESP flag, which is set for UEFI bootable media.
 	esp_partitition="yes" \
 		create_image_fat32_root_from_dir "${bootable_base_dir}" "${bootable_img}" "${bootable_dir}/fat32-root"
-
-	log info "Show info about produced image..."
-	ls -lah "${bootable_base_dir}/${bootable_img}"
 
 	log info "Done building grub bootable for hook ${hook_id}"
 	output_bootable_media "${bootable_base_dir}/${bootable_img}" "hook-bootable-grub-${OUTPUT_ID}.img"

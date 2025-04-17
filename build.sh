@@ -27,6 +27,12 @@ declare -a -g CLI_NON_PARAM_ARGS=()
 parse_command_line_arguments "${@}" # which fills the above vars & exports the key=value pairs from cmdline into environment
 # From here on, no more $1 ${1} or similar. We've parsed it all into CLI_PARSED_CMDLINE_PARAMS (already exported in environment) or CLI_NON_PARAM_ARGS
 
+## Global debug helpers; to use for coreutils mv/cp/etc; usage: mv "${debug_dash_v[@]}" here there
+declare -g -a debug_dash_v=()
+if [[ "${DEBUG}" == "yes" ]]; then
+	debug_dash_v+=("-v")
+fi
+
 ### Configuration
 declare -g HOOK_KERNEL_OCI_BASE="${HOOK_KERNEL_OCI_BASE:-"quay.io/tinkerbell/hook-kernel"}"
 declare -g HOOK_LK_CONTAINERS_OCI_BASE="${HOOK_LK_CONTAINERS_OCI_BASE:-"quay.io/tinkerbell/"}"

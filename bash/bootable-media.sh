@@ -1,19 +1,25 @@
 function build_bootable_media() {
-	log info "would build build_bootable_media: '${*}'"
+	log debug "would build build_bootable_media: '${*}'"
 
 	declare -r -g bootable_id="${1}" # read-only variable from here
+
+	# Check if the bootable_id is set, otherwise bomb
+	if [[ -z "${bootable_id}" ]]; then
+		log error "No bootable_id specified; please specify one of: ${bootable_inventory_ids[*]}"
+		exit 1
+	fi
 
 	declare -g -A bootable_info=()
 	get_bootable_info_dict "${bootable_id}"
 
 	# Dump the bootable_info dict
-	log info "bootable_info: $(declare -p bootable_info)"
+	log debug "bootable_info: $(declare -p bootable_info)"
 
 	# Get the kernel info from the bootable_info INVENTORY_ID
 	declare -g -A kernel_info=()
 	declare -g inventory_id="${bootable_info['INVENTORY_ID']}"
 	get_kernel_info_dict "${inventory_id}"
-	log info "kernel_info: $(declare -p kernel_info)"
+	log debug "kernel_info: $(declare -p kernel_info)"
 	set_kernel_vars_from_info_dict
 	kernel_obtain_output_id # sets OUTPUT_ID
 
@@ -76,11 +82,16 @@ function output_bootable_media() {
 		return 0
 	fi
 
+	declare human_size_input_file=""
+	human_size_input_file="$(du -h "${input_file}" | awk '{print $1}')"
+
 	# Use pixz to compress the image; use all CPU cores, default compression level
-	log info "Compressing image file ${input_file} to ${full_output_fn} -- wait..."
+	log info "Compressing image file ${input_file} (${human_size_input_file}) to ${full_output_fn} -- wait..."
 	pixz -i "${input_file}" -o "${full_output_fn}"
-	ls -lah "${full_output_fn}"
-	log info "Compressed image file ${input_file} to ${full_output_fn}"
+
+	declare human_size_output_file=""
+	human_size_output_file="$(du -h "${full_output_fn}" | awk '{print $1}')"
+	log info "Compressed image file to ${full_output_fn} (${human_size_output_file})"
 
 	return 0
 }
@@ -99,4 +110,29 @@ function write_image_to_device() {
 			exit 3
 		fi
 	fi
+}
+
+function fill_array_bootable_tinkerbell_kernel_parameters() {
+	declare -g -a bootable_tinkerbell_kernel_params=() # output global var
+	declare -r board_id="${1}"                         # board_id is the first argument
+
+	declare TINK_WORKER_IMAGE="${TINK_WORKER_IMAGE:-"ghcr.io/tinkerbell/tink-agent:latest"}"
+	declare TINK_TLS="${TINK_TLS:-"false"}"
+	declare TINK_GRPC_PORT="${TINK_GRPC_PORT:-"42113"}"
+	declare TINK_SERVER="${TINK_SERVER:-"tinkerbell"}" # export TINK_SERVER="192.168.66.75"
+	declare WORKER_ID="${WORKER_ID:-"${board_id}"}"    # export WORKER_ID="11:22:33:44:55:66"
+
+	log info "WORKER_ID is set to '${WORKER_ID}'"
+	log info "TINK_WORKER_IMAGE is set to '${TINK_WORKER_IMAGE}'"
+	log info "TINK_SERVER is set to '${TINK_SERVER}'"
+	log info "TINK_TLS is set to '${TINK_TLS}'"
+	log info "TINK_GRPC_PORT is set to '${TINK_GRPC_PORT}'"
+
+	bootable_tinkerbell_kernel_params+=(
+		"worker_id=${WORKER_ID}"
+		"tink_worker_image=${TINK_WORKER_IMAGE}"
+		"grpc_authority=${TINK_SERVER}:${TINK_GRPC_PORT}"
+		"tinkerbell_tls=${TINK_TLS}"
+		"syslog_host=${TINK_SERVER}"
+	)
 }

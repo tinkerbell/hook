@@ -187,6 +187,8 @@ function write_uboot_script_or_extlinux() {
 function write_uboot_script() {
 	declare fat32_root_dir="${1}"
 	declare boot_cmd_file="${fat32_root_dir}/boot.cmd"
+
+	declare console_extra_args="${bootable_info['CONSOLE_EXTRA_ARGS']:-""}"
 	cat <<- BOOT_CMD > "${boot_cmd_file}"
 		# Hook u-boot bootscript; mkimage -C none -A arm -T script -d /boot.cmd /boot.scr
 		echo "Starting Tinkerbell Hook boot script..."
@@ -195,7 +197,7 @@ function write_uboot_script() {
 		setenv ramdisk_addr_r "0x40000000"
 		test -n "\${distro_bootpart}" || distro_bootpart=1
 		echo "Boot script loaded from \${devtype} \${devnum}:\${distro_bootpart}"
-		setenv bootargs "${UBOOT_EXTLINUX_CMDLINE}"
+		setenv bootargs "${UBOOT_EXTLINUX_CMDLINE} console=tty0 console=${UBOOT_KERNEL_SERIALCON}${console_extra_args}"
 		echo "Booting with: \${bootargs}"
 
 		echo "Loading initramfs... \${ramdisk_addr_r} /uinitrd"
@@ -221,7 +223,7 @@ function write_uboot_extlinux() {
 	declare fat32_root_dir="${1}"
 
 	declare console_extra_args="${bootable_info['CONSOLE_EXTRA_ARGS']:-""}"
-	declare bootargs="${UBOOT_EXTLINUX_CMDLINE} console=${UBOOT_KERNEL_SERIALCON}${console_extra_args}"
+	declare bootargs="${UBOOT_EXTLINUX_CMDLINE} console=tty0 console=${UBOOT_KERNEL_SERIALCON}${console_extra_args}"
 	log info "Writing extlinux.conf; kernel cmdline: ${bootargs}"
 
 	declare -g -a bootable_tinkerbell_kernel_params=()

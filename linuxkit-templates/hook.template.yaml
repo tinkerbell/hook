@@ -37,22 +37,13 @@ onboot:
   - name: sysfs
     image: linuxkit/sysfs:v1.0.0
 
-  - name: modprobe
-    image: linuxkit/modprobe:v1.0.0
-    command: [ "modprobe", "cdc_ncm" ] # for usb ethernet dongles
-
-  - name: udev
+  - name: udev-once
     image: "${HOOK_CONTAINER_UDEV_IMAGE}"
-    capabilities:
-      - all
-    binds:
-      - /dev:/dev
-      - /sys:/sys
-      - /lib/modules:/lib/modules
+    command: [ "/usr/bin/bash", "/one-shot.sh" ]
+    capabilities: [ all ]
+    binds: [ /dev:/dev, /sys:/sys, /lib/modules:/lib/modules ]
     rootfsPropagation: shared
-    devices:
-      - path: all
-        type: b
+    devices: [ { path: all, type: b },  { path: all, type: c } ]
 
   - name: dhcpcd-once
     image: linuxkit/dhcpcd:v1.0.0
@@ -76,6 +67,14 @@ services:
 
   - name: ntpd
     image: linuxkit/openntpd:v1.0.0
+
+  - name: udev # as a service; so system reacts to changes in devices
+    image: "${HOOK_CONTAINER_UDEV_IMAGE}"
+    command: [ "/lib/systemd/systemd-udevd", "--debug" ]
+    capabilities: [ all ]
+    binds: [ /dev:/dev, /sys:/sys, /lib/modules:/lib/modules ]
+    rootfsPropagation: shared
+    devices: [ { path: all, type: b },  { path: all, type: c } ]
 
   - name: getty
     image: linuxkit/getty:v1.0.0

@@ -10,19 +10,21 @@ on:
 env: # Global environment, passed to all jobs & all steps
   # Default to quay.io, which is also the default for the CLI. 
   # Allow to use ghcr.io as an alternative, change & uncomment below:
-  REGISTRY: "quay.io" # or ghcr.io, determines which will be logged-in to
+  # REGISTRY: "quay.io" # or ghcr.io, determines which will be logged-in to
+  REGISTRY: "ghcr.io"
   #HOOK_KERNEL_OCI_BASE: "ghcr.io/${{ github.repository_owner }}/tinkerbell/kernel-"
   #HOOK_LK_CONTAINERS_OCI_BASE: "ghcr.io/${{ github.repository_owner }}/tinkerbell/linuxkit-"
   
   # Apart from the quay/ghcr coordinates above (used for both pulling & pushing), we might also want to
   # log in to DockerHub (with a read-only token) so we aren't hit by rate limits when pulling the linuxkit pkgs.
   # To do so, set the secret DOCKERHUB_USERNAME and DOCKERHUB_PASSWORD in the repo secrets, and set the below to yes.
-  LOGIN_TO_DOCKERHUB: "yes"
+  LOGIN_TO_DOCKERHUB: "no"
   
   HOOK_VERSION: "0.10.0-build-${{github.run_number}}" # Use a forced Hook version
   
   # Which flavors to build? space separated list, must match one of the TAG='s in flavors (this is used by matrix_prep job in gha-matrix command)
-  CI_TAGS: "standard armbian-sbc armbian-uefi lts" # 'dev' is not included
+  # CI_TAGS: "standard armbian-sbc armbian-uefi lts" # 'dev' is not included
+  CI_TAGS: "standard"
   
   # GHA runner configuration. See bash/json-matrix.sh for more details.
   CI_RUNNER_LK_CONTAINERS_ARM64: "ARM64" # Use a self-hosted runner with the "ARM64" tag for the ARM64 builds of LK containers
@@ -60,12 +62,14 @@ jobs:
   
   build-linuxkit-containers:
     needs: [ matrix_prep ]
-    runs-on: "${{ matrix.runner }}" # the runner to use is determined by the 'gha-matrix' code
+    runs-on: ubuntu-latest # the runner to use is determined by the 'gha-matrix' code
     strategy:
       fail-fast: true
       matrix:
         include: ${{ fromJSON(needs.matrix_prep.outputs.lkcontainers_json) }}
     name: "LinuxKit containers for ${{ matrix.docker_arch }}"
+    permissions:
+      packages: write
     steps:
       - name: Checkout build repo
         uses: actions/checkout@v4
@@ -94,11 +98,13 @@ jobs:
   
   build-kernels:
     needs: [ matrix_prep ] # depend on the previous job...
-    runs-on: "${{ matrix.runner }}" # the runner to use is determined by the 'gha-matrix' code
+    runs-on: ubuntu-latest # the runner to use is determined by the 'gha-matrix' code
     strategy:
       fail-fast: false # let other jobs try to complete if one fails, kernels might take long, and they'd be skipped on the next run
       matrix:
         include: ${{ fromJSON(needs.matrix_prep.outputs.kernels_json) }}
+    permissions:
+      packages: write
     name: "Kernel ${{ matrix.kernel }}"
     steps:
       - name: Checkout build repo
@@ -124,12 +130,14 @@ jobs:
 
   build-hook-ensemble:
     needs: [ matrix_prep, build-linuxkit-containers, build-kernels ] # depend on the previous job...
-    runs-on: "${{ matrix.runner }}" # the runner to use is determined by the 'gha-matrix' code
+    runs-on: ubuntu-latest # the runner to use is determined by the 'gha-matrix' code
     strategy:
       fail-fast: false # let other jobs try to complete if one fails
       matrix:
         include: ${{ fromJSON(needs.matrix_prep.outputs.lk_hooks_json) }}
     name: "Hook ${{ matrix.kernel }}"
+    permissions:
+      packages: write
     steps:
       - name: Checkout build repo
         uses: actions/checkout@v4
@@ -187,6 +195,9 @@ jobs:
     needs: [ matrix_prep, build-hook-ensemble ]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    permissions:
+      packages: write
+      contents: write
     steps:
 
       - name: Checkout code
@@ -256,6 +267,9 @@ jobs:
   release-tag:
     name: Publish all Hooks to GitHub Releases for a tag
     needs: [ matrix_prep, build-hook-ensemble ]
+    permissions:
+      packages: write
+      contents: write
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:

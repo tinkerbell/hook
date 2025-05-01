@@ -5,7 +5,7 @@ function produce_kernels_flavours_inventory() {
 	declare -g -A bootable_inventory_dict=()
 
 	produce_default_kernel_inventory
-	produce_armbian_kernel_inventory
+	# produce_armbian_kernel_inventory
 
 	# if a function `produce_custom_kernel_inventory` exists, call it.
 	if type -t produce_custom_kernel_inventory &> /dev/null; then

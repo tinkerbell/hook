@@ -41,6 +41,7 @@ function build_bootable_armbian_uboot_rockchip() {
 function list_bootable_armbian_uboot_rockchip_vendor() {
 	declare -g -A bootable_boards=()
 	bootable_boards["r58x"]="BOARD=mekotronics-r58x-pro BRANCH=vendor"
+	bootable_boards["blade3"]="BOARD=mixtile-blade3 BRANCH=vendor"
 }
 
 function build_bootable_armbian_uboot_rockchip_vendor() {
@@ -195,6 +196,10 @@ function write_uboot_script() {
 		exit 2
 	fi
 
+	declare -g -a bootable_tinkerbell_kernel_params=()
+	fill_array_bootable_tinkerbell_kernel_parameters "${BOARD}"
+	declare tinkerbell_args="${bootable_tinkerbell_kernel_params[*]}"
+
 	declare console_extra_args="${bootable_info['CONSOLE_EXTRA_ARGS']:-""}"
 	cat <<- BOOT_CMD > "${boot_cmd_file}"
 		# Hook u-boot bootscript; mkimage -C none -A arm -T script -d /boot.cmd /boot.scr
@@ -204,7 +209,7 @@ function write_uboot_script() {
 		setenv ramdisk_addr_r "0x40000000"
 		test -n "\${distro_bootpart}" || distro_bootpart=1
 		echo "Boot script loaded from \${devtype} \${devnum}:\${distro_bootpart}"
-		setenv bootargs "${UBOOT_EXTLINUX_CMDLINE} console=tty0 console=${UBOOT_KERNEL_SERIALCON}${console_extra_args}"
+		setenv bootargs "${UBOOT_EXTLINUX_CMDLINE} console=tty0 console=${UBOOT_KERNEL_SERIALCON}${console_extra_args} ${tinkerbell_args}"
 		echo "Booting with: \${bootargs}"
 
 		echo "Loading initramfs... \${ramdisk_addr_r} /uinitrd"
@@ -220,6 +225,9 @@ function write_uboot_script() {
 		echo "Booting: booti \${kernel_addr_r} \${ramdisk_addr_r} \${fdt_addr_r} - args: \${bootargs}"
 		booti \${kernel_addr_r} \${ramdisk_addr_r} \${fdt_addr_r}
 	BOOT_CMD
+
+	log info "Marking uinitrd.wanted..."
+	touch "${fat32_root_dir}/uinitrd.wanted" # marker file for utility run during fat32 image creation; see create_image_fat32_root_from_dir()
 
 	log_file_bat "${boot_cmd_file}" "info" "Produced Armbian u-boot boot.cmd/boot.scr"
 

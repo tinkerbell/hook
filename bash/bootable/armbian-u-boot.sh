@@ -41,6 +41,7 @@ function build_bootable_armbian_uboot_rockchip() {
 function list_bootable_armbian_uboot_rockchip_vendor() {
 	declare -g -A bootable_boards=()
 	bootable_boards["r58x"]="BOARD=mekotronics-r58x-pro BRANCH=vendor"
+	bootable_boards["blade3"]="BOARD=mixtile-blade3 BRANCH=vendor"
 }
 
 function build_bootable_armbian_uboot_rockchip_vendor() {
@@ -187,6 +188,19 @@ function write_uboot_script_or_extlinux() {
 function write_uboot_script() {
 	declare fat32_root_dir="${1}"
 	declare boot_cmd_file="${fat32_root_dir}/boot.cmd"
+
+	# It is absolutely unlikely that a (vendor/legacy) boot script will be used with a board that has fdtfile preset correctly.
+	# Thus check UBOOT_KERNEL_DTB is set, or bomb.
+	if [[ -z "${UBOOT_KERNEL_DTB}" ]]; then
+		log error "UBOOT_KERNEL_DTB is unset -- vendor/boot.scr requires a DTB to be set"
+		exit 2
+	fi
+
+	declare -g -a bootable_tinkerbell_kernel_params=()
+	fill_array_bootable_tinkerbell_kernel_parameters "${BOARD}"
+	declare tinkerbell_args="${bootable_tinkerbell_kernel_params[*]}"
+
+	declare console_extra_args="${bootable_info['CONSOLE_EXTRA_ARGS']:-""}"
 	cat <<- BOOT_CMD > "${boot_cmd_file}"
 		# Hook u-boot bootscript; mkimage -C none -A arm -T script -d /boot.cmd /boot.scr
 		echo "Starting Tinkerbell Hook boot script..."
@@ -195,7 +209,7 @@ function write_uboot_script() {
 		setenv ramdisk_addr_r "0x40000000"
 		test -n "\${distro_bootpart}" || distro_bootpart=1
 		echo "Boot script loaded from \${devtype} \${devnum}:\${distro_bootpart}"
-		setenv bootargs "${UBOOT_EXTLINUX_CMDLINE}"
+		setenv bootargs "${UBOOT_EXTLINUX_CMDLINE} console=tty0 console=${UBOOT_KERNEL_SERIALCON}${console_extra_args} ${tinkerbell_args}"
 		echo "Booting with: \${bootargs}"
 
 		echo "Loading initramfs... \${ramdisk_addr_r} /uinitrd"
@@ -212,6 +226,9 @@ function write_uboot_script() {
 		booti \${kernel_addr_r} \${ramdisk_addr_r} \${fdt_addr_r}
 	BOOT_CMD
 
+	log info "Marking uinitrd.wanted..."
+	touch "${fat32_root_dir}/uinitrd.wanted" # marker file for utility run during fat32 image creation; see create_image_fat32_root_from_dir()
+
 	log_file_bat "${boot_cmd_file}" "info" "Produced Armbian u-boot boot.cmd/boot.scr"
 
 	return 0
@@ -221,7 +238,7 @@ function write_uboot_extlinux() {
 	declare fat32_root_dir="${1}"
 
 	declare console_extra_args="${bootable_info['CONSOLE_EXTRA_ARGS']:-""}"
-	declare bootargs="${UBOOT_EXTLINUX_CMDLINE} console=${UBOOT_KERNEL_SERIALCON}${console_extra_args}"
+	declare bootargs="${UBOOT_EXTLINUX_CMDLINE} console=tty0 console=${UBOOT_KERNEL_SERIALCON}${console_extra_args}"
 	log info "Writing extlinux.conf; kernel cmdline: ${bootargs}"
 
 	declare -g -a bootable_tinkerbell_kernel_params=()
@@ -231,14 +248,25 @@ function write_uboot_extlinux() {
 	mkdir -p "${fat32_root_dir}/extlinux"
 	declare extlinux_conf="${fat32_root_dir}/extlinux/extlinux.conf"
 	cat <<- EXTLINUX_CONF > "${extlinux_conf}"
-		DEFAULT hook
-		LABEL hook
+		DEFAULT Tinkerbell Hook ${BOARD} ${BRANCH}
+		LABEL Tinkerbell Hook ${BOARD} ${BRANCH}
 			linux /vmlinuz
 			initrd /initramfs
 			append ${bootargs} ${tinkerbell_args}
-			fdt /dtb/${UBOOT_KERNEL_DTB}
 	EXTLINUX_CONF
-	# @TODO: fdtdir when UBOOT_KERNEL_DTB is unset
+
+	# If UBOOT_KERNEL_DTB is not set, just pass the fdtdir
+	if [[ -z "${UBOOT_KERNEL_DTB}" ]]; then
+		log info "UBOOT_KERNEL_DTB is unset; using fdtdir instead"
+		cat <<- EXTLINUX_CONF_FDTDIR >> "${extlinux_conf}"
+			fdtdir /dtb/
+		EXTLINUX_CONF_FDTDIR
+	else
+		log info "UBOOT_KERNEL_DTB is set (${UBOOT_KERNEL_DTB}); using it in extlinux.conf"
+		cat <<- EXTLINUX_CONF_DTB >> "${extlinux_conf}"
+			fdt /dtb/${UBOOT_KERNEL_DTB}
+		EXTLINUX_CONF_DTB
+	fi
 
 	log_file_bat "${extlinux_conf}" "info" "Produced Armbian u-boot extlinux.conf"
 

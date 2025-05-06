@@ -47,7 +47,9 @@ function log_file_bat() {
 		extra_bat_args+=("--language=${bat_language}")
 	fi
 	if command -v bat > /dev/null; then
-		bat --color=always "${extra_bat_args[@]}" "${file}"
+		bat --color=always --paging=never "${extra_bat_args[@]}" "${file}"
+	elif command -v batcat > /dev/null; then
+		batcat --color=always --paging=never "${extra_bat_args[@]}" "${file}"
 	else
 		log "${level}" "'bat' utility not installed; install it to see file contents in logs."
 	fi

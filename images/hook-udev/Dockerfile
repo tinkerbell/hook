@@ -6,4 +6,5 @@ RUN DEBIAN_FRONTEND=noninteractive apt update && \
     apt-get autoremove --yes && \
     rm -rf /var/lib/apt /var/lib/dpkg /var/lib/cache /var/lib/log /var/cache/* /usr/lib/apt/* /usr/share/*
 
-CMD ["/etc/init.d/udev", "start"]
+ADD ./one-shot.sh /one-shot.sh
+CMD ["/lib/systemd/systemd-udevd", "--debug"]

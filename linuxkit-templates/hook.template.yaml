@@ -179,7 +179,6 @@ services:
       - /var/run/images:/var/lib/docker
       - /var/run/worker:/worker
       - /:/host_root
-      - /run:/run
     runtime:
       mkdir:
         - /var/run/images

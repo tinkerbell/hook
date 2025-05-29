@@ -252,6 +252,7 @@ jobs:
             checksum.txt
           prerelease: true
           tag_name: latest
+          draft: false
 
   release-tag:
     name: Publish all Hooks to GitHub Releases for a tag

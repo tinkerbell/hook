@@ -49,6 +49,7 @@ onboot:
       - /dev:/dev
       - /sys:/sys
       - /lib/modules:/lib/modules
+      - /run:/run
     rootfsPropagation: shared
     devices:
       - path: all

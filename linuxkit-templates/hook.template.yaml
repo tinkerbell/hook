@@ -176,6 +176,7 @@ services:
       - /var/run/docker:/var/run
       - /var/run/images:/var/lib/docker
       - /var/run/worker:/worker
+      - /:/host_root
     runtime:
       mkdir:
         - /var/run/images

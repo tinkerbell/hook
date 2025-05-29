@@ -49,6 +49,7 @@ onboot:
       - /dev:/dev
       - /sys:/sys
       - /lib/modules:/lib/modules
+      - /run:/run
     rootfsPropagation: shared
     devices:
       - path: all
@@ -87,6 +88,7 @@ services:
       - /etc/motd:/etc/motd
       - /etc/os-release:/etc/os-release
       - /:/host_root
+      - /run:/run
       - /dev:/dev
       - /dev/console:/dev/console
       - /usr/bin/nerdctl:/usr/bin/nerdctl

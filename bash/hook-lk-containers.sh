@@ -10,6 +10,7 @@ function build_all_hook_linuxkit_containers() {
 	build_hook_linuxkit_container hook-bootkit "HOOK_CONTAINER_BOOTKIT_IMAGE"
 	build_hook_linuxkit_container hook-docker "HOOK_CONTAINER_DOCKER_IMAGE"
 	build_hook_linuxkit_container hook-udev "HOOK_CONTAINER_UDEV_IMAGE"
+	build_hook_linuxkit_container hook-acpid "HOOK_CONTAINER_ACPID_IMAGE"
 	build_hook_linuxkit_container hook-containerd "HOOK_CONTAINER_CONTAINERD_IMAGE"
 	build_hook_linuxkit_container hook-runc "HOOK_CONTAINER_RUNC_IMAGE"
 	build_hook_linuxkit_container hook-embedded "HOOK_CONTAINER_EMBEDDED_IMAGE"

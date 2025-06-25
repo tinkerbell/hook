@@ -6,6 +6,7 @@
 # - HOOK_CONTAINER_BOOTKIT_IMAGE: ${HOOK_CONTAINER_BOOTKIT_IMAGE}
 # - HOOK_CONTAINER_DOCKER_IMAGE: ${HOOK_CONTAINER_DOCKER_IMAGE}
 # - HOOK_CONTAINER_UDEV_IMAGE: ${HOOK_CONTAINER_UDEV_IMAGE}
+# - HOOK_CONTAINER_ACPID_IMAGE: ${HOOK_CONTAINER_ACPID_IMAGE}
 # - HOOK_CONTAINER_CONTAINERD_IMAGE: ${HOOK_CONTAINER_CONTAINERD_IMAGE}
 # - HOOK_CONTAINER_RUNC_IMAGE: ${HOOK_CONTAINER_RUNC_IMAGE}
 # - HOOK_CONTAINER_EMBEDDED_IMAGE: ${HOOK_CONTAINER_EMBEDDED_IMAGE}
@@ -77,6 +78,20 @@ services:
 
   - name: ntpd
     image: linuxkit/openntpd:v1.0.0
+
+  - name: acpi
+    image: "${HOOK_CONTAINER_ACPID_IMAGE}"
+    capabilities:
+      - all
+    pid: host
+    binds.add:
+      - /dev:/dev
+      - /var/run:/var/run
+    devices:
+      - path: all
+        type: b
+      - path: all
+        type: c
 
   - name: getty
     image: linuxkit/getty:v1.0.0

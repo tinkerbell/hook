@@ -1,9 +1,9 @@
-FROM golang:1.20-alpine AS dev
+FROM golang:1.24-alpine AS dev
 COPY . /src/
 WORKDIR /src
 RUN CGO_ENABLED=0 go build -a -ldflags '-s -w -extldflags "-static"' -o /hook-docker
 
-FROM docker:26.1.0-dind
+FROM docker:28.2.2-dind
 RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
 RUN apk update && apk add kexec-tools binutils && rm -rf /var/cache/apk/*
 # Won't use docker-buildx nor docker-compose

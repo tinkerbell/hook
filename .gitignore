@@ -20,3 +20,4 @@ images/hook-embedded/docker/*
 !images/hook-embedded/docker/.keep
 images/hook-embedded/images_tar/*
 !images/hook-embedded/images_tar/.keep
+scratch/

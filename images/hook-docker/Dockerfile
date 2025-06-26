@@ -19,6 +19,6 @@ COPY --from=docker /usr/local/bin/docker-init /usr/local/bin/docker /usr/local/b
 COPY --from=docker /usr/local/bin/containerd /usr/local/bin/containerd-shim-runc-v2 /usr/local/bin/
 COPY --from=docker /usr/local/bin/dockerd-entrypoint.sh /usr/local/bin/dockerd-entrypoint.sh
 
-RUN apk add --no-cache ca-certificates iptables
+RUN apk add --no-cache ca-certificates iptables openssl
 
 ENTRYPOINT ["/hook-docker"]

@@ -9,11 +9,11 @@ set -x
 
 run_dhcp_client() {
 	one_shot="$1"
-	al="en*"
+	al="e*"
 
 	vlan_id=$(sed -n 's/.* vlan_id=\([0-9]*\).*/\1/p' /proc/cmdline)
 	if [ -n "$vlan_id" ]; then
-		al="en*.*"
+		al="e*.*"
 	fi
 
 	if [ "$one_shot" = "true" ]; then

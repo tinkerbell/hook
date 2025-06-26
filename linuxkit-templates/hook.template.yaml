@@ -79,6 +79,20 @@ services:
   - name: ntpd
     image: linuxkit/openntpd:v1.0.0
 
+  - name: udev # as a service; so system reacts to changes in devices
+    image: "${HOOK_CONTAINER_UDEV_IMAGE}"
+    command: [ "/lib/systemd/systemd-udevd", "--debug" ]
+    capabilities: [ all ]
+    binds: [ /dev:/dev, /sys:/sys, /lib/modules:/lib/modules ]
+    rootfsPropagation: shared
+    net: host
+    pid: host
+    devices:
+      - path: all
+        type: b
+      - path: all
+        type: c
+
   - name: acpi
     image: "${HOOK_CONTAINER_ACPID_IMAGE}"
     capabilities:

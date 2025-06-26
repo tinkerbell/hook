@@ -63,6 +63,10 @@ func run() error {
 	myEnvs = append(myEnvs, fmt.Sprintf("HTTP_PROXY=%s", cfg.httpProxy))
 	myEnvs = append(myEnvs, fmt.Sprintf("HTTPS_PROXY=%s", cfg.httpsProxy))
 	myEnvs = append(myEnvs, fmt.Sprintf("NO_PROXY=%s", cfg.noProxy))
+	// We set this so that the dockerd-entrypoint.sh will run docker with TLS enabled.
+	// This is needed as the docker daemon is listening on 0.0.0.0 and it's not straightforward
+	// to reconfigure this. Enabling TLS will block remote access to the docker daemon for now.
+	myEnvs = append(myEnvs, "DOCKER_TLS_CERTDIR=/certs")
 
 	cmd.Env = append(os.Environ(), myEnvs...)
 

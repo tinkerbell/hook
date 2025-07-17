@@ -12,23 +12,17 @@ ARG KERNEL_VERSION
 ARG KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/${KERNEL_MAJOR_V}/linux-${KERNEL_VERSION}.tar.xz
 ARG KERNEL_SHA256_SUMS=https://www.kernel.org/pub/linux/kernel/${KERNEL_MAJOR_V}/sha256sums.asc
 ARG KERNEL_PGP2_SIGN=https://www.kernel.org/pub/linux/kernel/${KERNEL_MAJOR_V}/linux-${KERNEL_VERSION}.tar.sign
+# Backup URLs in case the main ones are down or point releases are not available yet.
+ARG KERNEL_SOURCE_BACKUP=https://cdn.kernel.org/pub/linux/kernel/${KERNEL_MAJOR_V}/linux-${KERNEL_VERSION}.tar.xz
+ARG KERNEL_SHA256_SUMS_BACKUP=https://cdn.kernel.org/pub/linux/kernel/${KERNEL_MAJOR_V}/sha256sums.asc
+ARG KERNEL_PGP2_SIGN_BACKUP=https://cdn.kernel.org/pub/linux/kernel/${KERNEL_MAJOR_V}/linux-${KERNEL_VERSION}.tar.sign
 
 # PGP keys: 589DA6B1 (greg@kroah.com) & 6092693E (autosigner@kernel.org) & 00411886 (torvalds@linux-foundation.org)
 COPY /keys.asc /keys.asc
 
 # Download and verify kernel
-RUN set -x &&  \
-    curl -fsSLO ${KERNEL_SHA256_SUMS} && \
-    gpg2 -q --import keys.asc && \
-    gpg2 --verify sha256sums.asc && \
-    KERNEL_SHA256=$(grep linux-${KERNEL_VERSION}.tar.xz sha256sums.asc | cut -d ' ' -f 1) && \
-    [ -f linux-${KERNEL_VERSION}.tar.xz ] || curl -fsSLO ${KERNEL_SOURCE} && \
-    echo "${KERNEL_SHA256}  linux-${KERNEL_VERSION}.tar.xz" | sha256sum -c - && \
-    xz -T 0 -d linux-${KERNEL_VERSION}.tar.xz && \
-    curl -fsSLO ${KERNEL_PGP2_SIGN} && \
-    gpg2 --verify linux-${KERNEL_VERSION}.tar.sign linux-${KERNEL_VERSION}.tar && \
-    cat linux-${KERNEL_VERSION}.tar | tar --absolute-names -x && mv /linux-${KERNEL_VERSION} /linux
-
+COPY download.sh /download.sh
+RUN /download.sh ${KERNEL_VERSION} ${KERNEL_SOURCE} ${KERNEL_SHA256_SUMS} ${KERNEL_PGP2_SIGN} ${KERNEL_SOURCE_BACKUP} ${KERNEL_SHA256_SUMS_BACKUP} ${KERNEL_PGP2_SIGN_BACKUP}
 
 FROM kernel-source-unpacked AS kernel-with-config
 

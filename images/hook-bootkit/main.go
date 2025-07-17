@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -58,6 +59,10 @@ func main() {
 	log.Info("starting BootKit: the tink-worker bootstrapper")
 
 	for {
+		if errors.Is(ctx.Err(), context.Canceled) {
+			log.Info("context cancellation received, exiting")
+			return
+		}
 		if err := run(ctx, log); err != nil {
 			log.Error(err, "bootstrapping tink-worker failed")
 			log.Info("will retry in 5 seconds")

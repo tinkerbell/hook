@@ -24,7 +24,7 @@ function build_hook_linuxkit_container() {
 	# Lets hash the contents of the directory and use that as a tag
 	declare container_files_hash
 	# NOTE: linuxkit containers must be in the images/ directory
-	container_files_hash="$(find "${container_base_dir}/${container_dir}" -type f -print | LC_ALL=C sort | xargs sha256sum | sha256sum | cut -d' ' -f1)"
+	container_files_hash="$(find "${container_base_dir}/${container_dir}" -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
 	declare container_files_hash_short="${container_files_hash:0:8}"
 
 	declare container_oci_ref="${HOOK_LK_CONTAINERS_OCI_BASE}${container_dir}:${container_files_hash_short}-${DOCKER_ARCH}"

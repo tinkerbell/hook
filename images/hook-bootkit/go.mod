@@ -10,6 +10,7 @@ require (
 	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zerologr v1.2.3
 	github.com/rs/zerolog v1.34.0
+	golang.org/x/text v0.27.0
 )
 
 require (

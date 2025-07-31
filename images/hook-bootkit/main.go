@@ -132,8 +132,9 @@ func run(ctx context.Context, log logr.Logger) error {
 
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
 
-	pullOpts := image.PullOptions{
-		RegistryAuth: authStr,
+	pullOpts := image.PullOptions{}
+	if useAuth(imageName, cfg.registry) {
+		pullOpts.RegistryAuth = authStr
 	}
 	var out io.ReadCloser
 	imagePullOperation := func() error {

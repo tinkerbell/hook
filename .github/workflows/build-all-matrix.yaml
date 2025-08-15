@@ -25,12 +25,12 @@ env: # Global environment, passed to all jobs & all steps
   CI_TAGS: "standard armbian-sbc armbian-uefi lts" # 'dev' is not included
   
   # GHA runner configuration. See bash/json-matrix.sh for more details.
-  CI_RUNNER_LK_CONTAINERS_ARM64: "ARM64" # Use a self-hosted runner with the "ARM64" tag for the ARM64 builds of LK containers
-  CI_RUNNER_LK_CONTAINERS_AMD64: "X64" # Use a self-hosted runner with the "X86" tag for the AMD64 builds of LK containers
-  CI_RUNNER_LK_ARM64: "ARM64" # Use a self-hosted runner with the "ARM64" tag for the ARM64 linuxkit builds
-  CI_RUNNER_LK_AMD64: "X64" # Use a self-hosted runner with the "X86" tag for the AMD64 linuxkit builds
-  CI_RUNNER_KERNEL_AMD64: "X64" # Use a self-hosted runner with the "X86" tag for the AMD64 kernel builds
-  CI_RUNNER_KERNEL_ARM64: "ARM64" # Use a self-hosted runner with the "ARM64" tag for the ARM64 kernel builds
+  CI_RUNNER_LK_CONTAINERS_ARM64: "oracle-24cpu-384gb-arm64" # Use a self-hosted runner with the "ARM64" tag for the ARM64 builds of LK containers
+  CI_RUNNER_LK_CONTAINERS_AMD64: "oracle-24cpu-384gb-x86-64" # Use a self-hosted runner with the "X86" tag for the AMD64 builds of LK containers
+  CI_RUNNER_LK_ARM64: "oracle-24cpu-384gb-arm64" # Use a self-hosted runner with the "ARM64" tag for the ARM64 linuxkit builds
+  CI_RUNNER_LK_AMD64: "oracle-24cpu-384gb-x86-64" # Use a self-hosted runner with the "X86" tag for the AMD64 linuxkit builds
+  CI_RUNNER_KERNEL_AMD64: "oracle-24cpu-384gb-x86-64" # Use a self-hosted runner with the "X86" tag for the AMD64 kernel builds
+  CI_RUNNER_KERNEL_ARM64: "oracle-24cpu-384gb-arm64" # Use a self-hosted runner with the "ARM64" tag for the ARM64 kernel builds
 
 
 jobs:
@@ -60,7 +60,9 @@ jobs:
   
   build-linuxkit-containers:
     needs: [ matrix_prep ]
-    runs-on: "${{ matrix.runner }}" # the runner to use is determined by the 'gha-matrix' code
+    runs-on:
+      group: Default
+      labels: "${{ matrix.runner }}" # the runner to use is determined by the 'gha-matrix' code
     strategy:
       fail-fast: true
       matrix:
@@ -94,7 +96,9 @@ jobs:
   
   build-kernels:
     needs: [ matrix_prep ] # depend on the previous job...
-    runs-on: "${{ matrix.runner }}" # the runner to use is determined by the 'gha-matrix' code
+    runs-on:
+      group: Default
+      labels: "${{ matrix.runner }}" # the runner to use is determined by the 'gha-matrix' code
     strategy:
       fail-fast: false # let other jobs try to complete if one fails, kernels might take long, and they'd be skipped on the next run
       matrix:
@@ -124,7 +128,9 @@ jobs:
 
   build-hook-ensemble:
     needs: [ matrix_prep, build-linuxkit-containers, build-kernels ] # depend on the previous job...
-    runs-on: "${{ matrix.runner }}" # the runner to use is determined by the 'gha-matrix' code
+    runs-on:
+      group: Default
+      labels: "${{ matrix.runner }}" # the runner to use is determined by the 'gha-matrix' code
     strategy:
       fail-fast: false # let other jobs try to complete if one fails
       matrix:

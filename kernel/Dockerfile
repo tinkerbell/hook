@@ -3,7 +3,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # crossbuild-essentials are pretty heavy; here we install for both architecures to maximize Docker layer hit cache rate during development, but only one will be used
 RUN set -x && apt -o "Dpkg::Use-Pty=0" -y update && \
-      apt -o "Dpkg::Use-Pty=0" -y install curl xz-utils gnupg2 flex bison libssl-dev libelf-dev bc libncurses-dev kmod \
+      apt -o "Dpkg::Use-Pty=0" -y install curl xz-utils gnupg2 flex bison libssl-dev libelf-dev bc libncurses-dev kmod make \
                      crossbuild-essential-amd64 crossbuild-essential-arm64 && \
       apt -o "Dpkg::Use-Pty=0" -y clean
 

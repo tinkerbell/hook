@@ -96,7 +96,7 @@ jobs:
         env:
           DOCKER_ARCH: "${{ matrix.docker_arch }}"
           DO_PUSH: "${{ github.ref == 'refs/heads/main' && 'yes' || 'no' }}"
-          EXPORT_LK_CONTAINERS: "${{ github.event_name == 'pull_request' && 'yes' || 'no' }}" # Builds on PRs don't push images to a registry so they need to be passed on through GitHub Artifacts.
+          EXPORT_LK_CONTAINERS: "${{ github.ref != 'refs/heads/main' && 'yes' || 'no' }}" # Builds on PRs don't push images to a registry so they need to be passed on through GitHub Artifacts.
           EXPORT_LK_CONTAINERS_DIR: "${{ runner.temp }}"
         run: bash build.sh linuxkit-containers
 
@@ -141,7 +141,7 @@ jobs:
       - name: Build and Push and Export Kernel ${{matrix.kernel}} (${{ matrix.arch }})
         env:
           DO_PUSH: "${{ github.ref == 'refs/heads/main' && 'yes' || 'no' }}"
-          EXPORT_KERNEL_IMAGE: "${{ github.event_name == 'pull_request' && 'yes' || 'no' }}" # Builds on PRs don't push images to a registry so they need to be passed on through GitHub Artifacts.
+          EXPORT_KERNEL_IMAGE: "${{ github.ref != 'refs/heads/main' && 'yes' || 'no' }}" # Builds on PRs don't push images to a registry so they need to be passed on through GitHub Artifacts.
           EXPORT_KERNEL_IMAGE_DIR: "${{ runner.temp }}"
         run: bash build.sh build-kernel "${{ matrix.kernel }}"
 
@@ -201,13 +201,13 @@ jobs:
 
       - name: Download Linuxkit artifacts
         uses: actions/download-artifact@v5
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ github.ref != 'refs/heads/main' }}
         with:
           name: linuxkit-images-${{ matrix.docker_arch }}
           path: ${{ runner.temp }}
 
       - name: Load Linuxkit Docker images into local Docker daemon
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ github.ref != 'refs/heads/main' }}
         run: |
           ls "${{ runner.temp }}"
           imgs=$(ls "${{ runner.temp }}" | grep tar.gz | xargs)
@@ -221,13 +221,13 @@ jobs:
 
       - name: Download Kernel artifacts
         uses: actions/download-artifact@v5
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ github.ref != 'refs/heads/main' }}
         with:
           name: kernel-images-${{ matrix.kernel }}
           path: ${{ runner.temp }}
 
       - name: Load Kernel Docker images into local Docker daemon
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ github.ref != 'refs/heads/main' }}
         run: |
           ls "${{ runner.temp }}"
           imgs=$(ls "${{ runner.temp }}" | grep tar.gz | xargs)

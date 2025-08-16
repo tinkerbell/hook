@@ -210,9 +210,6 @@ function json_matrix_find_runner() {
 	declare -a json_items_bare=(${runner})
 	# wrap each json_items array item in double quotes
 	declare -a json_items=()
-	if [[ "${runner}" != "ubuntu-latest" ]]; then # if not using a GH-hosted runner, auto-add the "self-hosted" member
-		json_items+=("\"self-hosted\"")
-	fi
 	for item in "${json_items_bare[@]}"; do
 		json_items+=("\"${item}\"")
 	done

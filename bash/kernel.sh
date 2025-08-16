@@ -48,6 +48,11 @@ function kernel_build() {
 	else
 		log info "DO_PUSH not 'yes', not pushing."
 	fi
+
+	if [[ "${EXPORT_KERNEL_IMAGE}" == "yes" ]]; then
+		log info "Exporting kernel image ${kernel_oci_image} to ${EXPORT_KERNEL_IMAGE_DIR}"
+		save_docker_image_to_tar_gz "${kernel_oci_image}" "${EXPORT_KERNEL_IMAGE_DIR}"
+	fi
 }
 
 function kernel_configure_interactive() {

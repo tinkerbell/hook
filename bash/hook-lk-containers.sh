@@ -7,19 +7,21 @@ function build_all_hook_linuxkit_containers() {
 	# when adding new container builds here you'll also want to add them to the
 	# `linuxkit_build` function in the linuxkit.sh file.
 	# # NOTE: linuxkit containers must be in the images/ directory
-	build_hook_linuxkit_container hook-bootkit "HOOK_CONTAINER_BOOTKIT_IMAGE"
-	build_hook_linuxkit_container hook-docker "HOOK_CONTAINER_DOCKER_IMAGE"
-	build_hook_linuxkit_container hook-udev "HOOK_CONTAINER_UDEV_IMAGE"
-	build_hook_linuxkit_container hook-acpid "HOOK_CONTAINER_ACPID_IMAGE"
-	build_hook_linuxkit_container hook-containerd "HOOK_CONTAINER_CONTAINERD_IMAGE"
-	build_hook_linuxkit_container hook-runc "HOOK_CONTAINER_RUNC_IMAGE"
-	build_hook_linuxkit_container hook-embedded "HOOK_CONTAINER_EMBEDDED_IMAGE"
+	build_hook_linuxkit_container hook-bootkit "HOOK_CONTAINER_BOOTKIT_IMAGE" "${EXPORT_LK_CONTAINERS}" "${EXPORT_LK_CONTAINERS_DIR}"
+	build_hook_linuxkit_container hook-docker "HOOK_CONTAINER_DOCKER_IMAGE" "${EXPORT_LK_CONTAINERS}" "${EXPORT_LK_CONTAINERS_DIR}"
+	build_hook_linuxkit_container hook-udev "HOOK_CONTAINER_UDEV_IMAGE" "${EXPORT_LK_CONTAINERS}" "${EXPORT_LK_CONTAINERS_DIR}"
+	build_hook_linuxkit_container hook-acpid "HOOK_CONTAINER_ACPID_IMAGE" "${EXPORT_LK_CONTAINERS}" "${EXPORT_LK_CONTAINERS_DIR}"
+	build_hook_linuxkit_container hook-containerd "HOOK_CONTAINER_CONTAINERD_IMAGE" "${EXPORT_LK_CONTAINERS}" "${EXPORT_LK_CONTAINERS_DIR}"
+	build_hook_linuxkit_container hook-runc "HOOK_CONTAINER_RUNC_IMAGE" "${EXPORT_LK_CONTAINERS}" "${EXPORT_LK_CONTAINERS_DIR}"
+	build_hook_linuxkit_container hook-embedded "HOOK_CONTAINER_EMBEDDED_IMAGE" "${EXPORT_LK_CONTAINERS}" "${EXPORT_LK_CONTAINERS_DIR}"
 }
 
 function build_hook_linuxkit_container() {
 	declare container_dir="${1}"
 	declare template_var="${2}" # bash name reference, kind of an output var but weird
 	declare container_base_dir="images"
+	declare export_container_images="${3:-false}"
+	declare export_container_images_dir="${4:-/tmp}"
 
 	# Lets hash the contents of the directory and use that as a tag
 	declare container_files_hash
@@ -38,6 +40,12 @@ function build_hook_linuxkit_container() {
 		# we try to push here because a previous build may have created the image
 		# this is the case for GitHub Actions CI because we build PRs on the same self-hosted runner
 		push_hook_linuxkit_container "${container_oci_ref}"
+
+		# If export_container_images=yes then export images as tar.gzs to export_container_images_dir
+		# This is mainly for CI to be able to pass built images between jobs
+		if [[ "${export_container_images}" == "yes" ]]; then
+			save_docker_image_to_tar_gz "${container_oci_ref}" "${export_container_images_dir}"
+		fi
 		return 0
 	fi
 
@@ -45,6 +53,11 @@ function build_hook_linuxkit_container() {
 	log debug "Checking if image ${container_oci_ref} can be pulled from remote registry"
 	if docker pull "${container_oci_ref}"; then
 		log info "Image ${container_oci_ref} pulled from remote registry, skipping build"
+		# If export_container_images=yes then export images as tar.gzs to export_container_images_dir
+		# This is mainly for CI to be able to pass built images between jobs
+		if [[ "${export_container_images}" == "yes" ]]; then
+			save_docker_image_to_tar_gz "${container_oci_ref}" "${export_container_images_dir}"
+		fi
 		return 0
 	fi
 
@@ -64,7 +77,25 @@ function build_hook_linuxkit_container() {
 
 	push_hook_linuxkit_container "${container_oci_ref}"
 
+	# If export_container_images=yes then export images as tar.gzs to export_container_images_dir
+	# This is mainly for CI to be able to pass built images between jobs
+	if [[ "${export_container_images}" == "yes" ]]; then
+		save_docker_image_to_tar_gz "${container_oci_ref}" "${export_container_images_dir}"
+	fi
+
 	return 0
+}
+
+function save_docker_image_to_tar_gz() {
+	declare container_oci_ref="${1}"
+	declare export_dir="${2:-/tmp}"
+
+	# Create the export directory if it doesn't exist
+	mkdir -p "${export_dir}"
+
+	# Save the Docker image as a tar.gz file
+	docker save "${container_oci_ref}" | gzip > "${export_dir}/$(basename "${container_oci_ref}" | sed 's/:/-/g').tar.gz"
+	log info "Saved Docker image ${container_oci_ref} to ${export_dir}/$(basename "${container_oci_ref}" | sed 's/:/-/g').tar.gz"
 }
 
 function push_hook_linuxkit_container() {

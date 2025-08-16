@@ -25,10 +25,10 @@ env: # Global environment, passed to all jobs & all steps
   CI_TAGS: "standard armbian-sbc armbian-uefi lts" # 'dev' is not included
   
   # GHA runner configuration. See bash/json-matrix.sh for more details.
-  CI_RUNNER_LK_CONTAINERS_ARM64: "oracle-24cpu-384gb-arm64" # Use a self-hosted runner with the "ARM64" tag for the ARM64 builds of LK containers
-  CI_RUNNER_LK_CONTAINERS_AMD64: "oracle-24cpu-384gb-x86-64" # Use a self-hosted runner with the "X86" tag for the AMD64 builds of LK containers
-  CI_RUNNER_LK_ARM64: "oracle-24cpu-384gb-arm64" # Use a self-hosted runner with the "ARM64" tag for the ARM64 linuxkit builds
-  CI_RUNNER_LK_AMD64: "oracle-24cpu-384gb-x86-64" # Use a self-hosted runner with the "X86" tag for the AMD64 linuxkit builds
+  CI_RUNNER_LK_CONTAINERS_ARM64: "oracle-vm-32cpu-128gb-arm64" # Use a self-hosted runner with the "ARM64" tag for the ARM64 builds of LK containers
+  CI_RUNNER_LK_CONTAINERS_AMD64: "oracle-vm-32cpu-128gb-x86-64" # Use a self-hosted runner with the "X86" tag for the AMD64 builds of LK containers
+  CI_RUNNER_LK_ARM64: "oracle-vm-32cpu-128gb-arm64" # Use a self-hosted runner with the "ARM64" tag for the ARM64 linuxkit builds
+  CI_RUNNER_LK_AMD64: "oracle-vm-32cpu-128gb-x86-64" # Use a self-hosted runner with the "X86" tag for the AMD64 linuxkit builds
   CI_RUNNER_KERNEL_AMD64: "oracle-24cpu-384gb-x86-64" # Use a self-hosted runner with the "X86" tag for the AMD64 kernel builds
   CI_RUNNER_KERNEL_ARM64: "oracle-24cpu-384gb-arm64" # Use a self-hosted runner with the "ARM64" tag for the ARM64 kernel builds
 
@@ -60,7 +60,9 @@ jobs:
   
   build-linuxkit-containers:
     needs: [ matrix_prep ]
-    runs-on: "${{ matrix.runner }}" # the runner to use is determined by the 'gha-matrix' code
+    runs-on:
+      group: Default
+      labels: "${{ matrix.runner }}" # the runner to use is determined by the 'gha-matrix' code
     strategy:
       fail-fast: true
       matrix:
@@ -75,6 +77,10 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          buildkitd-config-inline: |
+            [registry."docker.io"]
+              mirrors = ["mirror.gcr.io"]
 
       - name: Docker Login to quay.io
         if: ${{ env.REGISTRY == 'quay.io' && github.ref == 'refs/heads/main' }}
@@ -86,15 +92,26 @@ jobs:
         uses: docker/login-action@v3
         with: { registry: "ghcr.io", username: "${{ github.repository_owner }}", password: "${{ secrets.GITHUB_TOKEN }}" }
 
-      - name: Build and Push LinuxKit containers for ${{matrix.docker_arch}}
+      - name: Build and Push and Export LinuxKit containers for ${{matrix.docker_arch}}
         env:
           DOCKER_ARCH: "${{ matrix.docker_arch }}"
           DO_PUSH: "${{ github.ref == 'refs/heads/main' && 'yes' || 'no' }}"
+          EXPORT_LK_CONTAINERS: "yes"
+          EXPORT_LK_CONTAINERS_DIR: "${{ runner.temp }}"
         run: bash build.sh linuxkit-containers
-  
+
+      - name: Upload Linuxkit Docker images as GitHub Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linuxkit-images-${{ matrix.docker_arch }}
+          path: ${{ runner.temp }}/*-${{ matrix.docker_arch }}.tar.gz
+          retention-days: 1
+
   build-kernels:
     needs: [ matrix_prep ] # depend on the previous job...
-    runs-on: "${{ matrix.runner }}" # the runner to use is determined by the 'gha-matrix' code
+    runs-on:
+      group: Default
+      labels: "${{ matrix.runner }}" # the runner to use is determined by the 'gha-matrix' code
     strategy:
       fail-fast: false # let other jobs try to complete if one fails, kernels might take long, and they'd be skipped on the next run
       matrix:
@@ -106,6 +123,10 @@ jobs:
 
       - name: Set up Docker Buildx # nb: no need for qemu here, kernels are cross-compiled, instead of the compilation being emulated
         uses: docker/setup-buildx-action@v3
+        with:
+          buildkitd-config-inline: |
+            [registry."docker.io"]
+              mirrors = ["mirror.gcr.io"]
 
       - name: Docker Login to quay.io
         if: ${{ env.REGISTRY == 'quay.io' && github.ref == 'refs/heads/main' }}
@@ -120,11 +141,22 @@ jobs:
       - name: Build and push Kernel ${{matrix.kernel}} (${{ matrix.arch }})
         env:
           DO_PUSH: "${{ github.ref == 'refs/heads/main' && 'yes' || 'no' }}"
+          EXPORT_KERNEL_IMAGE: "yes"
+          EXPORT_KERNEL_IMAGE_DIR: "${{ runner.temp }}"
         run: bash build.sh build-kernel "${{ matrix.kernel }}"
+
+      - name: Upload Kernel Docker images as GitHub Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-images-${{ matrix.kernel }}
+          path: ${{ runner.temp }}/hook-kernel-*.tar.gz
+          retention-days: 1
 
   build-hook-ensemble:
     needs: [ matrix_prep, build-linuxkit-containers, build-kernels ] # depend on the previous job...
-    runs-on: "${{ matrix.runner }}" # the runner to use is determined by the 'gha-matrix' code
+    runs-on:
+      group: Default
+      labels: "${{ matrix.runner }}" # the runner to use is determined by the 'gha-matrix' code
     strategy:
       fail-fast: false # let other jobs try to complete if one fails
       matrix:
@@ -136,6 +168,10 @@ jobs:
 
       - name: Set up Docker Buildx # nb: no need for qemu here, kernels are cross-compiled, instead of the compilation being emulated
         uses: docker/setup-buildx-action@v3
+        with:
+          buildkitd-config-inline: |
+            [registry."docker.io"]
+              mirrors = ["mirror.gcr.io"]
 
       - name: Docker Login to DockerHub # read-only token, required to be able to pull all the linuxkit pkgs without getting rate limited.
         if: ${{ env.LOGIN_TO_DOCKERHUB == 'yes' && github.ref == 'refs/heads/main' }}
@@ -163,6 +199,42 @@ jobs:
             lk-cache-${{ matrix.docker_arch }}
           save-always: true # always save the cache, even if build fails
 
+      - name: Download Linuxkit artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linuxkit-images-${{ matrix.docker_arch }}
+          path: ${{ runner.temp }}
+
+      - name: Load Linuxkit Docker images into local Docker daemon
+        run: |
+          ls "${{ runner.temp }}"
+          imgs=$(ls "${{ runner.temp }}" | grep tar.gz | xargs)
+          echo "Found hook images: ${imgs}"
+          for img in ${imgs}; do
+            echo "extracting and loading image: ${{ runner.temp }}/${img}"
+            gunzip -d "${{ runner.temp }}/${img}"
+            docker load --input "${{ runner.temp }}/${img%.*}"
+          done
+          docker images
+
+      - name: Download Kernel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: kernel-images-${{ matrix.kernel }}
+          path: ${{ runner.temp }}
+
+      - name: Load Kernel Docker images into local Docker daemon
+        run: |
+          ls "${{ runner.temp }}"
+          imgs=$(ls "${{ runner.temp }}" | grep tar.gz | xargs)
+          echo "Found kernel images: ${{ runner.temp }}/${imgs}"
+          for img in ${imgs}; do
+            echo "extracting and loading image: ${{ runner.temp }}/${img}"
+            gunzip -d "${{ runner.temp }}/${img}"
+            docker load --input "${{ runner.temp }}/${img%.*}"
+          done
+          docker images
+
       - name: "Build Hook with Kernel ${{matrix.kernel}} (${{ matrix.arch }}) - cache: ${{matrix.gha_cache}}"
         env:
           DO_BUILD_LK_CONTAINERS: "no" # already built them; this is only for hook/linuxkit.
@@ -181,6 +253,7 @@ jobs:
           path: |
             out/*.tar.gz
             out/*.iso
+          retention-days: 1
 
   release-latest:
     name: Publish all Hooks to GitHub Releases

@@ -96,7 +96,7 @@ jobs:
         env:
           DOCKER_ARCH: "${{ matrix.docker_arch }}"
           DO_PUSH: "${{ github.ref == 'refs/heads/main' && 'yes' || 'no' }}"
-          EXPORT_LK_CONTAINERS: "yes"
+          EXPORT_LK_CONTAINERS: "${{ github.event_name == 'pull_request' && 'yes' || 'no' }}" # Builds on PRs don't push images to a registry so they need to be passed on through GitHub Artifacts.
           EXPORT_LK_CONTAINERS_DIR: "${{ runner.temp }}"
         run: bash build.sh linuxkit-containers
 
@@ -138,10 +138,10 @@ jobs:
         uses: docker/login-action@v3
         with: { registry: "ghcr.io", username: "${{ github.repository_owner }}", password: "${{ secrets.GITHUB_TOKEN }}" }
 
-      - name: Build and push Kernel ${{matrix.kernel}} (${{ matrix.arch }})
+      - name: Build and Push and Export Kernel ${{matrix.kernel}} (${{ matrix.arch }})
         env:
           DO_PUSH: "${{ github.ref == 'refs/heads/main' && 'yes' || 'no' }}"
-          EXPORT_KERNEL_IMAGE: "yes"
+          EXPORT_KERNEL_IMAGE: "${{ github.event_name == 'pull_request' && 'yes' || 'no' }}" # Builds on PRs don't push images to a registry so they need to be passed on through GitHub Artifacts.
           EXPORT_KERNEL_IMAGE_DIR: "${{ runner.temp }}"
         run: bash build.sh build-kernel "${{ matrix.kernel }}"
 

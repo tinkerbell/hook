@@ -34,6 +34,10 @@ function kernel_build() {
 		if docker pull "${kernel_oci_image}"; then
 			log info "Kernel image ${kernel_oci_image} already in registry; skipping build."
 			log info "Set FORCE_BUILD_KERNEL=yes to force a build; use DO_PUSH=yes to also push after build."
+			if [[ "${EXPORT_KERNEL_IMAGE}" == "yes" ]]; then
+				log info "Exporting kernel image ${kernel_oci_image} to ${EXPORT_KERNEL_IMAGE_DIR}"
+				save_docker_image_to_tar_gz "${kernel_oci_image}" "${EXPORT_KERNEL_IMAGE_DIR}"
+			fi
 			exit 0
 		fi
 	fi

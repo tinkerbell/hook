@@ -201,11 +201,13 @@ jobs:
 
       - name: Download Linuxkit artifacts
         uses: actions/download-artifact@v5
+        if: ${{ github.event_name == 'pull_request' }}
         with:
           name: linuxkit-images-${{ matrix.docker_arch }}
           path: ${{ runner.temp }}
 
       - name: Load Linuxkit Docker images into local Docker daemon
+        if: ${{ github.event_name == 'pull_request' }}
         run: |
           ls "${{ runner.temp }}"
           imgs=$(ls "${{ runner.temp }}" | grep tar.gz | xargs)
@@ -219,11 +221,13 @@ jobs:
 
       - name: Download Kernel artifacts
         uses: actions/download-artifact@v5
+        if: ${{ github.event_name == 'pull_request' }}
         with:
           name: kernel-images-${{ matrix.kernel }}
           path: ${{ runner.temp }}
 
       - name: Load Kernel Docker images into local Docker daemon
+        if: ${{ github.event_name == 'pull_request' }}
         run: |
           ls "${{ runner.temp }}"
           imgs=$(ls "${{ runner.temp }}" | grep tar.gz | xargs)

@@ -1,0 +1,4 @@
+# This file is used by linuxkit/init to configure the start up of containerd
+# https://github.com/linuxkit/linuxkit/blob/master/pkg/init/cmd/service/system_init.go
+stdout = "/var/log/containerd.out.log"
+stderr = "/var/log/containerd.err.log"

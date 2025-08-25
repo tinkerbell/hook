@@ -20,7 +20,7 @@ kernel:
 
 init:
   # this init container sha has support for volumes
-  - linuxkit/init:872d2e1be745f1acb948762562cf31c367303a3b
+  - linuxkit/init:v1.1.0
   - "${HOOK_CONTAINER_RUNC_IMAGE}"
   - "${HOOK_CONTAINER_CONTAINERD_IMAGE}"
   - linuxkit/ca-certificates:v1.0.0

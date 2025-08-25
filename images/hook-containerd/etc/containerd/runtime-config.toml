@@ -1,9 +1,10 @@
 # default containerd configuration file, generated via `containerd config default`
+# This file is named runtime-config.toml because thats the way linuxkit init service needs it.
 version = 3
 root = '/var/lib/containerd'
 state = '/run/containerd'
 temp = ''
-disabled_plugins = []
+disabled_plugins = ["cri"]
 required_plugins = []
 oom_score = 0
 imports = []

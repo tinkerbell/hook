@@ -166,6 +166,14 @@ jobs:
       - name: Checkout build repo
         uses: actions/checkout@v5
 
+      - name: Set up Docker registry mirror # this is needed because linuxkit pulls images from dockerhub and we want to use a registry mirror to avoid rate limiting
+        uses: docker/setup-docker-action@v4
+        with:
+          daemon-config: |
+            {
+              "registry-mirrors": ["https://mirror.gcr.io"]
+            }
+
       - name: Set up Docker Buildx # nb: no need for qemu here, kernels are cross-compiled, instead of the compilation being emulated
         uses: docker/setup-buildx-action@v3
         with:

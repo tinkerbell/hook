@@ -30,8 +30,8 @@ run_dhcp_client() {
 
 }
 
-if [ -f /run/network/interfaces ]; then
-	echo "the /run/network/interfaces file exists, so static IP's are in use. we will not be running the dhcp client."
+if [ -f /run/network/interfaces ] || [ -f /var/run/network/interfaces ]; then
+	echo "the /run/network/interfaces file or /var/run/network/interfaces file exists, so static IP's are in use. not running the dhcp client."
 	exit 0
 fi
 

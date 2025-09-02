@@ -59,9 +59,7 @@ jobs:
 
   build-linuxkit-containers:
     needs: [ matrix_prep ]
-    runs-on:
-      group: Default
-      labels: "${{ matrix.runner }}" # the runner to use is determined by the 'gha-matrix' code
+    runs-on: "${{ matrix.runner }}" # "groups" are only for self-hosted setups! TODO: group should be determined by matrix code # the runner to use is determined by the 'gha-matrix' code
     strategy:
       fail-fast: true
       matrix:
@@ -108,9 +106,7 @@ jobs:
 
   build-kernels:
     needs: [ matrix_prep ] # depend on the previous job...
-    runs-on:
-      group: Default
-      labels: "${{ matrix.runner }}" # the runner to use is determined by the 'gha-matrix' code
+    runs-on: "${{ matrix.runner }}" # "groups" are only for self-hosted setups! TODO: group should be determined by matrix code # # the runner to use is determined by the 'gha-matrix' code
     strategy:
       fail-fast: false # let other jobs try to complete if one fails, kernels might take long, and they'd be skipped on the next run
       matrix:
@@ -153,9 +149,7 @@ jobs:
 
   build-hook-ensemble:
     needs: [ matrix_prep, build-linuxkit-containers, build-kernels ] # depend on the previous job...
-    runs-on:
-      group: Default
-      labels: "${{ matrix.runner }}" # the runner to use is determined by the 'gha-matrix' code
+    runs-on: "${{ matrix.runner }}" # "groups" are only for self-hosted setups! TODO: group should be determined by matrix code #  # the runner to use is determined by the 'gha-matrix' code
     strategy:
       fail-fast: false # let other jobs try to complete if one fails
       matrix:

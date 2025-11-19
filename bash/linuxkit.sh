@@ -136,16 +136,121 @@ function linuxkit_build() {
 	"${linuxkit_bin}" build "--format" "kernel+initrd" "${lk_debug_args[@]}" "${lk_args[@]}"
 
 	declare initramfs_path="${lk_output_dir}/hook-initrd.img"
+
 	# initramfs_path is a gzipped file. obtain the uncompressed byte size, without decompressing it
-	declare -i initramfs_size_bytes=0
-	initramfs_size_bytes=$(gzip -l "${initramfs_path}" | tail -n 1 | awk '{print $2}')
-	log info "Uncompressed initramfs size in bytes: ${initramfs_size_bytes}"
-	# If the size is larger than 900mb, it is unlikely to boot on a 2gb RAM machine. Warn.
-	if [[ "${initramfs_size_bytes}" -gt 943718400 ]]; then
-		log warn "${inventory_id}: Uncompressed initramfs size (${initramfs_size_bytes} bytes) is larger than 900mb; it may not boot on a 2gb RAM machine."
-	else
-		log notice "${inventory_id}: Uncompressed initramfs size (${initramfs_size_bytes} bytes) is smaller than 900mb."
+	declare -i initramfs_size_bytes_initial=0 initramfs_size_bytes_gzip=0 initramfs_size_bytes_zstd=0
+	initramfs_size_bytes_gzip=$(stat -c%s "${initramfs_path}")
+	initramfs_size_bytes_initial=$(gzip -l "${initramfs_path}" | tail -n 1 | awk '{print $2}')
+	log info "Compressed-gzip (initial) initramfs size in bytes: ${initramfs_size_bytes_gzip}"
+	log info "Uncompressed initial initramfs size in bytes: ${initramfs_size_bytes_initial}"
+
+	# Brief detour to:
+	# 1) Decompress the initramfs (`gunzip`) and extract it to a directory (`cpio`)
+	#    This de-duplicates some cpio-duplicates leftover by linuxkit (some kb's)
+	# 2) Produce a reports on the initramfs contents:
+	#    - disk usage (by size) of the initramfs contents (du -h -d 10 -x | sort -h | tail -n 20)
+	#    - aggregated basename-identical files in the initramfs, with their size and hash
+	#      This will help us find things to optimize in the lkcontainers:
+	#      - use same base image for all cotntainers (deduplicate musl + others)
+	#      - avoid different versions of stuff (containerd in hook-containerd but also in hook-docker)
+	#      - avoid large files that are not needed in the initramfs (docs)
+	# 3) Use `rdfind` to replace exact duplicates with hardlinks (many mb's!)
+	# 4) Repack the initramfs into `cpio` and compress it with `zstd` level 9 (about 30% better, many mb's!)
+	#    All the Hook kernels already support zstd initramfs decompression, so this is safe to do. Performance might be better too.
+	#
+	# Since we need tools and do-it-as-root for this, its best done using a Docker container
+	declare -a compressor_deps=("bash" "gawk" "cpio" "zstd" "rdfind" "gzip" "pigz" "coreutils" "findutils" "file" "du-dust")
+	declare initramfs_compressor_dockerfile="${lk_output_dir}/Dockerfile.initramfs_compressor"
+	declare -r output_compressed_initramfs_name="initramfs-compressed.img" output_report_name="report.md"
+
+	# I *really* don't want to escape this; bear with me
+	find_same_name_files_command="$(
+		cat <<- 'FIND_SAME_NAME_FILES_COMMAND'
+			find . -type f -size +512k -printf "%f %p\n" | sort | awk '{files[$1]=files[$1] ? files[$1] "\n"$2 : $2; count[$1]++} END {for (f in count) if (count[f]>1) print f "\n" files[f]}' | while read -r line; do if [[ -f "$line" ]]; then stat --printf="%s bytes " "$line"; md5sum "$line"; else echo "### duplicate: '$line'"; fi; done
+		FIND_SAME_NAME_FILES_COMMAND
+	)"
+
+	log info "Creating Dockerfile '${initramfs_compressor_dockerfile}'... "
+	cat <<- INITRAMFS_COMPRESSOR_DOCKERFILE > "${initramfs_compressor_dockerfile}"
+		FROM debian:stable AS builder
+		RUN mkdir -p /output
+		ENV DEBIAN_FRONTEND=noninteractive
+		RUN apt-get -qq -o "Dpkg::Use-Pty=0" update || apt-get -o "Dpkg::Use-Pty=0" update
+		RUN apt-get -qq install -o "Dpkg::Use-Pty=0" -q -y ${compressor_deps[*]} || apt-get install -o "Dpkg::Use-Pty=0" -q -y ${compressor_deps[*]}
+		SHELL ["/bin/bash", "-c"]
+
+		ADD hook-initrd.img /input/initramfs.img
+		WORKDIR /work/dir
+		RUN echo "# Tinkerbell Hook LinuxKit initramfs compressor report" > /output/${output_report_name}
+		RUN { echo -n "## input magic: " && file /input/initramfs.img; }>> /output/${output_report_name}
+
+		RUN pigz -d -c /input/initramfs.img > /input/initramfs_decompress.cpio
+		#RUN zcat /input/initramfs.img > /input/initramfs_decompress.cpio
+
+		RUN { echo -n "## ungzipped input magic: " && file /input/initramfs_decompress.cpio; }>> /output/${output_report_name}
+
+		RUN cat /input/initramfs_decompress.cpio | cpio -idm
+
+		# Reporting on original...
+		RUN { echo "## original: dust report: " && dust -x --no-colors --no-percent-bars ; }>> /output/${output_report_name}
+		RUN { echo "## original: top-40 dirs usage 5-deep (du): " && du -h -d 5 -x . | sort -h | tail -40 ; }>> /output/${output_report_name}
+		RUN { echo "## original: same-name files, larger than 512kb: " && $find_same_name_files_command ; }>> /output/${output_report_name}
+		RUN { echo -n "## original: hardlinked files: " && find . -type f -links +1 | wc -l ; }>> /output/${output_report_name}
+
+		# -> Deduplicate exact files into hardlinks with rdfind
+		RUN { echo "## rdfind run: " && rdfind -makehardlinks true -deleteduplicates true -makeresultsfile false . ; }>> /output/${output_report_name}
+
+		# Reporting after deduplication
+		RUN { echo "## deduped: dust report: " && dust -x --no-colors --no-percent-bars ; }>> /output/${output_report_name}
+		RUN { echo -n "## deduped: hardlinked files: " && find . -type f -links +1 | wc -l ; }>> /output/${output_report_name}
+
+		RUN find . | cpio -o -H newc > /output/repacked.cpio
+		RUN { echo -n "## output, pre compression magic: " && file /output/repacked.cpio; }>> /output/${output_report_name}
+
+		RUN zstdmt -9 -o /output/${output_compressed_initramfs_name} /output/repacked.cpio
+		RUN { echo -n "## output magic: " && file /output/${output_compressed_initramfs_name}; }>> /output/${output_report_name}
+		FROM scratch
+		COPY --from=builder /output/* /
+	INITRAMFS_COMPRESSOR_DOCKERFILE
+
+	declare docker_compressor_output_dir="${lk_output_dir}/initramfs_compressor_output"
+	mkdir -p "${docker_compressor_output_dir}"
+
+	# Now, build the Dockerfile and output the fat32 image directly
+	log info "Building Dockerfile for initramfs compressor and outputting directly to '${docker_compressor_output_dir}'..."
+	declare -a compressor_docker_buildx_args=(
+		--output "type=local,dest=${docker_compressor_output_dir}" # output directly to a local dir, not an image
+		"--progress=${DOCKER_BUILDX_PROGRESS_TYPE}"                # show progress
+		-f "${initramfs_compressor_dockerfile}"                    # Dockerfile path
+		"${lk_output_dir}")                                        # build context, for easy access to the input initramfs file
+	docker buildx build "${compressor_docker_buildx_args[@]}"
+
+	# If output not in place, something went wrong
+	if [[ ! -f "${docker_compressor_output_dir}/${output_compressed_initramfs_name}" ]]; then
+		log error "Failed to produce compressed initramfs at expected location '${docker_compressor_output_dir}/${output_compressed_initramfs_name}'"
+		exit 8
 	fi
+
+	# If report not in place, something went wrong
+	if [[ ! -f "${docker_compressor_output_dir}/${output_report_name}" ]]; then
+		log error "Failed to produce compressed initramfs at expected location '${docker_compressor_output_dir}/${output_report_name}'"
+		exit 9
+	fi
+
+	# Output the report (use DEBUG=yes to see it)
+	log_file_bat "${docker_compressor_output_dir}/${output_report_name}" "info" "Compression report for initramfs ${inventory_id}:"
+
+	# Move the outputted compressed initramfs into the original location
+	mv "${debug_dash_v[@]}" "${docker_compressor_output_dir}/${output_compressed_initramfs_name}" "${initramfs_path}"
+
+	# Clean up the temporary Dockerfile and output dir - not if debugging
+	if [[ "${DEBUG}" != "yes" ]]; then
+		rm -rf "${initramfs_compressor_dockerfile}" "${docker_compressor_output_dir}"
+	fi
+
+	# Calculate the final initramfs zstd-compressed size, then brag about zstd's prowess
+	initramfs_size_bytes_zstd=$(stat -c%s "${initramfs_path}")
+	log notice "${inventory_id}: Final zstd+deduped initramfs size (${initramfs_size_bytes_zstd} bytes) vs initial gzip-compressed size (${initramfs_size_bytes_gzip} bytes): size reduced by $((100 - (initramfs_size_bytes_zstd * 100 / initramfs_size_bytes_gzip)))%"
 
 	if [[ "${LK_RUN}" == "qemu" ]]; then
 		linuxkit_run_qemu

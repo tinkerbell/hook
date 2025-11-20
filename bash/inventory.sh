@@ -35,7 +35,7 @@ function produce_default_kernel_inventory() {
 
 	## A 'peg' is not really a 'hook': for development purposes; testing new LK version and simpler LK configurations, using the default kernel
 	define_id "peg-default-amd64" METHOD='default' ARCH='x86_64' TAG='dev' \
-		USE_KERNEL_ID='hook-default-amd64' TEMPLATE='peg' LINUXKIT_VERSION='1.2.0' \
+		USE_KERNEL_ID='hook-default-amd64' TEMPLATE='peg' \
 		KERNEL_MAJOR='5' KERNEL_MINOR='10' KCONFIG='generic'
 
 	## development purposes: trying out kernel 6.6.y

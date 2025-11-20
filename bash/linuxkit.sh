@@ -221,6 +221,12 @@ function linuxkit_build() {
 
 		RUN zstdmt -9 -o /output/${output_compressed_initramfs_name} /output/repacked.cpio
 		RUN { echo -n "## output magic: " && file /output/${output_compressed_initramfs_name}; }>> /output/${output_report_name}
+
+		# Report on the reductions done.
+		# First, the original cpio vs the repacked cpio; this is twice in memory and uncompressed so most relevant
+		RUN { echo "## size reduction: original cpio vs repacked cpio: " && ls -lh /input/initramfs_decompress.cpio /output/repacked.cpio ; }>> /output/${output_report_name}
+		# Then, the original gzipped initramfs vs the final zstd initramfs; this is only once in memory but affects download/TFTP time
+		RUN { echo "## size reduction: original gzipped initramfs vs final zstd initramfs: " && ls -lh /input/initramfs.img /output/${output_compressed_initramfs_name} ; }>> /output/${output_report_name}
 		FROM scratch
 		COPY --from=builder /output/* /
 	INITRAMFS_COMPRESSOR_DOCKERFILE

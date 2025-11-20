@@ -163,12 +163,24 @@ function linuxkit_build() {
 	declare initramfs_compressor_dockerfile="${lk_output_dir}/Dockerfile.initramfs_compressor"
 	declare -r output_compressed_initramfs_name="initramfs-compressed.img" output_report_name="report.md"
 
+	declare find_same_name_files_command cpio_extract_like_the_kernel_does_command cpio_repack_for_kernel_command
 	# I *really* don't want to escape this; bear with me
 	find_same_name_files_command="$(
 		cat <<- 'FIND_SAME_NAME_FILES_COMMAND'
 			find . -type f -size +512k -printf "%f %p\n" | sort | awk '{files[$1]=files[$1] ? files[$1] "\n"$2 : $2; count[$1]++} END {for (f in count) if (count[f]>1) print f "\n" files[f]}' | while read -r line; do if [[ -f "$line" ]]; then stat --printf="%s bytes " "$line"; md5sum "$line"; else echo "### duplicate: '$line'"; fi; done
 		FIND_SAME_NAME_FILES_COMMAND
 	)"
+
+	# cpio command that mimics what the kernel does when extracting initramfs
+	#  -i: extract from archive (copy-in)
+	#  -d: create directories as needed
+	#  -m: preserve modification times (so files get the archive mtime, like the kernel does)
+	#  -u: unconditionally replace existing files (this is the key to "kernel-like" behavior)
+	#  --no-absolute-filenames: avoid writing absolute paths (shouldn't be any anyway, but don't trust - not a kernel concern)
+	cpio_extract_like_the_kernel_does_command="cpio -idmu --no-absolute-filenames"
+
+	# cpio repack, newc is the format the kernel expects
+	cpio_repack_for_kernel_command="cpio -o -H newc"
 
 	log info "Creating Dockerfile '${initramfs_compressor_dockerfile}'... "
 	cat <<- INITRAMFS_COMPRESSOR_DOCKERFILE > "${initramfs_compressor_dockerfile}"
@@ -189,7 +201,7 @@ function linuxkit_build() {
 
 		RUN { echo -n "## ungzipped input magic: " && file /input/initramfs_decompress.cpio; }>> /output/${output_report_name}
 
-		RUN cat /input/initramfs_decompress.cpio | cpio -idm
+		RUN cat /input/initramfs_decompress.cpio | ${cpio_extract_like_the_kernel_does_command}
 
 		# Reporting on original...
 		RUN { echo "## original: dust report: " && dust -x --no-colors --no-percent-bars ; }>> /output/${output_report_name}
@@ -204,7 +216,7 @@ function linuxkit_build() {
 		RUN { echo "## deduped: dust report: " && dust -x --no-colors --no-percent-bars ; }>> /output/${output_report_name}
 		RUN { echo -n "## deduped: hardlinked files: " && find . -type f -links +1 | wc -l ; }>> /output/${output_report_name}
 
-		RUN find . | cpio -o -H newc > /output/repacked.cpio
+		RUN find . | ${cpio_repack_for_kernel_command} > /output/repacked.cpio
 		RUN { echo -n "## output, pre compression magic: " && file /output/repacked.cpio; }>> /output/${output_report_name}
 
 		RUN zstdmt -9 -o /output/${output_compressed_initramfs_name} /output/repacked.cpio
@@ -223,6 +235,9 @@ function linuxkit_build() {
 		"--progress=${DOCKER_BUILDX_PROGRESS_TYPE}"                # show progress
 		-f "${initramfs_compressor_dockerfile}"                    # Dockerfile path
 		"${lk_output_dir}")                                        # build context, for easy access to the input initramfs file
+
+	log_file_bat "${initramfs_compressor_dockerfile}" "debug" "Dockerfile for initramfs compressor"
+
 	docker buildx build "${compressor_docker_buildx_args[@]}"
 
 	# If output not in place, something went wrong

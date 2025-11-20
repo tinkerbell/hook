@@ -45,10 +45,10 @@ function build_all_hook_linuxkit_containers() {
 		lk_proxy_image_ref="${linuxkit_proxy_images[${lk_proxy_image_key}]}"
 		lk_proxy_image_dir="hook-linuxkit-${lk_proxy_image_key}"
 		lk_proxy_image_var="HOOK_CONTAINER_LINUXKIT_$(echo "${lk_proxy_image_key}" | tr '[:lower:]' '[:upper:]')_IMAGE"
-		log warn "Preparing LinuxKit proxy image ${lk_proxy_image_ref} in ${lk_proxy_image_dir}, variable name ${lk_proxy_image_var}"
+		log info "Preparing LinuxKit proxy image ${lk_proxy_image_ref} in ${lk_proxy_image_dir}, variable name ${lk_proxy_image_var}"
 		rm -rf "images/${lk_proxy_image_dir}"
 		mkdir -p "images/${lk_proxy_image_dir}"
-		echo "FROM --platform=linux/${DOCKER_ARCH} ${lk_proxy_image_ref}" > "images/${lk_proxy_image_dir}/Dockerfile"
+		echo "FROM --platform=\${TARGETARCH} ${lk_proxy_image_ref}" > "images/${lk_proxy_image_dir}/Dockerfile"
 		build_hook_linuxkit_container "${lk_proxy_image_dir}" "${lk_proxy_image_var}" "${EXPORT_LK_CONTAINERS}" "${EXPORT_LK_CONTAINERS_DIR}"
 	done
 }

@@ -17,18 +17,19 @@ function build_all_hook_linuxkit_containers() {
 
 	# We also use a bunch of linuxkit/xxx:v1.0.0 images; those would be pulled from Docker Hub (and thus subject to rate limits) for each Hook build.
 	# Instead, we'll wrap them into a Dockerfile with just a FROM line, and build/push them ourselves.
+	# Those versions are obtained from the references in https://github.com/linuxkit/linuxkit/tree/master/examples
 	declare -A linuxkit_proxy_images=()
-	linuxkit_proxy_images+=(["init"]="linuxkit/init:v1.1.0")
-	linuxkit_proxy_images+=(["ca_certificates"]="linuxkit/ca-certificates:v1.0.0")
-	linuxkit_proxy_images+=(["firmware"]="linuxkit/firmware:24402a25359c7bc290f7fc3cd23b6b5f0feb32a5")
-	linuxkit_proxy_images+=(["rngd"]="linuxkit/rngd:v1.0.0")
-	linuxkit_proxy_images+=(["sysctl"]="linuxkit/sysctl:v1.0.0")
-	linuxkit_proxy_images+=(["sysfs"]="linuxkit/sysfs:v1.0.0")
-	linuxkit_proxy_images+=(["modprobe"]="linuxkit/modprobe:v1.0.0")
-	linuxkit_proxy_images+=(["dhcpcd"]="linuxkit/dhcpcd:v1.0.0")
-	linuxkit_proxy_images+=(["openntpd"]="linuxkit/openntpd:v1.0.0")
-	linuxkit_proxy_images+=(["getty"]="linuxkit/getty:v1.0.0")
-	linuxkit_proxy_images+=(["sshd"]="linuxkit/sshd:v1.0.0")
+	linuxkit_proxy_images+=(["init"]="linuxkit/init:b5506cc74a6812dc40982cacfd2f4328f8a4b12a")
+	linuxkit_proxy_images+=(["ca_certificates"]="linuxkit/ca-certificates:256f1950df59f2f209e9f0b81374177409eb11de")
+	linuxkit_proxy_images+=(["firmware"]="linuxkit/firmware:68c2b29f28f2639020b9f8d55254d333498a30aa")
+	linuxkit_proxy_images+=(["rngd"]="linuxkit/rngd:984eb580ecb63986f07f626b61692a97aacd7198")
+	linuxkit_proxy_images+=(["sysctl"]="linuxkit/sysctl:97e8bb067cd9cef1514531bb692f27263ac6d626")
+	linuxkit_proxy_images+=(["sysfs"]="linuxkit/sysfs:6d5bd933762f6b216744c711c6e876756cee9600")
+	linuxkit_proxy_images+=(["modprobe"]="linuxkit/modprobe:4248cdc3494779010e7e7488fc17b6fd45b73aeb")
+	linuxkit_proxy_images+=(["dhcpcd"]="linuxkit/dhcpcd:b87e9ececac55a65eaa592f4dd8b4e0c3009afdb")
+	linuxkit_proxy_images+=(["openntpd"]="linuxkit/openntpd:2508f1d040441457a0b3e75744878afdf61bc473")
+	linuxkit_proxy_images+=(["getty"]="linuxkit/getty:a86d74c8f89be8956330c3b115b0b1f2e09ef6e0")
+	linuxkit_proxy_images+=(["sshd"]="linuxkit/sshd:08e5d4a46603eff485d5d1b14001cc932a530858")
 
 	# each of those will handled the following way:
 	# - create+clean a directory under images; eg for key "init" create images/hook-linuxkit-init

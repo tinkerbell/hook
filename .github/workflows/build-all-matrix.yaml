@@ -45,7 +45,7 @@ jobs:
       lk_hooks_json: ${{ steps.prepare-matrix.outputs.lk_hooks_json }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Prepare release ID (current date) # This only used for the GitHub Release; not included in any way in the build process.
         id: date_prep
@@ -70,7 +70,7 @@ jobs:
     name: "LinuxKit containers for ${{ matrix.docker_arch }}"
     steps:
       - name: Checkout build repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -119,7 +119,7 @@ jobs:
     name: "Kernel ${{ matrix.kernel }}"
     steps:
       - name: Checkout build repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Docker Buildx # nb: no need for qemu here, kernels are cross-compiled, instead of the compilation being emulated
         uses: docker/setup-buildx-action@v3
@@ -164,7 +164,7 @@ jobs:
     name: "Hook ${{ matrix.kernel }}"
     steps:
       - name: Checkout build repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Docker registry mirror # this is needed because linuxkit pulls images from dockerhub and we want to use a registry mirror to avoid rate limiting
         uses: docker/setup-docker-action@v4
@@ -275,7 +275,7 @@ jobs:
     steps:
 
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Download built Hook artifacts
         uses: actions/download-artifact@v5
@@ -347,7 +347,7 @@ jobs:
     steps:
 
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Download built Hook artifacts
         uses: actions/download-artifact@v5

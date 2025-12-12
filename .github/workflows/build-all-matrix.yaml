@@ -197,7 +197,7 @@ jobs:
         with: { registry: "ghcr.io", username: "${{ github.repository_owner }}", password: "${{ secrets.GITHUB_TOKEN }}" }
 
       - name: GitHub Actions Cache for 'cache' dir
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         if: ${{ matrix.gha_cache == 'yes' }} # effectively always yes: see gha_cache in bash/json-matrix.sh around line 84
         with:
           path: cache

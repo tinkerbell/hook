@@ -128,6 +128,7 @@ function build_bootable_armbian_uboot() {
 
 	declare -i initramfs_size_bytes
 	initramfs_size_bytes=$(stat --format="%s" "${fat32_root_dir}/initramfs")
+	log debug "Initramfs size (bytes): ${initramfs_size_bytes}"
 
 	# DTBs go into a dtb subdirectory
 	mkdir -p "${fat32_root_dir}/dtb"

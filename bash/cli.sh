@@ -20,7 +20,7 @@ function parse_command_line_arguments() {
 				log error "Invalid command line parameter '${param_name}=${param_value_desc}'"
 				exit 8
 			fi
-		elif [[ "x${arg}x" != "xx" ]]; then # not a param, not empty, store it in the non-param array for later usage
+		elif [[ "${arg}" != "" ]]; then # not a param, not empty, store it in the non-param array for later usage
 			local non_param_value="${arg}"
 			local non_param_value_desc="${non_param_value:-(empty)}"
 			log debug "Command line: non-param argument" "'${non_param_value_desc}'"

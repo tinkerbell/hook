@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 function download_prepare_shellcheck_bin() {
-	declare SHELLCHECK_VERSION=${SHELLCHECK_VERSION:-"0.10.0"} # https://github.com/koalaman/shellcheck/releases
+	declare SHELLCHECK_VERSION=${SHELLCHECK_VERSION:-"0.11.0"} # https://github.com/koalaman/shellcheck/releases
 	log info "Preparing shellcheck binary for version v${SHELLCHECK_VERSION}..."
 
 	declare bash_machine="${BASH_VERSINFO[5]}"
@@ -51,7 +51,7 @@ function download_prepare_shellcheck_bin() {
 
 # Same, but for shellfmt
 function download_prepare_shellfmt_bin() {
-	declare SHELLFMT_VERSION=${SHELLFMT_VERSION:-"3.10.0"} # https://github.com/mvdan/sh/releases/
+	declare SHELLFMT_VERSION=${SHELLFMT_VERSION:-"3.12.0"} # https://github.com/mvdan/sh/releases/
 	log info "Preparing shellfmt binary for version v${SHELLFMT_VERSION}..."
 
 	declare bash_machine="${BASH_VERSINFO[5]}"

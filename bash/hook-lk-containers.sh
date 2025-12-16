@@ -14,6 +14,43 @@ function build_all_hook_linuxkit_containers() {
 	build_hook_linuxkit_container hook-containerd "HOOK_CONTAINER_CONTAINERD_IMAGE" "${EXPORT_LK_CONTAINERS}" "${EXPORT_LK_CONTAINERS_DIR}"
 	build_hook_linuxkit_container hook-runc "HOOK_CONTAINER_RUNC_IMAGE" "${EXPORT_LK_CONTAINERS}" "${EXPORT_LK_CONTAINERS_DIR}"
 	build_hook_linuxkit_container hook-embedded "HOOK_CONTAINER_EMBEDDED_IMAGE" "${EXPORT_LK_CONTAINERS}" "${EXPORT_LK_CONTAINERS_DIR}"
+
+	# We also use a bunch of linuxkit/xxx:v1.0.0 images; those would be pulled from Docker Hub (and thus subject to rate limits) for each Hook build.
+	# Instead, we'll wrap them into a Dockerfile with just a FROM line, and build/push them ourselves.
+	# Those versions are obtained from the references in https://github.com/linuxkit/linuxkit/tree/master/examples
+	declare -A linuxkit_proxy_images=()
+	linuxkit_proxy_images+=(["init"]="linuxkit/init:b5506cc74a6812dc40982cacfd2f4328f8a4b12a")
+	linuxkit_proxy_images+=(["ca_certificates"]="linuxkit/ca-certificates:256f1950df59f2f209e9f0b81374177409eb11de")
+	linuxkit_proxy_images+=(["firmware"]="linuxkit/firmware:68c2b29f28f2639020b9f8d55254d333498a30aa")
+	linuxkit_proxy_images+=(["rngd"]="linuxkit/rngd:984eb580ecb63986f07f626b61692a97aacd7198")
+	linuxkit_proxy_images+=(["sysctl"]="linuxkit/sysctl:97e8bb067cd9cef1514531bb692f27263ac6d626")
+	linuxkit_proxy_images+=(["sysfs"]="linuxkit/sysfs:6d5bd933762f6b216744c711c6e876756cee9600")
+	linuxkit_proxy_images+=(["modprobe"]="linuxkit/modprobe:4248cdc3494779010e7e7488fc17b6fd45b73aeb")
+	linuxkit_proxy_images+=(["dhcpcd"]="linuxkit/dhcpcd:b87e9ececac55a65eaa592f4dd8b4e0c3009afdb")
+	linuxkit_proxy_images+=(["openntpd"]="linuxkit/openntpd:2508f1d040441457a0b3e75744878afdf61bc473")
+	linuxkit_proxy_images+=(["getty"]="linuxkit/getty:a86d74c8f89be8956330c3b115b0b1f2e09ef6e0")
+	linuxkit_proxy_images+=(["sshd"]="linuxkit/sshd:08e5d4a46603eff485d5d1b14001cc932a530858")
+
+	# each of those will handled the following way:
+	# - create+clean a directory under images; eg for key "init" create images/hook-linuxkit-init
+	#  (all of images/hook-linuxkit-* are .gitignored)
+	# - create a Dockerfile with "FROM --platform=xxx linuxkit/init:v1.1.0" in that directory
+	# - determine HOOK_CONTAINER_LINUXKIT_<key:toUpper>_IMAGE variable name
+	# - call build_hook_linuxkit_container with that directory and variable name
+	# that way, everything else works exactly as with the other images, and there's  now a DockerHub-free way of getting those images
+	# it works because build_hook_linuxkit_container does content-based hashing; so tags should be stable for the same version
+	# that potentializes the use of caching with docker save/load or other local caching mechanisms.
+	declare lk_proxy_image_key="undetermined" lk_proxy_image_ref="undetermined" lk_proxy_image_dir="undetermined" lk_proxy_image_var="undetermined"
+	for lk_proxy_image_key in "${!linuxkit_proxy_images[@]}"; do
+		lk_proxy_image_ref="${linuxkit_proxy_images[${lk_proxy_image_key}]}"
+		lk_proxy_image_dir="hook-linuxkit-${lk_proxy_image_key}"
+		lk_proxy_image_var="HOOK_CONTAINER_LINUXKIT_$(echo "${lk_proxy_image_key}" | tr '[:lower:]' '[:upper:]')_IMAGE"
+		log info "Preparing LinuxKit proxy image ${lk_proxy_image_ref} in ${lk_proxy_image_dir}, variable name ${lk_proxy_image_var}"
+		rm -rf "images/${lk_proxy_image_dir}"
+		mkdir -p "images/${lk_proxy_image_dir}"
+		echo "FROM --platform=\${TARGETARCH} ${lk_proxy_image_ref}" > "images/${lk_proxy_image_dir}/Dockerfile"
+		build_hook_linuxkit_container "${lk_proxy_image_dir}" "${lk_proxy_image_var}" "${EXPORT_LK_CONTAINERS}" "${EXPORT_LK_CONTAINERS_DIR}"
+	done
 }
 
 function build_hook_linuxkit_container() {

@@ -13,7 +13,7 @@ function create_image_fat32_root_from_dir() {
 	# Create a Dockerfile; install parted and mtools
 	mkdir -p "bootable"
 	declare dockerfile_helper_filename="undefined.sh"
-	produce_dockerfile_helper_apt_oras "bootable/" # will create the helper script in bootable/ directory; sets helper_name
+	produce_dockerfile_helper_apt_oras "bootable/" # will create the helper script in bootable/ directory; sets dockerfile_helper_filename
 
 	# Lets create a Dockerfile that will be used to create the FAT32 image
 	cat <<- MKFAT32_SCRIPT > "bootable/Dockerfile.autogen.helper.mkfat32.sh"

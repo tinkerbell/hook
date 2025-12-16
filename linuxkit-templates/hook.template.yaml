@@ -10,6 +10,18 @@
 # - HOOK_CONTAINER_CONTAINERD_IMAGE: ${HOOK_CONTAINER_CONTAINERD_IMAGE}
 # - HOOK_CONTAINER_RUNC_IMAGE: ${HOOK_CONTAINER_RUNC_IMAGE}
 # - HOOK_CONTAINER_EMBEDDED_IMAGE: ${HOOK_CONTAINER_EMBEDDED_IMAGE}
+# Linuxkit-based images:
+# - HOOK_CONTAINER_LINUXKIT_RNGD_IMAGE: ${HOOK_CONTAINER_LINUXKIT_RNGD_IMAGE}
+# - HOOK_CONTAINER_LINUXKIT_GETTY_IMAGE: ${HOOK_CONTAINER_LINUXKIT_GETTY_IMAGE}
+# - HOOK_CONTAINER_LINUXKIT_SYSCTL_IMAGE: ${HOOK_CONTAINER_LINUXKIT_SYSCTL_IMAGE}
+# - HOOK_CONTAINER_LINUXKIT_MODPROBE_IMAGE: ${HOOK_CONTAINER_LINUXKIT_MODPROBE_IMAGE}
+# - HOOK_CONTAINER_LINUXKIT_OPENNTPD_IMAGE: ${HOOK_CONTAINER_LINUXKIT_OPENNTPD_IMAGE}
+# - HOOK_CONTAINER_LINUXKIT_INIT_IMAGE: ${HOOK_CONTAINER_LINUXKIT_INIT_IMAGE}
+# - HOOK_CONTAINER_LINUXKIT_DHCPCD_IMAGE: ${HOOK_CONTAINER_LINUXKIT_DHCPCD_IMAGE}
+# - HOOK_CONTAINER_LINUXKIT_SSHD_IMAGE: ${HOOK_CONTAINER_LINUXKIT_SSHD_IMAGE}
+# - HOOK_CONTAINER_LINUXKIT_CA_CERTIFICATES_IMAGE: ${HOOK_CONTAINER_LINUXKIT_CA_CERTIFICATES_IMAGE}
+# - HOOK_CONTAINER_LINUXKIT_SYSFS_IMAGE: ${HOOK_CONTAINER_LINUXKIT_SYSFS_IMAGE}
+# - HOOK_CONTAINER_LINUXKIT_FIRMWARE_IMAGE: ${HOOK_CONTAINER_LINUXKIT_FIRMWARE_IMAGE}
 # - Other variables are not replaced: for example this is a literal dollarsign-SOMETHING: $SOMETHING and with braces: ${SOMETHING}
 
 kernel:
@@ -20,26 +32,26 @@ kernel:
 
 init:
   # this init container sha has support for volumes
-  - linuxkit/init:v1.1.0
+  - "${HOOK_CONTAINER_LINUXKIT_INIT_IMAGE}"
   - "${HOOK_CONTAINER_RUNC_IMAGE}"
   - "${HOOK_CONTAINER_CONTAINERD_IMAGE}"
-  - linuxkit/ca-certificates:v1.0.0
-  - linuxkit/firmware:24402a25359c7bc290f7fc3cd23b6b5f0feb32a5 # "Some" firmware from Linuxkit pkg; see https://github.com/linuxkit/linuxkit/blob/master/pkg/firmware/Dockerfile
+  - "${HOOK_CONTAINER_LINUXKIT_CA_CERTIFICATES_IMAGE}"
+  - "${HOOK_CONTAINER_LINUXKIT_FIRMWARE_IMAGE}" # "Some" firmware from Linuxkit pkg; see https://github.com/linuxkit/linuxkit/blob/master/pkg/firmware/Dockerfile
   - "${HOOK_CONTAINER_EMBEDDED_IMAGE}"
 
 onboot:
   - name: rngd1
-    image: linuxkit/rngd:v1.0.0
+    image: "${HOOK_CONTAINER_LINUXKIT_RNGD_IMAGE}"
     command: [ "/sbin/rngd", "-1" ]
 
   - name: sysctl
-    image: linuxkit/sysctl:v1.0.0
+    image: "${HOOK_CONTAINER_LINUXKIT_SYSCTL_IMAGE}"
 
   - name: sysfs
-    image: linuxkit/sysfs:v1.0.0
+    image: "${HOOK_CONTAINER_LINUXKIT_SYSFS_IMAGE}"
 
   - name: modprobe
-    image: linuxkit/modprobe:v1.0.0
+    image: "${HOOK_CONTAINER_LINUXKIT_MODPROBE_IMAGE}"
     command: [ "modprobe", "cdc_ncm" ] # for usb ethernet dongles
 
   - name: udev
@@ -57,7 +69,7 @@ onboot:
         type: b
 
   - name: dhcpcd-once
-    image: linuxkit/dhcpcd:v1.0.0
+    image: "${HOOK_CONTAINER_LINUXKIT_DHCPCD_IMAGE}"
     command: [ "/etc/ip/dhcp.sh", "true" ] # 2nd paramter is one-shot true/false: true for onboot, false for services
     #capabilities.add:
     #  - CAP_SYS_TIME # for ntp one-shot no-max-offset after ntpd, for hardware missing RTC's that boot in 1970
@@ -74,10 +86,10 @@ onboot:
 
 services:
   - name: rngd
-    image: linuxkit/rngd:v1.0.0
+    image: "${HOOK_CONTAINER_LINUXKIT_RNGD_IMAGE}"
 
   - name: ntpd
-    image: linuxkit/openntpd:v1.0.0
+    image: "${HOOK_CONTAINER_LINUXKIT_OPENNTPD_IMAGE}"
 
   - name: udev # as a service; so system reacts to changes in devices
     image: "${HOOK_CONTAINER_UDEV_IMAGE}"
@@ -108,7 +120,7 @@ services:
         type: c
 
   - name: getty
-    image: linuxkit/getty:v1.0.0
+    image: "${HOOK_CONTAINER_LINUXKIT_GETTY_IMAGE}"
     capabilities:
       - all
     binds.add:
@@ -235,7 +247,7 @@ services:
         - /var/run/docker
   
   - name: dhcpcd-daemon
-    image: linuxkit/dhcpcd:v1.0.0
+    image: "${HOOK_CONTAINER_LINUXKIT_DHCPCD_IMAGE}"
     command: [ "/etc/ip/dhcp.sh", "false" ] # 2nd paramter is one-shot true/false: true for onboot, false for services
     #capabilities.add:
     #  - CAP_SYS_TIME # for ntp one-shot no-max-offset after ntpd, for hardware missing RTC's that boot in 1970
@@ -251,7 +263,7 @@ services:
         - /var/lib/dhcpcd
 
 #SSH_SERVER  - name: sshd
-#SSH_SERVER    image: linuxkit/sshd:v1.0.0
+#SSH_SERVER    image: "${HOOK_CONTAINER_LINUXKIT_SSHD_IMAGE}"
 #SSH_SERVER    binds.add:
 #SSH_SERVER      - /etc/profile.d/local.sh:/etc/profile.d/local.sh
 #SSH_SERVER      - /root/.ssh/authorized_keys:/root/.ssh/authorized_keys

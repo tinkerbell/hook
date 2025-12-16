@@ -72,8 +72,8 @@ function calculate_kernel_version_armbian() {
 		RUN mv /armbian/image/lib /armbian/modules_only/
 		RUN echo "Before cleaning: " && du -h -d 10 -x lib/modules | sort -h | tail -n 20
 		# Trim the kernel modules to save space; hopefully your required hardware is not included here
-		RUN rm -rf ./lib/modules/*/kernel/drivers/net/wireless ./lib/modules/*/kernel/sound ./lib/modules/*/kernel/drivers/media
-		RUN rm -rf ./lib/modules/*/kernel/drivers/infiniband
+		# DISABLED # RUN rm -rf ./lib/modules/*/kernel/drivers/net/wireless ./lib/modules/*/kernel/sound ./lib/modules/*/kernel/drivers/media
+		# DISABLED # RUN rm -rf ./lib/modules/*/kernel/drivers/infiniband
 		RUN echo "After cleaning: " &&  du -h -d 10 -x lib/modules | sort -h | tail -n 20
 		RUN tar -cf /armbian/output/kernel.tar .
 

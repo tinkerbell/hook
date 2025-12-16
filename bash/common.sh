@@ -51,7 +51,8 @@ function log_file_bat() {
 	elif command -v batcat > /dev/null; then
 		batcat --color=always --paging=never "${extra_bat_args[@]}" "${file}"
 	else
-		log "${level}" "'bat' utility not installed; install it to see file contents in logs."
+		log "${level}" "'bat' utility not installed; install it to see file contents colorized in logs."
+		cat "${file}"
 	fi
 }
 

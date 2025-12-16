@@ -198,7 +198,7 @@ function json_matrix_find_runner() {
 	declare -a vars_to_try=("CI_RUNNER_${matrix_type^^}_${docker_arch^^}" "CI_RUNNER_${matrix_type^^}" "CI_RUNNER_${docker_arch^^}" "CI_RUNNER")
 	for var in "${vars_to_try[@]}"; do
 		log debug "Checking var '${var}'"
-		if [[ -n "${!var}" && "x${!var}x" != "xx" ]]; then # if var is set, and not empty...
+		if [[ -n "${!var}" && "${!var}" != "" ]]; then # if var is set, and not empty...
 			log debug "Found runner '${!var}' for matrix type '${matrix_type}' and docker arch '${docker_arch}' via var '${var}'"
 			runner="${!var}"
 			break

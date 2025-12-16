@@ -9,7 +9,7 @@ function obtain_kernel_output_id_default() {
 	# If that is not set, and KCONFIG != generic, an output will be generated with KCONFIG, MAJOR, MINOR, ARCH.
 	# Lastly if using USE_KERNEL_ID, that will be used instead of the default inventory_id.
 	declare -g OUTPUT_ID="${ARCH}"
-	if [[ "x${FORCE_OUTPUT_ID}x" != "xx" ]]; then
+	if [[ "${FORCE_OUTPUT_ID}" != "" ]]; then
 		declare -g OUTPUT_ID="${FORCE_OUTPUT_ID}-${ARCH}"
 	elif [[ "${KCONFIG}" != "generic" ]]; then
 		OUTPUT_ID="${KCONFIG}-${KERNEL_MAJOR}.${KERNEL_MINOR}.y-${ARCH}"

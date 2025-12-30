@@ -72,8 +72,13 @@ function calculate_kernel_version_armbian() {
 		RUN mv /armbian/image/lib /armbian/modules_only/
 		RUN echo "Before cleaning: " && du -h -d 10 -x lib/modules | sort -h | tail -n 20
 		# Trim the kernel modules to save space; hopefully your required hardware is not included here
-		# DISABLED # RUN rm -rf ./lib/modules/*/kernel/drivers/net/wireless ./lib/modules/*/kernel/sound ./lib/modules/*/kernel/drivers/media
-		# DISABLED # RUN rm -rf ./lib/modules/*/kernel/drivers/infiniband
+
+		# Remove Panthor (Rockchip GPU), which requires firmware, and explodes if firmware not present: ./kernel/drivers/gpu/drm/panthor
+		RUN rm -rfv ./lib/modules/*/kernel/drivers/gpu/drm/panthor
+
+		# We _really_ don't need sound drivers for Hook: ./kernel/sound
+		RUN rm -rfv ./lib/modules/*/kernel/sound
+
 		RUN echo "After cleaning: " &&  du -h -d 10 -x lib/modules | sort -h | tail -n 20
 		RUN tar -cf /armbian/output/kernel.tar .
 

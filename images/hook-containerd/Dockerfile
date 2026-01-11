@@ -10,7 +10,7 @@ ENV CONTAINERD_REPO=https://github.com/containerd/containerd.git
 ENV CONTAINERD_COMMIT=v2.1.3
 ENV NERDCTL_VERSION=2.1.2
 ENV GOPATH=/go
-RUN apk add go=1.24.6-r0 git
+RUN apk add go git
 RUN mkdir -p $GOPATH/src/github.com/containerd && \
   cd $GOPATH/src/github.com/containerd && \
   git clone https://github.com/containerd/containerd.git && \

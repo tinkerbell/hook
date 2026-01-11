@@ -8,22 +8,22 @@ on:
   push:
 
 env: # Global environment, passed to all jobs & all steps
-  # Default to quay.io, which is also the default for the CLI. 
+  # Default to quay.io, which is also the default for the CLI.
   # Allow to use ghcr.io as an alternative, change & uncomment below:
   REGISTRY: "quay.io" # or ghcr.io, determines which will be logged-in to
   #HOOK_KERNEL_OCI_BASE: "ghcr.io/${{ github.repository_owner }}/tinkerbell/kernel-"
   #HOOK_LK_CONTAINERS_OCI_BASE: "ghcr.io/${{ github.repository_owner }}/tinkerbell/linuxkit-"
-  
+
   # Apart from the quay/ghcr coordinates above (used for both pulling & pushing), we might also want to
   # log in to DockerHub (with a read-only token) so we aren't hit by rate limits when pulling the linuxkit pkgs.
   # To do so, set the secret DOCKERHUB_USERNAME and DOCKERHUB_PASSWORD in the repo secrets, and set the below to yes.
   LOGIN_TO_DOCKERHUB: "yes"
-  
+
   HOOK_VERSION: "0.11.1-build-${{github.run_number}}" # Use a forced Hook version
-  
+
   # Which flavors to build? space separated list, must match one of the TAG='s in flavors (this is used by matrix_prep job in gha-matrix command)
   CI_TAGS: "standard armbian-sbc armbian-uefi lts" # 'dev' is not included
-  
+
   # GHA runner configuration. See bash/json-matrix.sh for more details.
   CI_RUNNER_LK_CONTAINERS_ARM64: "oracle-vm-32cpu-128gb-arm64" # Use a self-hosted runner with the "ARM64" tag for the ARM64 builds of LK containers
   CI_RUNNER_LK_CONTAINERS_AMD64: "oracle-vm-32cpu-128gb-x86-64" # Use a self-hosted runner with the "X86" tag for the AMD64 builds of LK containers
@@ -34,7 +34,7 @@ env: # Global environment, passed to all jobs & all steps
 
 
 jobs:
-  
+
   matrix_prep:
     name: "Prepare matrix JSON"
     runs-on: ubuntu-latest
@@ -57,7 +57,7 @@ jobs:
       - name: Run the matrix JSON preparation bash script
         id: prepare-matrix
         run: bash build.sh gha-matrix # This sets the output "kernels_json" & "lkcontainers_json" & "lk_hooks_json" internally
-  
+
   build-linuxkit-containers:
     needs: [ matrix_prep ]
     runs-on:
@@ -384,4 +384,4 @@ jobs:
             *.iso
             checksum.txt
           prerelease: true
-          tag_name: ${{github.ref}}  
+          tag_name: ${{github.ref}}

@@ -5,7 +5,7 @@ RUN \
   bash \
   gcc \
   git \
-  go=1.24.4-r0 \
+  go \
   libc-dev \
   libseccomp-dev \
   libseccomp-static \

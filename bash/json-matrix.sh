@@ -240,7 +240,12 @@ function json_matrix_find_runner() {
 	if [[ "${runner}" == "ubuntu-"* ]]; then # if not using a GH-hosted runner, auto-add the "self-hosted" member
 		:
 	else
-		json_items+=("\"self-hosted\"")
+		if [[ "${CI_RUNNERS_SELF_HOSTED_TAG:-"self-hosted"}" != "none" ]]; then
+			log debug "Adding 'self-hosted' tag to runner '${runner}'"
+			json_items+=("\"${CI_RUNNERS_SELF_HOSTED_TAG:-"self-hosted"}\"")
+		else
+			log debug "Not adding 'self-hosted' tag to runner '${runner}' due to CI_RUNNERS_SELF_HOSTED_TAG being set to 'none'"
+		fi
 	fi
 	for item in "${json_items_bare[@]}"; do
 		json_items+=("\"${item}\"")

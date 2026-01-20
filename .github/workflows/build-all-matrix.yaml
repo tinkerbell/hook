@@ -56,7 +56,7 @@ jobs:
 
       - name: Run the matrix JSON preparation bash script
         id: prepare-matrix
-        run: bash build.sh gha-matrix # This sets the output "kernels_json" & "lkcontainers_json" & "lk_hooks_json" internally
+        run: bash build.sh gha-matrix DEBUG=yes # This sets the output "kernels_json" & "lkcontainers_json" & "lk_hooks_json" internally
 
   build-linuxkit-containers:
     needs: [ matrix_prep ]
@@ -65,7 +65,7 @@ jobs:
       fail-fast: true
       matrix:
         include: ${{ fromJSON(needs.matrix_prep.outputs.lkcontainers_json) }}
-    name: "LinuxKit containers for ${{ matrix.docker_arch }}"
+    name: "LinuxKit containers for ${{ matrix.docker_arch }} (on ${{ join(matrix.runner) }})"
     steps:
       - name: Checkout build repo
         uses: actions/checkout@v6
@@ -112,7 +112,7 @@ jobs:
       fail-fast: false # let other jobs try to complete if one fails, kernels might take long, and they'd be skipped on the next run
       matrix:
         include: ${{ fromJSON(needs.matrix_prep.outputs.kernels_json) }}
-    name: "Kernel ${{ matrix.kernel }}"
+    name: "Kernel ${{ matrix.kernel }} (on ${{ join(matrix.runner) }})"
     steps:
       - name: Checkout build repo
         uses: actions/checkout@v6
@@ -155,7 +155,7 @@ jobs:
       fail-fast: false # let other jobs try to complete if one fails
       matrix:
         include: ${{ fromJSON(needs.matrix_prep.outputs.lk_hooks_json) }}
-    name: "Hook ${{ matrix.kernel }}"
+    name: "Hook ${{ matrix.kernel }} (on ${{ join(matrix.runner) }})"
     steps:
       - name: Checkout build repo
         uses: actions/checkout@v6

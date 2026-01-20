@@ -100,8 +100,8 @@ function install_dependencies() {
 		# If running on Debian or Ubuntu...
 		if [[ -f /etc/debian_version ]]; then
 			log info "Installing apt dependencies: ${debian_pkgs[*]}"
-			sudo DEBIAN_FRONTEND=noninteractive apt -o "Dpkg::Use-Pty=0" -y update
-			sudo DEBIAN_FRONTEND=noninteractive apt -o "Dpkg::Use-Pty=0" -y install "${debian_pkgs[@]}"
+			timeout --verbose 5m sudo DEBIAN_FRONTEND=noninteractive apt -o "Dpkg::Use-Pty=0" -y update || true               # sometimes apt update hangs forever; timeout after 5 minutes; don't fail
+			timeout --verbose 10m sudo DEBIAN_FRONTEND=noninteractive apt -o "Dpkg::Use-Pty=0" -y install "${debian_pkgs[@]}" # sometimes apt install hangs forever; timeout after 10 minutes; fail if this fails
 		elif [[ "$(uname)" == "Darwin" ]]; then
 			log info "Skipping Debian deps installation for Darwin..."
 		else

@@ -28,8 +28,8 @@ env: # Global environment, passed to all jobs & all steps
   CI_RUNNER_LK_CONTAINERS_AMD64: "ubuntu-latest" # lk containers are small and relatively quick to build
   CI_RUNNER_LK_ARM64: "ubuntu-24.04-arm" # Hook itself (linuxkit etc.) is small and relatively quick to build once we've the lk containers & kernel ready
   CI_RUNNER_LK_AMD64: "ubuntu-latest" # Hook itself (linuxkit etc.) is small and relatively quick to build once we've the lk containers & kernel ready
-  CI_RUNNER_KERNEL_SOURCE_AMD64: "oracle-vm-32cpu-128gb-x86-64" # Kernels that are built _from source_ benefit from beefy self-hosted CNCF runners
-  CI_RUNNER_KERNEL_SOURCE_ARM64: "oracle-vm-32cpu-128gb-arm64" # Kernels that are built _from source_ benefit from beefy self-hosted CNCF runners
+  CI_RUNNER_KERNEL_SOURCE_AMD64: "oracle-16cpu-64gb-x86-64" # Kernels that are built _from source_ benefit from beefy self-hosted CNCF runners
+  CI_RUNNER_KERNEL_SOURCE_ARM64: "oracle-16cpu-64gb-arm64" # Kernels that are built _from source_ benefit from beefy self-hosted CNCF runners
   CI_RUNNER_KERNEL_EXTERNAL_AMD64: "ubuntu-latest" # kernels that pull binaries from elsewhere (eg Armbian) can be built on normal runners (CNCF runners are actually worse at this)
   CI_RUNNER_KERNEL_EXTERNAL_ARM64: "ubuntu-24.04-arm" # kernels that pull binaries from elsewhere (eg Armbian) can be built on normal runners (CNCF runners are actually worse at this)
 

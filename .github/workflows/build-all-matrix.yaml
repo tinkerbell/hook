@@ -24,13 +24,14 @@ env: # Global environment, passed to all jobs & all steps
   CI_TAGS: "standard armbian-sbc armbian-uefi lts" # 'dev' is not included
 
   # GHA runner configuration. See bash/json-matrix.sh for more details.
-  CI_RUNNER_LK_CONTAINERS_ARM64: "oracle-vm-32cpu-128gb-arm64" # Use a self-hosted runner with the "ARM64" tag for the ARM64 builds of LK containers
-  CI_RUNNER_LK_CONTAINERS_AMD64: "oracle-vm-32cpu-128gb-x86-64" # Use a self-hosted runner with the "X86" tag for the AMD64 builds of LK containers
-  CI_RUNNER_LK_ARM64: "oracle-vm-32cpu-128gb-arm64" # Use a self-hosted runner with the "ARM64" tag for the ARM64 linuxkit builds
-  CI_RUNNER_LK_AMD64: "oracle-vm-32cpu-128gb-x86-64" # Use a self-hosted runner with the "X86" tag for the AMD64 linuxkit builds
-  CI_RUNNER_KERNEL_AMD64: "oracle-24cpu-384gb-x86-64" # Use a self-hosted runner with the "X86" tag for the AMD64 kernel builds
-  CI_RUNNER_KERNEL_ARM64: "oracle-24cpu-384gb-arm64" # Use a self-hosted runner with the "ARM64" tag for the ARM64 kernel builds
-
+  CI_RUNNER_LK_CONTAINERS_ARM64: "ubuntu-24.04-arm" # lk containers are small and relatively quick to build
+  CI_RUNNER_LK_CONTAINERS_AMD64: "ubuntu-latest" # lk containers are small and relatively quick to build
+  CI_RUNNER_LK_ARM64: "ubuntu-24.04-arm" # Hook itself (linuxkit etc.) is small and relatively quick to build once we've the lk containers & kernel ready
+  CI_RUNNER_LK_AMD64: "ubuntu-latest" # Hook itself (linuxkit etc.) is small and relatively quick to build once we've the lk containers & kernel ready
+  CI_RUNNER_KERNEL_SOURCE_AMD64: "oracle-vm-32cpu-128gb-x86-64" # Kernels that are built _from source_ benefit from beefy self-hosted CNCF runners
+  CI_RUNNER_KERNEL_SOURCE_ARM64: "oracle-vm-32cpu-128gb-arm64" # Kernels that are built _from source_ benefit from beefy self-hosted CNCF runners
+  CI_RUNNER_KERNEL_EXTERNAL_AMD64: "ubuntu-latest" # kernels that pull binaries from elsewhere (eg Armbian) can be built on normal runners (CNCF runners are actually worse at this)
+  CI_RUNNER_KERNEL_EXTERNAL_ARM64: "ubuntu-24.04-arm" # kernels that pull binaries from elsewhere (eg Armbian) can be built on normal runners (CNCF runners are actually worse at this)
 
 jobs:
 

@@ -24,6 +24,7 @@ env: # Global environment, passed to all jobs & all steps
   CI_TAGS: "standard armbian-sbc armbian-uefi lts" # 'dev' is not included
 
   # GHA runner configuration. See bash/json-matrix.sh for more details.
+  CI_RUNNERS_SELF_HOSTED_TAG: "none" # CNCF runners don't have the semi-standard 'self-hosted' tag
   CI_RUNNER_LK_CONTAINERS_ARM64: "ubuntu-24.04-arm" # lk containers are small and relatively quick to build
   CI_RUNNER_LK_CONTAINERS_AMD64: "ubuntu-latest" # lk containers are small and relatively quick to build
   CI_RUNNER_LK_ARM64: "ubuntu-24.04-arm" # Hook itself (linuxkit etc.) is small and relatively quick to build once we've the lk containers & kernel ready

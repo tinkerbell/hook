@@ -26,25 +26,25 @@ function produce_default_kernel_inventory() {
 	##### METHOD=default; Hook's own kernel, in kernel/ directory
 	## Hook default kernel, source code stored in `kernel` dir in this repo -- currently 5.10.y
 	define_id "hook-default-amd64" METHOD='default' ARCH='x86_64' TAG='standard' SUPPORTS_ISO='yes' \
-		KERNEL_MAJOR='5' KERNEL_MINOR='10' KCONFIG='generic'
+		KERNEL_MAJOR='5' KERNEL_MINOR='10' KCONFIG='generic' TYPE='source'
 	add_bootable_id "grub-amd64" HANDLER='grub' SERIAL_CONSOLE='ttyS0' TAG='standard'
 
 	define_id "hook-default-arm64" METHOD='default' ARCH='aarch64' TAG='standard' SUPPORTS_ISO='yes' \
-		KERNEL_MAJOR='5' KERNEL_MINOR='10' KCONFIG='generic'
+		KERNEL_MAJOR='5' KERNEL_MINOR='10' KCONFIG='generic' TYPE='source'
 	add_bootable_id "grub-arm64" HANDLER='grub' SERIAL_CONSOLE='ttyAMA0' TAG='standard'
 
 	## A 'peg' is not really a 'hook': for development purposes; testing new LK version and simpler LK configurations, using the default kernel
 	define_id "peg-default-amd64" METHOD='default' ARCH='x86_64' TAG='dev' \
 		USE_KERNEL_ID='hook-default-amd64' TEMPLATE='peg' \
-		KERNEL_MAJOR='5' KERNEL_MINOR='10' KCONFIG='generic'
+		KERNEL_MAJOR='5' KERNEL_MINOR='10' KCONFIG='generic' TYPE='source'
 
 	## development purposes: trying out kernel 6.6.y
 	define_id "hook-latest-lts-amd64" METHOD='default' ARCH='x86_64' TAG='lts' SUPPORTS_ISO='yes' \
-		KERNEL_MAJOR='6' KERNEL_MINOR='6' KCONFIG='generic' FORCE_OUTPUT_ID='latest-lts'
+		KERNEL_MAJOR='6' KERNEL_MINOR='6' KCONFIG='generic' FORCE_OUTPUT_ID='latest-lts' TYPE='source'
 	add_bootable_id "grub-latest-lts-amd64" SERIAL_CONSOLE='ttyS0' HANDLER='grub' TAG='lts'
 
 	define_id "hook-latest-lts-arm64" METHOD='default' ARCH='aarch64' TAG='lts' SUPPORTS_ISO='yes' \
-		KERNEL_MAJOR='6' KERNEL_MINOR='6' KCONFIG='generic' FORCE_OUTPUT_ID='latest-lts'
+		KERNEL_MAJOR='6' KERNEL_MINOR='6' KCONFIG='generic' FORCE_OUTPUT_ID='latest-lts' TYPE='source'
 	add_bootable_id "grub-latest-lts-arm64" SERIAL_CONSOLE='ttyAMA0' HANDLER='grub' TAG='lts'
 }
 
@@ -58,28 +58,28 @@ function produce_default_kernel_inventory() {
 function produce_armbian_kernel_inventory() {
 	### SBC-oriented:
 	## Armbian meson64 (Amlogic) edge Khadas VIM3/3L, Radxa Zero/2, LibreComputer Potatos, and many more
-	define_id "armbian-meson64-edge" METHOD='armbian' ARCH='aarch64' TAG='armbian-sbc' ARMBIAN_KERNEL_ARTIFACT='kernel-meson64-edge'
+	define_id "armbian-meson64-edge" METHOD='armbian' ARCH='aarch64' TAG='armbian-sbc' ARMBIAN_KERNEL_ARTIFACT='kernel-meson64-edge' TYPE='external'
 	add_bootable_id "uboot-aml" HANDLER='armbian_uboot_amlogic' TAG='armbian-sbc' UBOOT_TYPE='extlinux' CONSOLE_EXTRA_ARGS=',115200' # all meson64, mainline kernel and u-boot, uses extlinux to boot
 
 	## Armbian bcm2711 (Broadcom) current, from RaspberryPi Foundation with many CNCF-landscape fixes and patches; for the RaspberryPi 3b+/4b/5
-	define_id "armbian-bcm2711-current" METHOD='armbian' ARCH='aarch64' TAG='armbian-sbc' ARMBIAN_KERNEL_ARTIFACT='kernel-bcm2711-current'
+	define_id "armbian-bcm2711-current" METHOD='armbian' ARCH='aarch64' TAG='armbian-sbc' ARMBIAN_KERNEL_ARTIFACT='kernel-bcm2711-current' TYPE='external'
 	add_bootable_id "rpi" HANDLER='rpi_firmware' TAG='armbian-sbc'
 
 	## Armbian rockchip64 (Rockchip) edge, for many rk356x/3399 SoCs. As of late December 2024, also for rk3588.
-	define_id "armbian-rockchip64-edge" METHOD='armbian' ARCH='aarch64' TAG='armbian-sbc' ARMBIAN_KERNEL_ARTIFACT='kernel-rockchip64-edge'
+	define_id "armbian-rockchip64-edge" METHOD='armbian' ARCH='aarch64' TAG='armbian-sbc' ARMBIAN_KERNEL_ARTIFACT='kernel-rockchip64-edge' TYPE='external'
 	add_bootable_id "uboot-rk" HANDLER='armbian_uboot_rockchip' TAG='armbian-sbc' UBOOT_TYPE='extlinux' CONSOLE_EXTRA_ARGS=',1500000' # rk3588, mainline u-boot, uses extlinux to boot
 
 	## Armbian rk35xx (Rockchip) vendor, for rk3566, rk3568, rk3588, rk3588s SoCs -- 6.1-rkr4.1 - BSP / vendor kernel, roughly equivalent to Android's 6.1.84
 	# Use with edk2 (v0.9.1+) or mainline u-boot + EFI: matches the DT included in https://github.com/edk2-porting/edk2-rk3588 _after_ v0.9.1
-	define_id "armbian-rk35xx-vendor" METHOD='armbian' ARCH='aarch64' TAG='armbian-sbc' ARMBIAN_KERNEL_ARTIFACT='kernel-rk35xx-vendor'
+	define_id "armbian-rk35xx-vendor" METHOD='armbian' ARCH='aarch64' TAG='armbian-sbc' ARMBIAN_KERNEL_ARTIFACT='kernel-rk35xx-vendor' TYPE='external'
 	add_bootable_id "uboot-rk35xx-vendor" HANDLER='armbian_uboot_rockchip_vendor' TAG='armbian-sbc' CONSOLE_EXTRA_ARGS=',1500000'
 
 	###  Armbian mainline Generic UEFI kernels, for EFI capable machines might use those:
 	## Armbian generic edge UEFI kernel for arm64
-	define_id "armbian-uefi-arm64-edge" METHOD='armbian' ARCH='aarch64' TAG='standard armbian-uefi' ARMBIAN_KERNEL_ARTIFACT='kernel-arm64-edge'
+	define_id "armbian-uefi-arm64-edge" METHOD='armbian' ARCH='aarch64' TAG='standard armbian-uefi' ARMBIAN_KERNEL_ARTIFACT='kernel-arm64-edge' TYPE='external'
 	add_bootable_id "grub-armbian-uefi-arm64" HANDLER='grub' SERIAL_CONSOLE='ttyAMA0' DTB='yes' TAG='standard'
 
 	## Armbian generic edge UEFI kernel (Armbian calls it x86)
-	define_id "armbian-uefi-x86-edge" METHOD='armbian' ARCH='x86_64' TAG='standard armbian-uefi' ARMBIAN_KERNEL_ARTIFACT='kernel-x86-edge'
+	define_id "armbian-uefi-x86-edge" METHOD='armbian' ARCH='x86_64' TAG='standard armbian-uefi' ARMBIAN_KERNEL_ARTIFACT='kernel-x86-edge' TYPE='external'
 	add_bootable_id "grub-armbian-uefi-amd64" HANDLER='grub' SERIAL_CONSOLE='ttyS0' TAG='standard'
 }

@@ -12,7 +12,11 @@
 
 # GH Runner selection, using environment variables  (in order of specificity, for AMD64, same applies to ARM64 variant):
 ## Kernels: (1)
+# - CI_RUNNER_KERNEL_SOURCE_AMD64 is the runner to use for amd64 kernel builds for kernels built from source
+# - CI_RUNNER_KERNEL_EXTERNAL_AMD64 is the runner to use for amd64 kernel builds for kernels obtained externally
 # - CI_RUNNER_KERNEL_AMD64 is the runner to use for amd64 kernel builds
+# - CI_RUNNER_KERNEL_SOURCE is the runner to use for kernels built from source
+# - CI_RUNNER_KERNEL_EXTERNAL is the runner to use for kernels obtained externally
 # - CI_RUNNER_KERNEL is the runner to use for all kernels
 # - CI_RUNNER_AMD64 is the runner to use for all AMD64 things
 # - CI_RUNNER is the runner to use for everything
@@ -78,8 +82,16 @@ function prepare_json_matrix() {
 		declare -A kernel_info
 		get_kernel_info_dict "${kernel}"
 
-		if [[ "${matrix_type}" == "KERNEL" ]]; then # special case for kernel builds, if USE_KERNEL_ID is set, skip this kernel
-			if [[ -n "${kernel_info[USE_KERNEL_ID]}" ]]; then
+		declare -a find_runner_params=("${matrix_type}" "${kernel_info[DOCKER_ARCH]}")
+
+		if [[ "${matrix_type}" == "KERNEL" ]]; then # special case for kernel builds
+			# if TYPE is set, add it as extra param to find_runner
+			if [[ -n "${kernel_info[TYPE]}" ]]; then
+				log debug "Adding TYPE='${kernel_info[TYPE]}' to runner search for kernel '${kernel}'"
+				find_runner_params+=("${kernel_info[TYPE]}")
+			fi
+
+			if [[ -n "${kernel_info[USE_KERNEL_ID]}" ]]; then # if USE_KERNEL_ID is set, skip this kernel
 				log info "Skipping build of kernel '${kernel}' due to it having USE_KERNEL_ID set to '${kernel_info[USE_KERNEL_ID]}'"
 				continue
 			fi
@@ -87,7 +99,7 @@ function prepare_json_matrix() {
 
 		if json_matrix_tag_match "${kernel_info[TAG]}"; then
 			declare runner="unknown-runner"
-			runner="$(json_matrix_find_runner "${matrix_type}" "${kernel_info[DOCKER_ARCH]}")"
+			runner="$(json_matrix_find_runner "${find_runner_params[@]}")"
 			declare gha_cache="yes" # always use GH cache; hitting DockerHub for linuxkit images is prone to rate limiting
 
 			all_arches["${kernel_info[DOCKER_ARCH]}"]=1
@@ -193,9 +205,24 @@ function json_matrix_tag_match() {
 function json_matrix_find_runner() {
 	declare matrix_type="${1}"
 	declare docker_arch="${2}"
+	declare matrix_extra="${3:-""}"
 	declare runner="ubuntu-latest"
-	#log debug "Finding runner for matrix type '${matrix_type}' and docker arch '${docker_arch}'"
-	declare -a vars_to_try=("CI_RUNNER_${matrix_type^^}_${docker_arch^^}" "CI_RUNNER_${matrix_type^^}" "CI_RUNNER_${docker_arch^^}" "CI_RUNNER")
+	if [[ "${docker_arch}" == "arm64" ]]; then
+		runner="ubuntu-24.04-arm"
+	fi
+	log debug "Finding runner for matrix type '${matrix_type}' and docker arch '${docker_arch}'"
+	declare -a vars_to_try=(
+		"CI_RUNNER_${matrix_type^^}_${docker_arch^^}" "CI_RUNNER_${matrix_type^^}"
+		"CI_RUNNER_${docker_arch^^}" "CI_RUNNER"
+	)
+	if [[ -n "${matrix_extra}" ]]; then
+		log debug "Including matrix extra '${matrix_extra}' in runner search"
+		vars_to_try=(
+			"CI_RUNNER_${matrix_type^^}_${matrix_extra^^}_${docker_arch^^}" "CI_RUNNER_${matrix_type^^}_${matrix_extra^^}"
+			"CI_RUNNER_${matrix_type^^}_${docker_arch^^}" "CI_RUNNER_${matrix_type^^}"
+			"CI_RUNNER_${docker_arch^^}" "CI_RUNNER"
+		)
+	fi
 	for var in "${vars_to_try[@]}"; do
 		log debug "Checking var '${var}'"
 		if [[ -n "${!var}" && "${!var}" != "" ]]; then # if var is set, and not empty...
@@ -210,6 +237,16 @@ function json_matrix_find_runner() {
 	declare -a json_items_bare=(${runner})
 	# wrap each json_items array item in double quotes
 	declare -a json_items=()
+	if [[ "${runner}" == "ubuntu-"* ]]; then # if not using a GH-hosted runner, auto-add the "self-hosted" member
+		:
+	else
+		if [[ "${CI_RUNNERS_SELF_HOSTED_TAG:-"self-hosted"}" != "none" ]]; then
+			log debug "Adding 'self-hosted' tag to runner '${runner}'"
+			json_items+=("\"${CI_RUNNERS_SELF_HOSTED_TAG:-"self-hosted"}\"")
+		else
+			log debug "Not adding 'self-hosted' tag to runner '${runner}' due to CI_RUNNERS_SELF_HOSTED_TAG being set to 'none'"
+		fi
+	fi
 	for item in "${json_items_bare[@]}"; do
 		json_items+=("\"${item}\"")
 	done

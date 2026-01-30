@@ -211,6 +211,16 @@ func run(ctx context.Context, log logr.Logger) error {
 				Source: "/var/run/docker.sock",
 				Target: "/var/run/docker.sock",
 			},
+			{
+				Type:   mount.TypeBind,
+				Source: "/dev",
+				Target: "/dev",
+			},
+			{
+				Type:   mount.TypeBind,
+				Source: "/host_root/run",
+				Target: "/run",
+			},
 		},
 		NetworkMode: "host",
 		Privileged:  true,

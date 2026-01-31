@@ -69,6 +69,9 @@ function produce_armbian_kernel_inventory() {
 	define_id "armbian-rockchip64-edge" METHOD='armbian' ARCH='aarch64' TAG='armbian-sbc' ARMBIAN_KERNEL_ARTIFACT='kernel-rockchip64-edge' TYPE='external'
 	add_bootable_id "uboot-rk" HANDLER='armbian_uboot_rockchip' TAG='armbian-sbc' UBOOT_TYPE='extlinux' CONSOLE_EXTRA_ARGS=',1500000' # rk3588, mainline u-boot, uses extlinux to boot
 
+	## Armbian genio (Mediatek) collabora/edge, for Mediatek Genio 1200 and others.
+	define_id "armbian-genio-edge" METHOD='armbian' ARCH='aarch64' TAG='armbian-sbc' ARMBIAN_KERNEL_ARTIFACT='kernel-genio-collabora'
+
 	## Armbian rk35xx (Rockchip) vendor, for rk3566, rk3568, rk3588, rk3588s SoCs -- 6.1-rkr4.1 - BSP / vendor kernel, roughly equivalent to Android's 6.1.84
 	# Use with edk2 (v0.9.1+) or mainline u-boot + EFI: matches the DT included in https://github.com/edk2-porting/edk2-rk3588 _after_ v0.9.1
 	define_id "armbian-rk35xx-vendor" METHOD='armbian' ARCH='aarch64' TAG='armbian-sbc' ARMBIAN_KERNEL_ARTIFACT='kernel-rk35xx-vendor' TYPE='external'

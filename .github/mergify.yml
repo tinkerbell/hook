@@ -32,6 +32,8 @@ queue_rules:
       - check-success~=^Kernel .*
       - label!=do-not-merge
       - label=ready-to-merge
+      # This extra condition forces draft PR mode (prevents in-place checks)
+      - queue-position>=0
     commit_message_template: |
       {{ title }} (#{{ number }})
 

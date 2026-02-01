@@ -71,6 +71,40 @@ function get_latest_tag_for_docker_image_using_skopeo() {
 	log info "Found latest tag: '${latest_tag_for_docker_image}' for image '${image}'"
 }
 
+# Utility to get the latest kernel point release from an OCI registry using Skopeo.
+# Sets the value of outer-scope variable latest_kernel_point_release, so declare it there.
+# Arguments: full_image_path kernel_major kernel_minor
+# Example: get_latest_kernel_point_release_using_skopeo "quay.io/tinkerbell/hook-kernel" "6" "6"
+function get_latest_kernel_point_release_using_skopeo() {
+	declare full_image="$1"
+	declare kernel_major="$2"
+	declare kernel_minor="$3"
+	latest_kernel_point_release="undetermined"
+
+	# Pull separately to avoid tty hell in the subshell below
+	pull_skopeo_image_if_not_in_local_docker_cache
+
+	log debug "Querying registry '${full_image}' for latest point release for kernel ${kernel_major}.${kernel_minor}"
+
+	# List tags, filter for kernel version pattern (major.minor.point-hash), sort, get latest, extract point release
+	# Expected format: 6.6.32-14b8be17 (major.minor.point-hash)
+	latest_kernel_point_release="$(docker run "${SKOPEO_IMAGE}" list-tags "docker://${full_image}" |
+		jq -r ".Tags[]" |
+		grep -E "^${kernel_major}\.${kernel_minor}\.[0-9]+-[a-f0-9]+" |
+		sort -V |
+		tail -n1 |
+		cut -d"-" -f1 |
+		cut -d"." -f3)"
+
+	if [[ -z "${latest_kernel_point_release}" || "${latest_kernel_point_release}" == "undetermined" ]]; then
+		log error "Failed to determine latest kernel point release for ${kernel_major}.${kernel_minor} from ${full_image}"
+		return 1
+	fi
+
+	log info "Found latest kernel point release: ${latest_kernel_point_release} for ${kernel_major}.${kernel_minor}"
+	return 0
+}
+
 # Utility to pull from remote, with retries.
 function pull_docker_image_from_remote_with_retries() {
 	declare image="$1"

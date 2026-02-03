@@ -74,16 +74,22 @@ function resolve_latest_kernel_version_lts() { # Produces KERNEL_POINT_RELEASE
 
 	# As the point release can and does change frequently, Users can specify if they
 	# want to use the latest known point release version. This allows users to build
-	# HookOS using an existing kernel container image from the registry. This only works with
-	# unauthenticated registries.
+	# HookOS using an existing kernel container image from the registry.
 	if [[ -n "${USE_LATEST_BUILT_KERNEL}" ]]; then
-		reg="$(echo "${HOOK_KERNEL_OCI_BASE}" | cut -d'/' -f1)"
-		repo="$(echo "${HOOK_KERNEL_OCI_BASE}" | cut -d'/' -f2-)"
+		# Use skopeo to properly query the OCI registry for the latest kernel point release
 		# expected format is: 6.6.32-14b8be17 (major.minor.point-hash)
-		latest_point_release="$(curl -sL "https://${reg}/v2/${repo}/tags/list" | jq -r ".tags[]" | grep -e "^${KERNEL_MAJOR}.${KERNEL_MINOR}" | sort -V | tail -n1 | cut -d"-" -f1 | cut -d"." -f3)"
-		log info "Using latest point release from registry ${HOOK_KERNEL_OCI_BASE} for kernel ${KERNEL_MAJOR}.${KERNEL_MINOR}: ${latest_point_release}"
-		KERNEL_POINT_RELEASE="${latest_point_release}"
-		return 0
+		# shellcheck disable=SC2153 # KERNEL_MAJOR and KERNEL_MINOR are set by calling code
+		log debug "USE_LATEST_BUILT_KERNEL is set, querying registry '${HOOK_KERNEL_OCI_BASE}' for latest point release for kernel ${KERNEL_MAJOR}.${KERNEL_MINOR}"
+
+		declare latest_kernel_point_release
+		if get_latest_kernel_point_release_using_skopeo "${HOOK_KERNEL_OCI_BASE}" "${KERNEL_MAJOR}" "${KERNEL_MINOR}"; then
+			log info "Using latest point release from registry ${HOOK_KERNEL_OCI_BASE} for kernel ${KERNEL_MAJOR}.${KERNEL_MINOR}: ${latest_kernel_point_release}"
+			KERNEL_POINT_RELEASE="${latest_kernel_point_release}"
+			return 0
+		else
+			log error "Failed to determine latest kernel point release from registry; falling back to kernel.org"
+			# Fall through to kernel.org fetching logic below
+		fi
 	fi
 
 	if [[ -f "${CACHE_DIR}/kernel-releases.json" ]]; then

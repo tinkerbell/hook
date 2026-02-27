@@ -100,7 +100,7 @@ jobs:
         run: bash build.sh linuxkit-containers
 
       - name: Upload Linuxkit Docker images as GitHub Artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: linuxkit-images-${{ matrix.docker_arch }}
           path: ${{ runner.temp }}/*-${{ matrix.docker_arch }}.tar.gz
@@ -143,7 +143,7 @@ jobs:
         run: bash build.sh build-kernel "${{ matrix.kernel }}"
 
       - name: Upload Kernel Docker images as GitHub Artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: kernel-images-${{ matrix.kernel }}
           path: ${{ runner.temp }}/hook-kernel-*.tar.gz
@@ -254,7 +254,7 @@ jobs:
         run: bash build.sh build "${{ matrix.kernel }}" LINUXKIT_ISO=yes
 
       - name: Upload deb as artifact ${{ matrix.arch.name }} ${{ matrix.distro }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: "hook-tarball-${{ matrix.kernel }}"
           path: |

@@ -11,6 +11,11 @@ run_dhcp_client() {
 	one_shot="$1"
 	al="e*"
 
+	ntp_server=$(tr ' ' '\n' </proc/cmdline | sed -n 's/^ntp_server=//p')
+	if [ -z "$ntp_server" ]; then
+		ntp_server="pool.ntp.org"
+	fi
+
 	interface=$(sed -n 's/.* interface=\([a-z,A-Z,0-9]*\).*/\1/p' /proc/cmdline)
 	if [ -n "$interface" ]; then
 		al="$interface"
@@ -29,7 +34,7 @@ run_dhcp_client() {
 
 		# use busybox's ntpd to set the time after getting an IP address; don't fail
 		echo "sleep 1 second before calling ntpd; date: '$(date)'" && sleep 1
-		if ! /usr/sbin/ntpd -n -q -dd -p pool.ntp.org; then
+		if ! /usr/sbin/ntpd -n -q -dd -p "$ntp_server"; then
 			echo "ntpd call failed; setting time manually and retrying"
 			# set system time to the date of the dhcpd binary file
 			# this should recover from ntpd failures due to time being too far off
@@ -38,7 +43,7 @@ run_dhcp_client() {
 			while [ $tries -le 5 ]; do
 				echo "waiting 1 second before retrying ntpd call; try #$tries ; date is now: '$(date)'"
 				sleep 1
-				if /usr/sbin/ntpd -n -q -dd -p pool.ntp.org; then
+				if /usr/sbin/ntpd -n -q -dd -p "$ntp_server"; then
 					echo "ntpd retry call succeeded on try #$tries; date is now: '$(date)'"
 					break
 				else

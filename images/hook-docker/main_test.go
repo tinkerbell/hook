@@ -7,6 +7,26 @@ import (
 	"testing"
 )
 
+func TestSyslogAddress(t *testing.T) {
+	tests := map[string]struct {
+		host string
+		want string
+	}{
+		"empty host returns empty": {host: "", want: ""},
+		"ipv4 host":                {host: "192.168.1.10", want: "udp://192.168.1.10:514"},
+		"ipv6 host is bracketed":   {host: "fd00:80:66::1", want: "udp://[fd00:80:66::1]:514"},
+		"ipv6 loopback":            {host: "::1", want: "udp://[::1]:514"},
+		"hostname passes through":  {host: "syslog.example.com", want: "udp://syslog.example.com:514"},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := syslogAddress(tt.host); got != tt.want {
+				t.Fatalf("syslogAddress(%q) = %q, want %q", tt.host, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestWriteToDisk(t *testing.T) {
 	tests := map[string]struct {
 		cfg     dockerConfig

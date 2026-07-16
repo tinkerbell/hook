@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -37,12 +38,12 @@ func run() error {
 	fmt.Println("Starting the Docker Engine")
 
 	d := dockerConfig{
-		Debug:     true,
-		LogDriver: "syslog",
-		LogOpts: map[string]string{
-			"syslog-address": fmt.Sprintf("udp://%v:514", cfg.syslogHost),
-		},
+		Debug:              true,
 		InsecureRegistries: cfg.insecureRegistries,
+	}
+	if addr := syslogAddress(cfg.syslogHost); addr != "" {
+		d.LogDriver = "syslog"
+		d.LogOpts = map[string]string{"syslog-address": addr}
 	}
 	path := "/etc/docker"
 	// Create the directory for the docker config
@@ -87,6 +88,18 @@ func main() {
 			time.Sleep(10 * time.Second)
 		}
 	}
+}
+
+// syslogAddress builds the syslog log driver's UDP address for the given host.
+// It returns an empty string when host is empty (caller should skip configuring
+// the syslog log driver in that case). IPv6 addresses are bracketed via
+// net.JoinHostPort so the resulting URL parses correctly (e.g.
+// "udp://[fd00::1]:514" rather than "udp://fd00::1:514").
+func syslogAddress(host string) string {
+	if host == "" {
+		return ""
+	}
+	return "udp://" + net.JoinHostPort(host, "514")
 }
 
 // writeToDisk writes the dockerConfig to loc.
